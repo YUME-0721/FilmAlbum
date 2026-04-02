@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #ffba20;
+  --color-primary-dim: #f0ad00;
+  --color-on-primary: #563b00;
+  --color-primary-container: #5e4200;
+  --color-on-primary-container: #ffc85f;
+  
+  --color-surface: #0e0e0e;
+  --color-surface-container-lowest: #000000;
+  --color-surface-container-low: #131313;
+  --color-surface-container: #191a1a;
+  --color-surface-container-high: #1f2020;
+  --color-surface-container-highest: #252626;
+  --color-surface-variant: #252626;
+  --color-surface-bright: #2b2c2c;
+  
+  --color-on-surface: #e7e5e5;
+  --color-on-surface-variant: #acabaa;
+  
+  --color-outline: #767575;
+  --color-outline-variant: #484848;
+  
+  --color-secondary-container: #004522;
+  --color-on-secondary-container: #65d58a;
+  --color-secondary: #40b26b;
+  --color-on-secondary: #002610;
+
+  --font-headline: "Noto Serif SC", serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Space Grotesk", sans-serif;
+}
+
+/* 浅色主题 */
+html.light {
+  --color-primary: #ffba20;
+  --color-primary-dim: #f0ad00;
+  --color-on-primary: #563b00;
+  --color-primary-container: #ffebb8;
+  --color-on-primary-container: #563b00;
+  
+  --color-surface: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f5f5f5;
+  --color-surface-container: #f0f0f0;
+  --color-surface-container-high: #e8e8e8;
+  --color-surface-container-highest: #e0e0e0;
+  --color-surface-variant: #e8e8e8;
+  --color-surface-bright: #ffffff;
+  
+  --color-on-surface: #1a1a1a;
+  --color-on-surface-variant: #666666;
+  
+  --color-outline: #999999;
+  --color-outline-variant: #cccccc;
+  
+  --color-secondary-container: #e6f4ea;
+  --color-on-secondary-container: #1e8e3e;
+  --color-secondary: #34a853;
+  --color-on-secondary: #ffffff;
+}
+
+@layer utilities {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  }
+  
+  .fill-1 {
+    font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  }
+  
+  .masonry-grid {
+    column-count: 1;
+    column-gap: 2rem;
+  }
+  @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
+  @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
+  @media (min-width: 1536px) { .masonry-grid { column-count: 4; } }
+  
+  .masonry-item {
+    break-inside: avoid;
+    margin-bottom: 2rem;
+  }
+
+  .perforation-pattern {
+    background-image: radial-gradient(circle, #000000 60%, transparent 60%);
+    background-size: 12px 12px;
+    background-repeat: repeat-x;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #131313;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #484848;
+  }
+
+  .carousel-container {
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .carousel-container::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .carousel-item {
+    scroll-snap-align: start;
+    flex: 0 0 100%;
+  }
+  
+  .font-trajan {
+    font-family: 'Trajan, serif';
+  }
+  
+  .font-lingxun {
+    font-family: 'Source Serif Pro', serif;
+  }
+  
+  @keyframes spin-smooth {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .animate-spin-smooth {
+    animation: spin-smooth 1.5s linear infinite;
+  }
+  
+  /* 日期输入框日历按钮样式 - 深色主题 */
+  html.dark input[type="date"]::-webkit-calendar-picker-indicator,
+  :root:not(.light) input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+  }
+  
+  html.dark input[type="date"]::-ms-calendar-picker-indicator,
+  :root:not(.light) input[type="date"]::-ms-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+  }
+  
+  /* 日期输入框日历按钮样式 - 浅色主题 */
+  html.light input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: none;
+    cursor: pointer;
+  }
+  
+  html.light input[type="date"]::-ms-calendar-picker-indicator {
+    filter: none;
+    cursor: pointer;
+  }
+  
+  input[type="date"] {
+    position: relative;
+  }
+  
+  html.dark input[type="date"]:hover::-webkit-calendar-picker-indicator,
+  :root:not(.light) input[type="date"]:hover::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.5);
+  }
+  
+  html.dark input[type="date"]:hover::-ms-calendar-picker-indicator,
+  :root:not(.light) input[type="date"]:hover::-ms-calendar-picker-indicator {
+    filter: invert(1) brightness(1.5);
+  }
+  
+  html.light input[type="date"]:hover::-webkit-calendar-picker-indicator {
+    filter: brightness(0.8);
+  }
+  
+  html.light input[type="date"]:hover::-ms-calendar-picker-indicator {
+    filter: brightness(0.8);
+  }
+}

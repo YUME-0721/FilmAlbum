@@ -1,0 +1,22 @@
+{
+  "name": "film-album-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute film-album-db --local --file=./src/db/schema.sql",
+    "db:seed": "wrangler d1 execute film-album-db --local --file=./src/db/seed.sql"
+  },
+  "dependencies": {
+    "@types/uuid": "^10.0.0",
+    "hono": "^4.7.0",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250313.0",
+    "typescript": "~5.8.2",
+    "wrangler": "^4.0.0"
+  }
+}
