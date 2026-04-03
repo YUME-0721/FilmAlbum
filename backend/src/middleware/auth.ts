@@ -3,6 +3,7 @@
  * 验证请求中的 JWT 令牌，将用户信息注入上下文
  */
 import { Context, Next } from 'hono';
+import { getCookie } from 'hono/cookie';
 import type { Env, JwtPayload } from '../types';
 
 /** 用于 HMAC-SHA256 签名的密钥缓存 */
@@ -136,14 +137,12 @@ export function authOptional() {
   };
 }
 
+
 /** 从请求中提取 JWT 令牌 */
 function extractToken(c: Context): string | null {
   // 优先从 Cookie 提取
-  const cookieHeader = c.req.header('Cookie');
-  if (cookieHeader) {
-    const match = cookieHeader.match(/token=([^;]+)/);
-    if (match) return match[1];
-  }
+  const token = getCookie(c, 'token');
+  if (token) return token;
 
   // 其次从 Authorization header 提取
   const authHeader = c.req.header('Authorization');

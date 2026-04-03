@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import type { FilmStock } from '../src/api/film-stocks';
+import { createFilmStock, updateFilmStock, deleteFilmStock } from '../src/api/film-stocks';
 import { commonBrands, brandMap, getBrandDisplayName, filterFilmStocks } from '../src/constants/brands';
 import { X, Plus, Film, AlertCircle, CheckCircle2 } from 'lucide-react';
 
@@ -66,14 +67,8 @@ export default function FilmStockManager({
   const handleDeleteFilmStock = async (id: string) => {
     if (window.confirm('确定要删除这个胶卷型号吗？')) {
       try {
-        const response = await fetch('/api/film-stocks/' + id, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        const data = await response.json();
-        if (data.success) {
+        const result = await deleteFilmStock(id);
+        if (result.success) {
           // 调用onUpdate函数通知父组件更新数据
           if (onUpdate) {
             onUpdate();
@@ -81,11 +76,11 @@ export default function FilmStockManager({
           onClose();
           showToast('胶卷型号删除成功');
         } else {
-          showToast('删除失败：' + (data.error || '未知错误'), 'error');
+          showToast('删除失败：' + (result.error || '未知错误'), 'error');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('删除胶卷型号失败:', error);
-        showToast('删除失败：网络错误', 'error');
+        showToast('删除失败：' + (error.message || '网络错误'), 'error');
       }
     }
   };
@@ -122,14 +117,7 @@ export default function FilmStockManager({
     try {
       if (editFilmStock) {
         // 编辑胶卷型号
-        const response = await fetch(`/api/film-stocks/${editFilmStock.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(addFilmStockForm)
-        });
-        const result = await response.json();
+        const result = await updateFilmStock(editFilmStock.id, addFilmStockForm);
         if (result.success && result.data) {
           setAddFilmStockForm({
               brand: '',
@@ -148,46 +136,35 @@ export default function FilmStockManager({
           onClose();
           showToast('胶卷型号更新成功');
         } else {
-          showToast('更新失败', 'error');
+          showToast('更新失败：' + (result.error || '未知错误'), 'error');
         }
       } else {
           // 添加胶卷型号
-          const response = await fetch('/api/film-stocks', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(addFilmStockForm)
-          });
-          if (response.status === 409) {
-            // 处理冲突错误
-            showToast('胶卷型号已存在，请检查品牌、型号和ISO是否重复', 'error');
-          } else {
-            const result = await response.json();
-            if (result.success && result.data) {
-              setAddFilmStockForm({
-                  brand: '',
-                  model: '',
-                  iso: 0,
-                  format: '135',
-                  filmType: 'COLOR_NEGATIVE',
-                  process: 'C-41'
-                });
-              setShowAddModal(false);
-              // 调用onUpdate函数通知父组件更新数据
-              if (onUpdate) {
-                onUpdate();
-              }
-              onClose();
-              showToast('胶卷型号添加成功');
-            } else {
-              showToast('添加失败', 'error');
+          const result = await createFilmStock(addFilmStockForm);
+          if (result.success && result.data) {
+            setAddFilmStockForm({
+                brand: '',
+                model: '',
+                iso: 0,
+                format: '135',
+                filmType: 'COLOR_NEGATIVE',
+                process: 'C-41'
+              });
+            setShowAddModal(false);
+            // 调用onUpdate函数通知父组件更新数据
+            if (onUpdate) {
+              onUpdate();
             }
+            onClose();
+            showToast('胶卷型号添加成功');
+          } else {
+            // 如果是 409 冲突，API 逻辑会抛出异常或返回 success: false
+            showToast('添加失败：' + (result.error || '该胶卷型号可能已存在'), 'error');
           }
         }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add or update film stock:', err);
-      showToast('网络错误', 'error');
+      showToast(err.message || '操作失败', 'error');
     }
   };
 

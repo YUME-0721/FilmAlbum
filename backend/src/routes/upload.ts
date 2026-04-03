@@ -59,7 +59,8 @@ async function uploadToImgBed(
   }
 
   // 拼接完整 URL
-  return `${imgBedUrl}${result[0].src}`;
+  const base = imgBedUrl.replace(/\/$/, '');
+  return `${base}${result[0].src}`;
 }
 
 /**
@@ -152,12 +153,13 @@ upload.delete('/', authRequired(), async (c) => {
 
   const imgBedUrl = c.env.IMG_BED_URL;
   const imgBedToken = c.env.IMG_BED_TOKEN;
-
+  const base = imgBedUrl.replace(/\/$/, '');
+ 
   // 从路径中提取文件标识（去掉前导 /）
   const filePath = body.path.startsWith('/') ? body.path.slice(1) : body.path;
-
+ 
   try {
-    const response = await fetch(`${imgBedUrl}/api/manage/delete/${filePath}`, {
+    const response = await fetch(`${base}/api/manage/delete/${filePath}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${imgBedToken}`

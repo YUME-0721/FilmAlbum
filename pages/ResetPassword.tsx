@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Notification from '../components/Notification.tsx';
 import { sendCode } from '../src/api/auth.ts';
+import { post } from '../src/api/client.ts';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPassword() {
@@ -119,13 +120,11 @@ export default function ResetPassword() {
         return;
       }
 
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code, newPassword })
+      const result = await post('/auth/reset-password', {
+        email,
+        code,
+        newPassword
       });
-
-      const result = await response.json();
       if (result.success) {
         setShowNotification(true);
         setNotificationMessage('密码重置成功，请重新登录');
@@ -138,9 +137,9 @@ export default function ResetPassword() {
         setNotificationMessage(result.error || '密码重置失败');
         setNotificationType('error');
       }
-    } catch (err) {
+    } catch (err: any) {
       setShowNotification(true);
-      setNotificationMessage('网络错误');
+      setNotificationMessage(err.message || '网络错误');
       setNotificationType('error');
     } finally {
       setIsSubmitting(false);

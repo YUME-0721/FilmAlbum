@@ -50,11 +50,11 @@ async function request<T>(
 
   try {
     const response = await fetch(url, config);
-    const data = await response.json() as ApiResponse<T>;
-
     if (!response.ok) {
-      throw new Error(data.error || `请求失败 (${response.status})`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `请求失败 (${response.status})`);
     }
+    const data = await response.json() as ApiResponse<T>;
 
     return data;
   } catch (error) {
