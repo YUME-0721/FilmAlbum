@@ -1,10 +1,13 @@
 name = "film-album-api"
 main = "src/index.ts"
-compatibility_date = "2025-03-01"
+compatibility_date = "2024-04-03"
+
+routes = [
+  { pattern = "filmsapi.072199.xyz", custom_domain = true }
+]
 
 [vars]
 # 图床配置
-IMG_BED_URL = "https://img.072199.xyz"
 # NOTE: 密钥类变量请通过 npx wrangler secret put 指令设置，不要存在此处
 
 [[d1_databases]]

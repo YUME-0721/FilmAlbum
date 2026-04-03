@@ -1,8 +1,16 @@
 <div align="center">
-
+  <img width="100%" src="./Screenshots/logo.webp" alt="logo" />
+  <br/><br/>
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Hono-E36022?style=for-the-badge&logo=hono&logoColor=white" />
+  <img src="https://img.shields.io/badge/Cloudflare_Workers-F38020?style=for-the-badge&logo=cloudflare-workers&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" />
+  <br/>
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
 </div>
 
-# 居流相册 (Film Album) 开发中！半成品！
+# 居流相册 (Film Album)
 
 > **属于胶片摄影师的数字角落。让每一卷底片，都在数字世界找到最美的一站。**
 
@@ -38,60 +46,86 @@
 
 ---
 
-## 🚀 快速开始
+## 🚀 部署指南 (Deployment Guide)
 
-### 1. 克隆项目
-```bash
-git clone https://github.com/your-repo/film-album.git
-cd film-album
-```
+项目采用全栈 **Cloudflare** 方案，部署成本接近 **￥0**。请按照以下步骤依次操作：
 
-### 2. 后端配置与运行
-```bash
-cd backend
-npm install
-# 初始化本地数据库
-npm run db:init
-# 运行后端 API (Local Wrangler Dev)
-npm run dev
-```
-
-### 3. 前端配置与运行
-```bash
-# 返回根目录
-cd ..
-npm install
-# 启动前端开发服务器
-npm run dev
-```
+### 1. 准备工作
+在开始之前，你需要准备好以下服务：
+- [Cloudflare 账号](https://dash.cloudflare.com/)：用于托管前端、后端及数据库。
+- [Resend 账号](https://resend.com/)：用于发送邮箱验证码（免费额度充足）。
+- [CloudFlare-ImgBed 图床](https://github.com/marlowe-j/cloudflare-imgbed)：建议自建图床（或使用兼容 API 的图床），获取 `API URL` 和 `Token`。
 
 ---
 
-## 📦 部署指南
+### 2. 后端部署 (Cloudflare Workers + D1)
 
-项目基于 **Cloudflare Stack** 构建，可享受几乎零成本的高性能托管。
-
-### 1. 部署后端 (Cloudflare Workers)
-1.  登录 Cloudflare 控制台，创建一个 **D1 数据库**（例如：`film-album-db`）。
-2.  修改 `/backend/wrangler.toml` 中的 `database_id` 为你刚创建的 ID。
-3.  设置环境变量：
+#### 2.1 创建并初始化数据库
+1.  **安装依赖**：
     ```bash
-    npx wrangler secret put JWT_SECRET      # 设置 JWT 密钥
-    npx wrangler secret put IMG_BED_TOKEN  # 设置图床 Token
+    cd backend
+    npm install
     ```
-4.  部署：`npx wrangler deploy`。
+2.  **创建 D1 数据库**：
+    ```bash
+    npx wrangler d1 create film-album-db
+    ```
+    *执行后，请记下返回结果中的 `database_id`。*
+3.  **修改配置**：打开 `backend/wrangler.toml`，将 `[[d1_databases]]` 部分的 `database_id` 替换为你刚才获取的 ID。
+4.  **初始化表结构**：
+    ```bash
+    # 这一步会将本地 schema.sql 推送到 Cloudflare 线上
+    npx wrangler d1 execute film-album-db --remote --file=./src/db/schema.sql
+    ```
 
-### 2. 初始化生产数据库
+#### 2.2 录入机密环境变量 (Secrets)
+为了安全，以下变量**必须**通过命令行录入，不要写在配置文件里：
 ```bash
-npm run db:init -- --remote
+npx wrangler secret put JWT_SECRET      # 任意长字符串，用于登录鉴权
+npx wrangler secret put IMG_BED_URL     # 你的图床地址 (例: https://img.example.com)
+npx wrangler secret put IMG_BED_TOKEN   # 图床的 API Token
+npx wrangler secret put SMTP_HOST       # SMTP 服务器 (如: smtp.resend.com)
+npx wrangler secret put SMTP_PORT       # 端口 (如: 465)
+npx wrangler secret put SMTP_USER       # SMTP 用户名 (如: resend)
+npx wrangler secret put SMTP_PASSWORD   # SMTP 密钥
+npx wrangler secret put SMTP_FROM       # 发件邮箱 (如: FilmAlbum <onboarding@resend.dev>)
 ```
 
-### 3. 部署前端 (Cloudflare Pages)
-1.  在 Cloudflare Pages 中关联你的项目仓库。
-2.  设置构建配置：
+#### 2.3 部署代码
+```bash
+npx wrangler deploy
+```
+*完成后，你会得到一个后端 API URL（例如：`https://film-api.xxx.workers.dev`）。*
+
+---
+
+### 3. 前端部署 (Cloudflare Pages)
+
+1.  **Fork 并关联**：将本项目 Fork 到你的 GitHub，在 Cloudflare Pages 中点击 "Create a project" -> "Connect to git"。
+2.  **构建配置**：
+    -   **Framework preset**: `Vite`
     -   **Build command**: `npm run build`
     -   **Build output directory**: `dist`
-3.  配置环境变量 `VITE_API_BASE_URL` 指向你的 Workers 地址。
+3.  **配置环境变量 (Environment Variables)**：在 Pages 设置中添加：
+    -   `VITE_API_BASE_URL`: 填写你上面部署好的后端 URL，**必须以 `/api` 结尾**。
+    -   *(例: `https://film-api.xxx.workers.dev/api`)*
+
+---
+
+### 4. 关键：解决 Cookie 登录失效 (域名绑定)
+
+**⚠️ 重要注意：**
+由于浏览器对三方 Cookie 的限制，如果前端和后端域名不一致（例如一个是 `pages.dev`，一个是 `workers.dev`），会导致无法保持登录。
+
+**【推荐方案】绑定二级域名：**
+1.  在 Cloudflare 中，为你的顶级域名（例如 `example.com`）配置：
+    -   **前端**：绑定到 `example.com` 或 `www.example.com`。
+    -   **后端**：在 Workers 设置的 "Custom Domains" 中添加 `api.example.com`。
+2.  **更新环境变量**：将前端 Pages 的 `VITE_API_BASE_URL` 更新为 `https://api.example.com/api`。
+
+完成后，前端和后端将属于“同级域名”，登录状态将持久保持。
+
+---
 
 ---
 
