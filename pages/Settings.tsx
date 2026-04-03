@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import { useSettings } from '../src/context/SettingsContext.tsx';
 import Notification from '../components/Notification.tsx';
+import { sendCode } from '../src/api/auth.ts';
+import { post } from '../src/api/client.ts';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('interface');
@@ -34,12 +36,7 @@ export default function Settings() {
 
     setIsSendingCode(true);
     try {
-      const response = await fetch('/api/auth/send-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email })
-      });
-      const result = await response.json();
+      const result = await sendCode(user.email);
       if (result.success) {
         setError('');
         setShowNotification(true);
@@ -61,9 +58,9 @@ export default function Settings() {
         setNotificationMessage(result.error || '发送验证码失败');
         setNotificationType('error');
       }
-    } catch (err) {
+    } catch (err: any) {
       setShowNotification(true);
-      setNotificationMessage('发送验证码失败');
+      setNotificationMessage(err.message || '发送验证码失败');
       setNotificationType('error');
     } finally {
       setIsSendingCode(false);
@@ -107,12 +104,11 @@ export default function Settings() {
     }
 
     try {
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email, code, newPassword })
+      const result = await post('/auth/change-password', {
+        email: user.email,
+        code,
+        newPassword
       });
-      const result = await response.json();
       if (result.success) {
         setShowNotification(true);
         setNotificationMessage('密码修改成功，请重新登录');
@@ -132,9 +128,9 @@ export default function Settings() {
         setNotificationMessage(result.error || '密码修改失败');
         setNotificationType('error');
       }
-    } catch (err) {
+    } catch (err: any) {
       setShowNotification(true);
-      setNotificationMessage('密码修改失败');
+      setNotificationMessage(err.message || '密码修改失败');
       setNotificationType('error');
     }
   };
@@ -149,11 +145,7 @@ export default function Settings() {
   const handleDeleteAccount = async () => {
     if (window.confirm('确定要注销账号吗？此操作不可恢复。')) {
       try {
-        const response = await fetch('/api/auth/delete-account', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        const result = await response.json();
+        const result = await post('/auth/delete-account');
         if (result.success) {
           setShowNotification(true);
           setNotificationMessage('账号注销成功');
@@ -167,9 +159,9 @@ export default function Settings() {
           setNotificationMessage(result.error || '账号注销失败');
           setNotificationType('error');
         }
-      } catch (err) {
+      } catch (err: any) {
         setShowNotification(true);
-        setNotificationMessage('账号注销失败');
+        setNotificationMessage(err.message || '账号注销失败');
         setNotificationType('error');
       }
     }

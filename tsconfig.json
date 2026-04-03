@@ -23,6 +23,9 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": true,
-    "forceConsistentCasingInFileNames": true
-  }
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src", "pages", "components"],
+  "exclude": ["node_modules", "backend"]
 }

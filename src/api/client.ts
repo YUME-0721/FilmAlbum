@@ -4,7 +4,7 @@
  */
 
 // NOTE: 开发环境使用 Vite 代理，生产环境需配置正确的 API 地址
-const API_BASE_URL = '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 /** API 统一响应类型 */
 export interface ApiResponse<T = unknown> {

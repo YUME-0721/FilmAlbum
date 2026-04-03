@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Notification from '../components/Notification.tsx';
+import { sendCode } from '../src/api/auth.ts';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPassword() {
@@ -32,12 +33,7 @@ export default function ResetPassword() {
 
     setIsSendingCode(true);
     try {
-      const response = await fetch('/api/auth/send-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, type: 'reset-password' })
-      });
-      const result = await response.json();
+      const result = await sendCode(email, 'reset-password');
       if (result.success) {
         setShowNotification(true);
         setNotificationMessage('验证码发送成功');
@@ -77,9 +73,9 @@ export default function ResetPassword() {
           setNotificationType('error');
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       setShowNotification(true);
-      setNotificationMessage('发送验证码失败');
+      setNotificationMessage(err.message || '发送验证码失败');
       setNotificationType('error');
     } finally {
       setIsSendingCode(false);

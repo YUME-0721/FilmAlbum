@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import Notification from '../components/Notification.tsx';
+import { sendCode } from '../src/api/auth.ts';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
@@ -66,12 +67,7 @@ export default function Login() {
 
     setIsSendingCode(true);
     try {
-      const response = await fetch('/api/auth/send-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, type: 'register' })
-      });
-      const result = await response.json();
+      const result = await sendCode(email, 'register');
       if (result.success) {
         setError('');
         setShowNotification(true);
@@ -93,9 +89,9 @@ export default function Login() {
         setNotificationMessage(result.error || '发送验证码失败');
         setNotificationType('error');
       }
-    } catch (err) {
+    } catch (err: any) {
       setShowNotification(true);
-      setNotificationMessage('发送验证码失败');
+      setNotificationMessage(err.message || '发送验证码失败');
       setNotificationType('error');
     } finally {
       setIsSendingCode(false);

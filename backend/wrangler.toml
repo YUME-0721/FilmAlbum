@@ -4,12 +4,10 @@ compatibility_date = "2025-03-01"
 
 [vars]
 # 图床配置
-IMG_BED_URL = "${IMG_BED_URL}"
-# NOTE: 生产环境中应使用 wrangler secret 设置以下密钥
-# JWT_SECRET = "your-jwt-secret"
-IMG_BED_TOKEN = "${IMG_BED_TOKEN}"
+IMG_BED_URL = "https://img.072199.xyz"
+# NOTE: 密钥类变量请通过 npx wrangler secret put 指令设置，不要存在此处
 
 [[d1_databases]]
 binding = "DB"
 database_name = "film-album-db"
-database_id = "placeholder-replace-after-creation"
+database_id = "7bbb2117-9bc6-4d84-865e-6df3633453d5"

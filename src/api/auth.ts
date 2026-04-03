@@ -34,3 +34,8 @@ export function logout() {
 export function getCurrentUser() {
   return get<AuthUser>('/auth/me');
 }
+
+/** 发送验证码 */
+export function sendCode(email: string, type: 'register' | 'reset-password' = 'register') {
+  return post('/auth/send-code', { email, type });
+}
