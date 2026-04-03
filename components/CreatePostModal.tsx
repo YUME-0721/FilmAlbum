@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { X, CloudUpload, CheckCircle2, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../src/context/AuthContext';
 import { getRolls, getRoll, type RollListItem, type FrameItem } from '../src/api/rolls';
 import { uploadImage } from '../src/api/upload';
@@ -195,7 +196,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
           >
-            <span className="material-symbols-outlined text-[#999]">close</span>
+            <X className="text-[#999]" size={20} />
           </button>
         </div>
 
@@ -214,7 +215,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                     <span className="text-[#999] animate-pulse">正在上传...</span>
                   ) : (
                     <>
-                      <span className="material-symbols-outlined text-4xl text-[#666] mb-2">cloud_upload</span>
+                      <CloudUpload className="text-[#666] mb-2" size={40} />
                       <span className="text-[#e7e5e5]">点击上传照片</span>
                     </>
                   )}
@@ -272,12 +273,12 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                         />
                         {selectedImages.some(img => img.url === frame.imageUrl) && (
                           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-primary text-3xl">check_circle</span>
+                            <CheckCircle2 className="text-primary" size={32} />
                           </div>
                         )}
                         {!selectedImages.some(img => img.url === frame.imageUrl) && (
                           <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span className="material-symbols-outlined text-white">check_circle</span>
+                            <CheckCircle2 className="text-white" size={24} />
                           </div>
                         )}
                       </div>
@@ -298,7 +299,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                       onClick={() => setCurrentImageIndex(prev => prev === 0 ? selectedImages.length - 1 : prev - 1)}
                       className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 transition-colors z-10"
                     >
-                      <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+                      <ChevronLeft size={20} />
                     </button>
                   )}
                   <img src={selectedImages[currentImageIndex]?.url} alt="preview" className="w-full h-auto object-contain max-h-[50vh]" referrerPolicy="no-referrer" />
@@ -307,7 +308,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                       onClick={() => setCurrentImageIndex(prev => prev === selectedImages.length - 1 ? 0 : prev + 1)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 transition-colors z-10"
                     >
-                      <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                      <ChevronRight size={20} />
                     </button>
                   )}
                   {selectedImages.length > 1 && (
@@ -322,7 +323,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                   onClick={() => { setStep(1); setCurrentImageIndex(0); }}
                   className="mt-4 text-[#999] hover:text-white text-sm flex items-center justify-center gap-1 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                  <ArrowLeft size={16} />
                   重选图片 / {selectedImages.length} 张已选
                 </button>
               </div>
@@ -392,7 +393,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                       <span key={tag} className="bg-[#333] text-sm px-2 py-1 rounded flex items-center gap-1 group">
                         {tag}
                         <button type="button" onClick={() => removeTag(tag)} className="text-[#999] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="material-symbols-outlined text-[14px]">close</span>
+                          <X size={14} />
                         </button>
                       </span>
                     ))}

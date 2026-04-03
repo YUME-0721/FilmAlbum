@@ -42,6 +42,8 @@ export interface FrameItem {
   camera?: string;
   lens?: string;
   tags?: string[];
+  fileSize?: number;
+  fileFormat?: string;
 }
 
 export interface RollDetail {
@@ -119,6 +121,8 @@ export function addFrames(rollId: string, frames: Array<{
   shutterSpeed?: string;
   iso?: string;
   description?: string;
+  fileSize?: number;
+  fileFormat?: string;
 }>): Promise<ApiResponse<FrameItem[]>> {
   return post<FrameItem[]>(`/rolls/${rollId}/frames`, { frames });
 }

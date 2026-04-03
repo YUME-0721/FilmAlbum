@@ -9,15 +9,15 @@ CREATE TABLE IF NOT EXISTS users (
   nickname TEXT NOT NULL,
   avatar_url TEXT DEFAULT '',
   bio TEXT DEFAULT '',
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
 -- 关注关系
 CREATE TABLE IF NOT EXISTS follows (
   follower_id INTEGER NOT NULL,
   following_id INTEGER NOT NULL,
-  created_at TEXT DEFAULT (datetime('now')),
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   PRIMARY KEY (follower_id, following_id),
   FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
@@ -38,8 +38,8 @@ CREATE TABLE IF NOT EXISTS rolls (
   film_type TEXT DEFAULT 'COLOR_NEGATIVE', -- COLOR_NEGATIVE, BW_NEGATIVE, COLOR_POSITIVE, BW_POSITIVE
   status TEXT DEFAULT 'DRAFT',
   tags TEXT DEFAULT '[]',
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now')),
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -54,13 +54,15 @@ CREATE TABLE IF NOT EXISTS frames (
   shutter_speed TEXT DEFAULT '',
   iso TEXT DEFAULT '',
   description TEXT DEFAULT '',
+  file_size INTEGER DEFAULT 0,
+  file_format TEXT DEFAULT '',
   sort_order INTEGER DEFAULT 0,
   shot_date TEXT,
   location TEXT DEFAULT '',
   camera TEXT DEFAULT '',
   lens TEXT DEFAULT '',
   tags TEXT DEFAULT '[]',
-  created_at TEXT DEFAULT (datetime('now')),
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (roll_id) REFERENCES rolls(id) ON DELETE CASCADE
 );
 
@@ -74,8 +76,8 @@ CREATE TABLE IF NOT EXISTS posts (
   camera TEXT DEFAULT '',
   lens TEXT DEFAULT '',
   tags TEXT DEFAULT '[]',
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now')),
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -93,7 +95,7 @@ CREATE TABLE IF NOT EXISTS post_images (
 CREATE TABLE IF NOT EXISTS likes (
   user_id INTEGER NOT NULL,
   post_id TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now')),
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   PRIMARY KEY (user_id, post_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
@@ -105,7 +107,9 @@ CREATE TABLE IF NOT EXISTS comments (
   post_id TEXT NOT NULL,
   user_id INTEGER NOT NULL,
   content TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now')),
+  parent_id TEXT, -- 父评论 ID
+  reply_to_user_id INTEGER, -- 被回复用户 ID
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -126,8 +130,8 @@ CREATE TABLE IF NOT EXISTS gear (
   external_url TEXT DEFAULT '', -- 设备详情外部链接
   review TEXT DEFAULT '', -- max 30 characters
   rating REAL DEFAULT 0, -- 0-5
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now')),
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -140,9 +144,38 @@ CREATE TABLE IF NOT EXISTS film_stocks (
   format TEXT NOT NULL, -- 135, 120, 4x5, etc.
   film_type TEXT NOT NULL, -- COLOR_NEGATIVE, BW_NEGATIVE, COLOR_POSITIVE, BW_POSITIVE
   process TEXT NOT NULL, -- C-41, E-6, D-76, etc.
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now')),
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   UNIQUE(brand, model, iso) -- 确保品牌、型号和感光度的组合唯一
+);
+
+-- 私信消息表
+CREATE TABLE IF NOT EXISTS messages (
+  id TEXT PRIMARY KEY,
+  sender_id INTEGER NOT NULL,
+  receiver_id INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  is_read INTEGER DEFAULT 0, -- 0 for false, 1 for true
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 通知表 (点赞、评论、系统通知)
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  receiver_id INTEGER NOT NULL,
+  sender_id INTEGER NOT NULL,
+  type TEXT NOT NULL, -- 'LIKE', 'COMMENT', 'SYSTEM'
+  post_id TEXT, -- 关联帖子
+  comment_id TEXT, -- 关联评论
+  content TEXT, -- 消息内容预览或消息文本
+  is_read INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE
 );
 
 -- 邮箱验证码表
@@ -163,6 +196,7 @@ CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at);
 CREATE INDEX IF NOT EXISTS idx_post_images_post_id ON post_images(post_id);
 CREATE INDEX IF NOT EXISTS idx_likes_post_id ON likes(post_id);
 CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON comments(parent_id);
 CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id);
 CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id);
 CREATE INDEX IF NOT EXISTS idx_gear_user_id ON gear(user_id);
@@ -170,3 +204,8 @@ CREATE INDEX IF NOT EXISTS idx_film_stocks_brand ON film_stocks(brand);
 CREATE INDEX IF NOT EXISTS idx_film_stocks_iso ON film_stocks(iso);
 CREATE INDEX IF NOT EXISTS idx_film_stocks_format ON film_stocks(format);
 CREATE INDEX IF NOT EXISTS idx_email_verifications_email ON email_verifications(email);
+CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(sender_id, receiver_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_receiver ON notifications(receiver_id, type);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);

@@ -38,6 +38,7 @@ export interface PostDetail {
   likesCount: number;
   commentsCount: number;
   isLiked: boolean;
+  isFollowing: boolean;
   isOwner: boolean;
   createdAt: string;
 }
@@ -46,6 +47,8 @@ export interface CommentItem {
   id: string;
   content: string;
   user: { id: string; nickname: string; avatarUrl: string };
+  parentId?: string;
+  replyToUser?: { id: string; nickname: string } | null;
   createdAt: string;
 }
 
@@ -113,6 +116,6 @@ export function getComments(postId: string, page = 1) {
 }
 
 /** 发表评论 */
-export function createComment(postId: string, content: string) {
-  return post<CommentItem>(`/posts/${postId}/comments`, { content });
+export function createComment(postId: string, content: string, parentId?: string, replyToUserId?: string | number) {
+  return post<CommentItem>(`/posts/${postId}/comments`, { content, parentId, replyToUserId });
 }

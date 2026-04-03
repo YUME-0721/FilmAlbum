@@ -5,6 +5,7 @@
  */
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext.tsx';
+import { Search, Mail, User, Settings as SettingsIcon } from 'lucide-react';
 
 export default function Layout() {
   const { isLoggedIn, user, logout } = useAuth();
@@ -52,9 +53,18 @@ export default function Layout() {
 
           {/* Actions */}
           <div className="flex items-center gap-6">
-            <button className="material-symbols-outlined text-on-surface hover:text-primary transition-colors">
-              search
+            <button className="text-on-surface hover:text-primary transition-colors">
+              <Search size={20} strokeWidth={2.5} />
             </button>
+            {isLoggedIn && (
+              <button 
+                onClick={() => navigate('/messages')}
+                className="text-on-surface hover:text-primary transition-colors"
+                title="消息"
+              >
+                <Mail size={20} strokeWidth={2.5} />
+              </button>
+            )}
             {isLoggedIn ? (
               <div className="flex items-center gap-4">
                 <button 
@@ -68,7 +78,7 @@ export default function Layout() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant">person</span>
+                    <User size={18} strokeWidth={2.5} className="text-on-surface-variant" />
                   )}
                 </button>
                 <button
@@ -76,7 +86,7 @@ export default function Layout() {
                   className="text-on-surface-variant hover:text-primary transition-colors"
                   title="设置"
                 >
-                  <span className="material-symbols-outlined text-[20px]">settings</span>
+                  <SettingsIcon size={20} strokeWidth={2.5} />
                 </button>
               </div>
             ) : (

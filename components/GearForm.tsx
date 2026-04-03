@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Gear } from '../src/api/gear';
+import { X, Loader2, CheckCircle2, ImagePlus, Star } from 'lucide-react';
 
 interface GearFormProps {
   isEditing: boolean;
@@ -104,7 +105,7 @@ export default function GearForm({
           onClick={onCancel}
           className="absolute top-4 right-4 text-on-surface-variant hover:text-primary transition-colors"
         >
-          <span className="material-symbols-outlined">close</span>
+          <X size={20} />
         </button>
         <h2 className="text-xl font-headline font-bold mb-6 text-on-surface tracking-tight">
           {isEditing ? '编辑拍摄设备' : '添加拍摄设备'}
@@ -115,13 +116,13 @@ export default function GearForm({
           <div className="mb-4 p-3 bg-surface-container-high rounded-sm border border-outline-variant/30">
             {submitStatus === 'uploading' && (
               <div className="flex items-center gap-2 text-on-surface">
-                <span className="material-symbols-outlined animate-spin">sync</span>
+                <Loader2 className="animate-spin" size={16} />
                 <span className="text-sm">{isEditing ? '更新设备中...' : '上传设备中...'}</span>
               </div>
             )}
             {submitStatus === 'success' && (
               <div className="flex items-center gap-2 text-success">
-                <span className="material-symbols-outlined">check_circle</span>
+                <CheckCircle2 size={16} />
                 <span className="text-sm">{isEditing ? '设备更新成功' : '设备添加成功'}</span>
               </div>
             )}
@@ -149,7 +150,7 @@ export default function GearForm({
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-on-surface-variant/30">
-                    <span className="material-symbols-outlined text-[24px] mb-1">add_photo_alternate</span>
+                    <ImagePlus size={48} className="mb-2" />
                     <p className="text-xs">点击上传设备照片</p>
                   </div>
                 )}
@@ -291,7 +292,7 @@ export default function GearForm({
                           }}
                           className="text-on-surface-variant hover:text-error"
                         >
-                          <span className="material-symbols-outlined text-sm">close</span>
+                          <X size={14} />
                         </button>
                       </div>
                     ))}
@@ -370,11 +371,10 @@ export default function GearForm({
                     onClick={() => setGearForm({...gearForm, rating: i + 1})}
                     className="text-2xl transition-colors"
                   >
-                    <span className={`material-symbols-outlined ${
-                      i < gearForm.rating ? 'text-warning fill-warning' : 'text-on-surface-variant/30 hover:text-warning hover:fill-warning' 
-                    }`}>
-                      star
-                    </span>
+                    <Star 
+                      size={24} 
+                      className={i < gearForm.rating ? 'text-warning fill-warning' : 'text-on-surface-variant/30 hover:text-warning hover:fill-warning'} 
+                    />
                   </button>
                 ))}
               </div>
@@ -423,7 +423,7 @@ export default function GearForm({
             >
               {isSubmitting ? (
                 <>
-                  <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+                  <Loader2 className="animate-spin" size={16} />
                   {isEditing ? '更新中...' : '添加中...'}
                 </>
               ) : (

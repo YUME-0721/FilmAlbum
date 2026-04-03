@@ -115,6 +115,15 @@ posts.get('/:id', authOptional(), async (c) => {
     isLiked = !!like;
   }
 
+  // 检查当前用户是否已关注作者
+  let isFollowing = false;
+  if (currentUserId && post.user_id) {
+    const follow = await c.env.DB.prepare(
+      'SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?'
+    ).bind(currentUserId, post.user_id).first();
+    isFollowing = !!follow;
+  }
+
   return c.json({
     success: true,
     data: {
@@ -140,6 +149,7 @@ posts.get('/:id', authOptional(), async (c) => {
       likesCount: post.likes_count,
       commentsCount: post.comments_count,
       isLiked,
+      isFollowing,
       isOwner: String(currentUserId) === String(post.user_id),
       createdAt: post.created_at
     }
@@ -277,6 +287,14 @@ posts.post('/:id/like', authRequired(), async (c) => {
     await c.env.DB.prepare(
       'INSERT INTO likes (user_id, post_id) VALUES (?, ?)'
     ).bind(userId, postId).run();
+
+    // 通知作者
+    const postAuthor = await c.env.DB.prepare('SELECT user_id FROM posts WHERE id = ?').bind(postId).first<{ user_id: number }>();
+    if (postAuthor && String(postAuthor.user_id) !== String(userId)) {
+      await c.env.DB.prepare(
+        'INSERT INTO notifications (id, receiver_id, sender_id, type, post_id) VALUES (?, ?, ?, ?, ?)'
+      ).bind(generateId(), postAuthor.user_id, userId, 'LIKE', postId).run();
+    }
   } catch {
     // 已经点过赞
   }
@@ -316,10 +334,12 @@ posts.get('/:id/comments', async (c) => {
   ).bind(postId).first<{ count: number }>();
 
   const result = await c.env.DB.prepare(
-    `SELECT c.id, c.content, c.created_at,
-            u.id as user_id, u.nickname, u.avatar_url
+    `SELECT c.id, c.content, c.created_at, c.parent_id, c.reply_to_user_id,
+            u.id as user_id, u.nickname, u.avatar_url,
+            ru.nickname as reply_to_nickname
      FROM comments c
      JOIN users u ON c.user_id = u.id
+     LEFT JOIN users ru ON c.reply_to_user_id = ru.id
      WHERE c.post_id = ?
      ORDER BY c.created_at ASC
      LIMIT ? OFFSET ?`
@@ -327,7 +347,7 @@ posts.get('/:id/comments', async (c) => {
 
   return c.json({
     success: true,
-    data: result.results?.map((row: Record<string, unknown>) => ({
+    data: result.results?.map((row: Record<string, any>) => ({
       id: row.id,
       content: row.content,
       user: {
@@ -335,6 +355,11 @@ posts.get('/:id/comments', async (c) => {
         nickname: row.nickname,
         avatarUrl: row.avatar_url
       },
+      parentId: row.parent_id,
+      replyToUser: row.reply_to_user_id ? {
+        id: row.reply_to_user_id,
+        nickname: row.reply_to_nickname
+      } : null,
       createdAt: row.created_at
     })) ?? [],
     pagination: {
@@ -350,7 +375,7 @@ posts.get('/:id/comments', async (c) => {
 posts.post('/:id/comments', authRequired(), async (c) => {
   const postId = c.req.param('id');
   const userId = c.get('userId');
-  const body = await c.req.json<{ content: string }>();
+  const body = await c.req.json<{ content: string; parentId?: string; replyToUserId?: string | number }>();
 
   if (!body.content?.trim()) {
     return c.json({ success: false, error: '评论内容不能为空' }, 400);
@@ -364,13 +389,50 @@ posts.post('/:id/comments', authRequired(), async (c) => {
 
   const commentId = generateId();
   await c.env.DB.prepare(
-    'INSERT INTO comments (id, post_id, user_id, content) VALUES (?, ?, ?, ?)'
-  ).bind(commentId, postId, userId, body.content.trim()).run();
+    'INSERT INTO comments (id, post_id, user_id, content, parent_id, reply_to_user_id) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(
+    commentId, 
+    postId, 
+    userId, 
+    body.content.trim(), 
+    body.parentId ?? null, 
+    body.replyToUserId ?? null
+  ).run();
+
+  // 通知流程
+  const postAuthor = await c.env.DB.prepare('SELECT user_id FROM posts WHERE id = ?').bind(postId).first<{ user_id: number }>();
+  
+  // 场景 1: 直接评论帖子 -> 通知帖子作者
+  if (postAuthor && String(postAuthor.user_id) !== String(userId) && !body.replyToUserId) {
+    await c.env.DB.prepare(
+      'INSERT INTO notifications (id, receiver_id, sender_id, type, post_id, comment_id, content) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(generateId(), postAuthor.user_id, userId, 'COMMENT', postId, commentId, body.content.trim()).run();
+  }
+  
+  // 场景 2: 回复某人 -> 通知该被回复的人
+  if (body.replyToUserId && String(body.replyToUserId) !== String(userId)) {
+    await c.env.DB.prepare(
+      'INSERT INTO notifications (id, receiver_id, sender_id, type, post_id, comment_id, content) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(generateId(), body.replyToUserId, userId, 'COMMENT', postId, commentId, body.content.trim()).run();
+  }
 
   // 返回新评论（含用户信息）
   const user = await c.env.DB.prepare(
     'SELECT nickname, avatar_url FROM users WHERE id = ?'
   ).bind(userId).first<{ nickname: string; avatar_url: string }>();
+
+  let replyToUser = null;
+  if (body.replyToUserId) {
+    const replyTo = await c.env.DB.prepare(
+      'SELECT nickname FROM users WHERE id = ?'
+    ).bind(body.replyToUserId).first<{ nickname: string }>();
+    if (replyTo) {
+      replyToUser = {
+        id: String(body.replyToUserId),
+        nickname: replyTo.nickname
+      };
+    }
+  }
 
   return c.json({
     success: true,
@@ -382,6 +444,8 @@ posts.post('/:id/comments', authRequired(), async (c) => {
         nickname: user?.nickname ?? '',
         avatarUrl: user?.avatar_url ?? ''
       },
+      parentId: body.parentId ?? null,
+      replyToUser,
       createdAt: new Date().toISOString()
     }
   }, 201);

@@ -117,6 +117,16 @@ export interface Gear {
   createdAt: string;
 }
 
+/** 私信消息 */
+export interface Message {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 /** JWT Payload */
 export interface JwtPayload {
   sub: string;

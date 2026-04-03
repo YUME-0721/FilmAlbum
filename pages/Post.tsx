@@ -2,10 +2,12 @@
  * 帖子详情页
  * 从后端 API 获取帖子数据，支持点赞和评论
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import { getPost, likePost, unlikePost, getComments, createComment, type PostDetail, type CommentItem } from '../src/api/posts.ts';
+import { post as apiPost, del } from '../src/api/client.ts';
+import { ArrowLeft, User, Heart, MessageSquare, Share2, X } from 'lucide-react';
 
 /** 回退 MOCK 数据 */
 const FALLBACK_POST: PostDetail = {
@@ -30,6 +32,7 @@ const FALLBACK_POST: PostDetail = {
   likesCount: 1200,
   commentsCount: 42,
   isLiked: false,
+  isFollowing: false,
   isOwner: false,
   createdAt: ''
 };
@@ -55,8 +58,11 @@ export default function Post() {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentText, setCommentText] = useState('');
   const [isLiked, setIsLiked] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const fetchPost = useCallback(async () => {
     if (!id) return;
@@ -65,6 +71,7 @@ export default function Post() {
       if (result.success && result.data) {
         setPost(result.data);
         setIsLiked(result.data.isLiked);
+        setIsFollowing(result.data.isFollowing);
         setLikesCount(result.data.likesCount);
       } else {
         setPost(FALLBACK_POST);
@@ -108,6 +115,21 @@ export default function Post() {
         if (result.data) setLikesCount(result.data.likesCount);
       }
     } catch {
+      // 静默处理点赞错误
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!isLoggedIn || !post?.author.id) return;
+    try {
+      if (isFollowing) {
+        await del(`/users/${post.author.id}/follow`);
+        setIsFollowing(false);
+      } else {
+        await apiPost(`/users/${post.author.id}/follow`);
+        setIsFollowing(true);
+      }
+    } catch {
       // 操作失败静默处理
     }
   };
@@ -115,14 +137,26 @@ export default function Post() {
   const handleComment = async () => {
     if (!commentText.trim() || !id) return;
     try {
-      const result = await createComment(id, commentText.trim());
+      const result = await createComment(
+        id, 
+        commentText.trim(), 
+        replyTo?.parentId || replyTo?.id, // 如果回复的是回复，则共用同一个 parentId，否则当前评论就是 parent
+        replyTo?.user.id
+      );
       if (result.success && result.data) {
         setComments(prev => [...prev, result.data!]);
         setCommentText('');
+        setReplyTo(null);
       }
     } catch {
       // 评论失败静默处理
     }
+  };
+
+  const handleReply = (comment: CommentItem) => {
+    setReplyTo(comment);
+    textareaRef.current?.focus();
+    textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   if (isLoading) {
@@ -141,7 +175,7 @@ export default function Post() {
         onClick={() => navigate(-1)}
         className="flex items-center space-x-2 text-on-surface-variant hover:text-primary transition-colors mb-6 md:mb-0 md:absolute md:-left-20 lg:-left-28 md:top-10 group"
       >
-        <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
+        <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
         <span className="text-xs font-label tracking-widest uppercase hidden md:inline">返回</span>
       </button>
 
@@ -153,7 +187,7 @@ export default function Post() {
               {post.author.avatarUrl ? (
                 <img src={post.author.avatarUrl} alt={post.author.nickname} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : (
-                <span className="material-symbols-outlined text-on-surface-variant">person</span>
+                <User size={24} className="text-on-surface-variant" />
               )}
             </div>
             <div>
@@ -162,8 +196,11 @@ export default function Post() {
             </div>
           </div>
           {!post.isOwner && (
-            <button className="bg-primary text-on-primary px-6 py-2 text-xs font-bold hover:bg-primary-dim transition-colors uppercase tracking-widest self-start md:self-auto">
-              关注
+            <button 
+              onClick={handleFollow}
+              className={`${isFollowing ? 'bg-surface-variant text-on-surface' : 'bg-primary text-on-primary hover:bg-primary-dim'} px-6 py-2 text-xs font-bold transition-colors uppercase tracking-widest self-start md:self-auto rounded-sm`}
+            >
+              {isFollowing ? '已关注' : '关注'}
             </button>
           )}
         </header>
@@ -209,15 +246,15 @@ export default function Post() {
 
           <div className="flex gap-6">
             <button onClick={handleLike} className={`flex items-center gap-2 transition-colors group ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
-              <span className={`material-symbols-outlined group-hover:scale-110 transition-transform ${isLiked ? 'fill-1' : ''}`}>favorite</span>
+              <Heart size={20} className={`group-hover:scale-110 transition-transform ${isLiked ? 'fill-current text-primary' : ''}`} />
               <span className="font-label text-sm">{likesCount}</span>
             </button>
             <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
-              <span className="material-symbols-outlined group-hover:scale-110 transition-transform">chat_bubble</span>
+              <MessageSquare size={20} className="group-hover:scale-110 transition-transform" />
               <span className="font-label text-sm">{comments.length || post.commentsCount}</span>
             </button>
             <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
-              <span className="material-symbols-outlined group-hover:scale-110 transition-transform">share</span>
+              <Share2 size={20} className="group-hover:scale-110 transition-transform" />
             </button>
           </div>
         </div>
@@ -230,13 +267,24 @@ export default function Post() {
         {isLoggedIn && (
           <div className="flex gap-4 mb-8">
             <div className="w-10 h-10 rounded-full bg-surface-variant flex-shrink-0 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">person</span>
+              <User size={20} className="text-on-surface-variant" />
             </div>
             <div className="flex-grow">
+              {replyTo && (
+                <div className="flex items-center justify-between bg-surface-variant/30 px-4 py-2 mb-2 rounded-sm border-l-2 border-primary">
+                  <span className="text-xs text-on-surface-variant">
+                    正在回复 <span className="font-bold text-on-surface">@{replyTo.user.nickname}</span>
+                  </span>
+                  <button onClick={() => setReplyTo(null)} className="text-on-surface-variant hover:text-error transition-colors">
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
               <textarea 
+                ref={textareaRef}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                placeholder="添加评论..." 
+                placeholder={replyTo ? `回复 @${replyTo.user.nickname}...` : "添加评论..."} 
                 className="w-full bg-surface-container-low border border-outline-variant/30 p-4 text-sm font-body focus:border-primary focus:ring-0 outline-none transition-colors resize-none h-24"
               ></textarea>
               <div className="flex justify-end mt-2">
@@ -260,15 +308,26 @@ export default function Post() {
                 {comment.user.avatarUrl ? (
                   <img src={comment.user.avatarUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="material-symbols-outlined text-[14px] text-on-surface-variant">person</span>
+                  <User size={14} className="text-on-surface-variant" />
                 )}
               </div>
-              <div>
+              <div className="flex-grow">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-bold text-on-surface">{comment.user.nickname}</span>
                   <span className="text-[10px] text-on-surface-variant">{formatRelativeTime(comment.createdAt)}</span>
                 </div>
-                <p className="text-sm text-on-surface-variant font-body">{comment.content}</p>
+                <p className="text-sm text-on-surface-variant font-body mb-2">
+                  {comment.replyToUser && (
+                    <span className="text-primary/80 mr-1.5 font-bold">@{comment.replyToUser.nickname}</span>
+                  )}
+                  {comment.content}
+                </p>
+                <button 
+                  onClick={() => handleReply(comment)}
+                  className="text-[10px] font-bold text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest"
+                >
+                  回复
+                </button>
               </div>
             </div>
           ))}

@@ -8,6 +8,7 @@ import { getPosts, type PostListItem } from '../src/api/posts.ts';
 import CreatePostModal from '../components/CreatePostModal.tsx';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import FeedCard from '../components/FeedCard';
+import { User, Heart, MessageSquare, ChevronDown, Plus } from 'lucide-react';
 
 /** 后端无数据时的回退 MOCK 数据 */
 const FALLBACK_POSTS: PostListItem[] = [
@@ -236,17 +237,17 @@ export default function Home() {
                           {post.author.avatarUrl ? (
                             <img src={post.author.avatarUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
-                            <span className="material-symbols-outlined text-[14px]">person</span>
+                            <User size={14} className="text-on-surface-variant" />
                           )}
                         </div>
                         <span className="text-sm text-on-surface-variant font-body">{post.author.nickname}</span>
                       </div>
                       <div className="flex gap-4 text-on-surface-variant font-label text-xs">
                         <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined !text-sm">favorite</span> {formatCount(post.likesCount)}
+                          <Heart size={14} /> {formatCount(post.likesCount)}
                         </span>
                         <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined !text-sm">chat_bubble</span> {formatCount(post.commentsCount)}
+                          <MessageSquare size={14} /> {formatCount(post.commentsCount)}
                         </span>
                       </div>
                     </div>
@@ -285,7 +286,7 @@ export default function Home() {
             onClick={loadMore}
             className="flex items-center gap-2 px-8 py-3 border border-outline-variant/20 hover:border-primary/50 text-on-surface-variant hover:text-primary transition-all font-label tracking-widest text-sm uppercase"
           >
-            <span className="material-symbols-outlined">expand_more</span>
+            <ChevronDown size={18} />
             探索更多作品
           </button>
         </div>
@@ -296,7 +297,7 @@ export default function Home() {
         onClick={handleFabClick}
         className="fixed bottom-8 right-8 bg-primary text-on-primary w-14 h-14 flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 z-40 rounded-sm"
       >
-        <span className="material-symbols-outlined text-[28px] drop-shadow-md">add</span>
+        <Plus size={28} className="drop-shadow-md" />
       </button>
 
       <CreatePostModal 

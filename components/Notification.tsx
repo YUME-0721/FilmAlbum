@@ -3,6 +3,7 @@
  * 用于显示成功、错误、警告等通知
  */
 import { useState, useEffect } from 'react';
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 interface NotificationProps {
   message: string | React.ReactNode;
@@ -42,17 +43,17 @@ export default function Notification({
     return null;
   }
 
-  const getIcon = () => {
+  const renderIcon = () => {
     switch (type) {
       case 'success':
-        return 'check_circle';
+        return <CheckCircle2 size={20} />;
       case 'error':
-        return 'error';
+        return <AlertCircle size={20} />;
       case 'warning':
-        return 'warning';
+        return <AlertTriangle size={20} />;
       case 'info':
       default:
-        return 'info';
+        return <Info size={20} />;
     }
   };
 
@@ -73,7 +74,7 @@ export default function Notification({
   return (
     <div className="fixed top-16 right-4 z-50">
       <div className={`${getBackgroundColor()} border rounded-md px-6 py-4 flex items-center gap-3 max-w-md w-full shadow-lg`}>
-        <span className="material-symbols-outlined">{getIcon()}</span>
+        {renderIcon()}
         <span className="text-sm font-body">{message}</span>
         <button
           onClick={() => {
@@ -84,7 +85,7 @@ export default function Notification({
           }}
           className="ml-auto text-on-surface-variant hover:text-on-surface transition-colors"
         >
-          <span className="material-symbols-outlined text-sm">close</span>
+          <X size={16} />
         </button>
       </div>
     </div>

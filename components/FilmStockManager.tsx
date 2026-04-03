@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import type { FilmStock } from '../src/api/film-stocks';
 import { commonBrands, brandMap, getBrandDisplayName, filterFilmStocks } from '../src/constants/brands';
+import { X, Plus, Film, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface FilmStockManagerProps {
   filmStocks: FilmStock[];
@@ -203,7 +204,7 @@ export default function FilmStockManager({
               onClick={onClose}
               className="text-on-surface-variant hover:text-on-surface transition-colors"
             >
-              <span className="material-symbols-outlined">close</span>
+              <X size={24} />
             </button>
           </div>
           <div className="p-6">
@@ -224,7 +225,7 @@ export default function FilmStockManager({
                 }}
                 className="bg-primary text-on-primary px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-primary-dim transition-colors flex items-center gap-2"
               >
-                <span className="material-symbols-outlined text-sm">add</span>
+                <Plus size={16} />
                 添加型号
               </button>
             </div>
@@ -277,7 +278,7 @@ export default function FilmStockManager({
             
             {filmStocks.length === 0 && (
               <div className="py-12 text-center text-on-surface-variant">
-                <span className="material-symbols-outlined text-4xl mb-4 opacity-30">film</span>
+                <Film size={48} className="mb-4 opacity-30 mx-auto" />
                 <p className="text-sm">暂无胶卷型号，点击上方按钮添加</p>
               </div>
             )}
@@ -298,7 +299,7 @@ export default function FilmStockManager({
               onClick={() => setShowAddModal(false)}
               className="absolute top-6 right-6 text-on-surface-variant hover:text-primary transition-colors"
             >
-              <span className="material-symbols-outlined">close</span>
+              <X size={24} />
             </button>
             <h2 className="text-2xl font-headline font-bold mb-8 text-on-surface tracking-tight">{editFilmStock ? '编辑胶卷型号' : '添加胶卷型号'}</h2>
             
@@ -589,12 +590,10 @@ export default function FilmStockManager({
         <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[400] px-6 py-3 rounded shadow-2xl backdrop-blur-md flex items-center gap-3 transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${
           toast.type === 'error' ? 'bg-error/90 text-on-error' : 'bg-surface-container-highest/90 text-on-surface border border-outline-variant/30'
         }`}>
-          <span className="material-symbols-outlined text-xl">
-            {toast.type === 'error' ? 'error' : 'check_circle'}
-          </span>
+            {toast.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
           <div className="text-sm font-label whitespace-pre-wrap">{toast.message}</div>
           <button onClick={() => setToast(null)} className="ml-2 opacity-50 hover:opacity-100">
-            <span className="material-symbols-outlined text-base">close</span>
+            <X size={16} />
           </button>
         </div>
       )}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { uploadImage, deleteImage } from '../src/api/upload';
 import { put } from '../src/api/client';
+import { X, User, Pencil } from 'lucide-react';
 
 interface ProfileEditFormProps {
   profile: {
@@ -132,7 +133,7 @@ export default function ProfileEditForm({ profile, onSubmit, onCancel }: Profile
           onClick={onCancel}
           className="absolute top-6 right-6 text-on-surface-variant hover:text-primary transition-colors"
         >
-          <span className="material-symbols-outlined">close</span>
+          <X size={24} />
         </button>
         <h2 className="text-2xl font-headline font-bold mb-8 text-on-surface tracking-tight">编辑资料</h2>
         
@@ -155,7 +156,7 @@ export default function ProfileEditForm({ profile, onSubmit, onCancel }: Profile
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30">person</span>
+                  <User size={48} className="text-on-surface-variant/30" />
                 )}
               </div>
               <div className="absolute bottom-0 right-0 bg-primary text-on-primary p-1 rounded-full w-8 h-8 flex items-center justify-center">
@@ -170,7 +171,7 @@ export default function ProfileEditForm({ profile, onSubmit, onCancel }: Profile
                   htmlFor="avatar-upload"
                   className="cursor-pointer flex items-center justify-center w-full h-full"
                 >
-                  <span className="material-symbols-outlined text-sm">edit</span>
+                  <Pencil size={14} />
                 </label>
               </div>
             </div>

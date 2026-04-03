@@ -29,7 +29,7 @@ async function uploadToImgBed(
 
   // 构建查询参数
   const urlParams = new URLSearchParams({
-    uploadChannel: isPreview ? 'telegram' : 'huggingface',
+    uploadChannel: 'huggingface',
     uploadNameType: 'index',
     serverCompress: 'true',
     serverWebp: 'true',

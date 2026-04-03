@@ -13,6 +13,7 @@ import Post from './pages/Post.tsx';
 import Login from './pages/Login.tsx';
 import ResetPassword from './pages/ResetPassword.tsx';
 import Settings from './pages/Settings.tsx';
+import Messages from './pages/Messages.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
 
 export default function App() {
@@ -48,6 +49,16 @@ export default function App() {
             <Route path="settings" element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="messages" element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            } />
+            <Route path="messages/:userId" element={
+              <ProtectedRoute>
+                <Messages />
               </ProtectedRoute>
             } />
             

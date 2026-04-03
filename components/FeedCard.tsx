@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import type { PostListItem } from '../src/api/posts';
 import { useAuth } from '../src/context/AuthContext';
-import { deletePost } from '../src/api/posts';
+import { deletePost, type PostListItem } from '../src/api/posts';
+import { User, Pencil, Trash2, Heart, MessageSquare, Share2 } from 'lucide-react';
 
 /** 相对时间格式化 */
 function formatRelativeTime(dateString: string) {
@@ -69,7 +69,7 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
             <img src={post.author.avatarUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <span className="material-symbols-outlined text-[20px] text-[#999]">person</span>
+              <User size={20} className="text-[#999]" />
             </div>
           )}
         </div>
@@ -86,14 +86,14 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
               className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-[#999] hover:text-white transition-colors"
               title="编辑帖子"
             >
-              <span className="material-symbols-outlined text-[16px]">edit</span>
+              <Pencil size={16} />
             </button>
             <button 
               onClick={handleDelete}
               className="w-8 h-8 rounded-full bg-white/5 hover:bg-red-500/20 flex items-center justify-center text-[#999] hover:text-red-400 transition-colors"
               title="删除帖子"
             >
-              <span className="material-symbols-outlined text-[16px]">delete</span>
+              <Trash2 size={16} />
             </button>
           </div>
         )}
@@ -182,16 +182,16 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
       <div className="flex items-center justify-between px-5 py-3 border-t border-white/6">
         <div className="flex items-center gap-5 text-[#666] text-sm">
           <button className="flex items-center gap-1.5 hover:text-[#aaa] transition-colors">
-            <span className="material-symbols-outlined text-[18px]">thumb_up</span>
+            <Heart size={18} />
             <span className="text-xs">{post.likesCount > 0 ? post.likesCount : '点赞'}</span>
           </button>
           <button className="flex items-center gap-1.5 hover:text-[#aaa] transition-colors" onClick={onClick}>
-            <span className="material-symbols-outlined text-[18px]">chat_bubble_outline</span>
+            <MessageSquare size={18} />
             <span className="text-xs">{post.commentsCount > 0 ? post.commentsCount : '评论'}</span>
           </button>
         </div>
         <button className="flex items-center gap-1 text-[#555] hover:text-[#aaa] transition-colors text-xs">
-          <span className="material-symbols-outlined text-[16px]">ios_share</span>
+          <Share2 size={16} />
           分享
         </button>
       </div>

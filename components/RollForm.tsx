@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { filterFilmStocks } from '../src/constants/brands';
+import { X, Tag } from 'lucide-react';
 
 interface RollFormProps {
   isEditing: boolean;
@@ -111,7 +112,7 @@ export default function RollForm({
           onClick={onCancel}
           className="absolute top-6 right-6 text-on-surface-variant hover:text-primary transition-colors"
         >
-          <span className="material-symbols-outlined">close</span>
+          <X size={24} />
         </button>
         <h2 className="text-2xl font-headline font-bold mb-8 text-on-surface tracking-tight">
           {isEditing ? '编辑相册详情' : '新建胶卷相册'}
@@ -451,7 +452,7 @@ export default function RollForm({
           </div>
           <div className="space-y-3">
             <label htmlFor={isEditing ? "edit-tags" : "new-roll-tags"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1 flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm">sell</span>
+              <Tag size={14} />
               自定义标签
             </label>
             <div className="space-y-3">
@@ -480,9 +481,9 @@ export default function RollForm({
                       <button 
                         type="button"
                         onClick={() => removeTag(idx)}
-                        className="material-symbols-outlined text-xs opacity-40 hover:opacity-100 transition-opacity"
+                        className="opacity-40 hover:opacity-100 transition-opacity"
                       >
-                        close
+                        <X size={12} />
                       </button>
                     </span>
                   ))}

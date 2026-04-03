@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Notification from '../components/Notification.tsx';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
@@ -198,7 +199,7 @@ export default function ResetPassword() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-0 top-0 h-full flex items-center px-4 text-on-surface-variant hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
@@ -222,7 +223,7 @@ export default function ResetPassword() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-0 top-0 h-full flex items-center px-4 text-on-surface-variant hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>

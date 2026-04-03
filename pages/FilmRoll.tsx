@@ -13,6 +13,11 @@ import { commonBrands } from '../src/constants/brands';
 import { motion, AnimatePresence } from 'motion/react';
 import FilmStockManager from '../components/FilmStockManager';
 import RollForm from '../components/RollForm';
+import { 
+  ArrowLeft, ImagePlus, Pencil, Download, Trash2, Camera, Calendar, 
+  MapPin, Maximize, Library, ArrowUp, ArrowDown, ChevronLeft, 
+  ChevronRight, Share2, X, Info, CloudUpload, AlertCircle, CheckCircle2 
+} from 'lucide-react';
 
 // Custom style for hiding scrollbars globally in the lightbox area
 const LIGHTBOX_STYLES = `
@@ -227,7 +232,9 @@ export default function FilmRoll() {
           shutterSpeed: '',
           iso: '',
           description: '',
-          sortOrder: frames.length + i
+          sortOrder: frames.length + i,
+          fileSize: file.size,
+          fileFormat: file.type
         });
       }
 
@@ -442,7 +449,7 @@ export default function FilmRoll() {
               onClick={() => navigate(-1)}
               className="p-2 hover:bg-surface-variant rounded-full transition-colors"
             >
-              <span className="material-symbols-outlined">arrow_back</span>
+              <ArrowLeft size={24} />
             </button>
             <h1 className="text-2xl font-bold text-on-surface truncate max-w-md">
               {roll.title}
@@ -456,7 +463,7 @@ export default function FilmRoll() {
               className="p-2 hover:bg-surface-variant rounded-full transition-colors"
               title="添加照片"
             >
-              <span className="material-symbols-outlined">add_photo_alternate</span>
+              <ImagePlus size={24} />
             </button>
             <button
               type="button"
@@ -464,7 +471,7 @@ export default function FilmRoll() {
               className="p-2 hover:bg-surface-variant rounded-full transition-colors"
               title="编辑"
             >
-              <span className="material-symbols-outlined">edit</span>
+              <Pencil size={24} />
             </button>
             <button
               type="button"
@@ -472,7 +479,7 @@ export default function FilmRoll() {
               className="p-2 hover:bg-surface-variant rounded-full transition-colors"
               title="导出"
             >
-              <span className="material-symbols-outlined">download</span>
+              <Download size={24} />
             </button>
             <button
               type="button"
@@ -480,7 +487,7 @@ export default function FilmRoll() {
               className="p-2 hover:bg-error/10 text-error rounded-full transition-colors"
               title="删除"
             >
-              <span className="material-symbols-outlined">delete</span>
+              <Trash2 size={24} />
             </button>
           </div>
         </div>
@@ -489,30 +496,30 @@ export default function FilmRoll() {
         <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-on-surface-variant">
           {roll.camera && (
             <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">camera</span>
+              <Camera size={14} />
               <span>{roll.camera}</span>
             </div>
           )}
           {roll.lens && (
             <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">photo_camera_front</span>
+              <Camera size={14} />
               <span>{roll.lens}</span>
             </div>
           )}
           {roll.shotDate && (
             <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">event</span>
+              <Calendar size={14} />
               <span>{roll.shotDate}</span>
             </div>
           )}
           {roll.location && (
             <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">location_on</span>
+              <MapPin size={14} />
               <span>{roll.location}</span>
             </div>
           )}
           <div className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-xs">aspect_ratio</span>
+            <Maximize size={14} />
             <span>{roll.format === '135' ? '135' : roll.format === '120' ? '120' : roll.format || '-'}</span>
           </div>
           <div className="flex items-center gap-1">
@@ -548,7 +555,7 @@ export default function FilmRoll() {
         {/* 照片网格 */}
         {frames.length === 0 ? (
           <div className="text-center py-12 text-on-surface-variant">
-            <span className="material-symbols-outlined text-6xl mb-4 opacity-30">photo_library</span>
+            <Library size={64} className="mb-4 opacity-30 mx-auto" />
             <p>还没有照片，点击上方按钮添加</p>
           </div>
         ) : (
@@ -579,7 +586,7 @@ export default function FilmRoll() {
                     disabled={index === 0}
                     className="p-1 bg-white/20 rounded hover:bg-white/30 disabled:opacity-30"
                   >
-                    <span className="material-symbols-outlined text-white text-sm">arrow_upward</span>
+                    <ArrowUp size={16} className="text-white" />
                   </button>
                   <button
                     onClick={(e) => {
@@ -589,7 +596,7 @@ export default function FilmRoll() {
                     disabled={index === frames.length - 1}
                     className="p-1 bg-white/20 rounded hover:bg-white/30 disabled:opacity-30"
                   >
-                    <span className="material-symbols-outlined text-white text-sm">arrow_downward</span>
+                    <ArrowDown size={16} className="text-white" />
                   </button>
                   <button
                     onClick={(e) => {
@@ -598,7 +605,7 @@ export default function FilmRoll() {
                     }}
                     className="p-1 bg-error/80 rounded hover:bg-error"
                   >
-                    <span className="material-symbols-outlined text-white text-sm">delete</span>
+                    <Trash2 size={16} className="text-white" />
                   </button>
                 </div>
                 {/* 照片信息 */}
@@ -629,15 +636,15 @@ export default function FilmRoll() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 overflow-hidden"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl overflow-hidden"
             onClick={() => setShowLightbox(false)}
           >
             {/* 左侧返回按钮 */}
             <button
               onClick={() => setShowLightbox(false)}
-              className="absolute top-4 left-4 p-2 text-white/70 hover:text-white z-10"
+              className="absolute top-6 left-6 p-3 bg-black/20 hover:bg-black/40 rounded-full text-white/70 hover:text-white backdrop-blur-md transition-all z-10"
             >
-              <span className="material-symbols-outlined">arrow_back</span>
+              <ArrowLeft size={24} />
             </button>
 
             {/* 主内容区 */}
@@ -658,7 +665,7 @@ export default function FilmRoll() {
                   }}
                   className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-16 p-2 text-white/70 hover:text-white z-10"
                 >
-                  <span className="material-symbols-outlined text-4xl">chevron_left</span>
+                  <ChevronLeft size={48} />
                 </button>
 
                 <div onClick={(e) => e.stopPropagation()}>
@@ -737,7 +744,7 @@ export default function FilmRoll() {
                   }}
                   className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-16 p-2 text-white/70 hover:text-white z-10"
                 >
-                  <span className="material-symbols-outlined text-4xl">chevron_right</span>
+                  <ChevronRight size={48} />
                 </button>
               </motion.div>
 
@@ -754,70 +761,72 @@ export default function FilmRoll() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 400, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="absolute right-0 top-0 bottom-0 w-72 bg-surface-container border-l border-outline-variant/30 flex flex-col z-20 no-scrollbar"
+                className="absolute right-0 top-0 bottom-0 w-[400px] bg-surface-container-lowest/80 backdrop-blur-3xl border-l border-white/5 flex flex-col z-20 no-scrollbar shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* 侧边栏顶部 */}
-                <div className="p-4 border-b border-outline-variant/30 flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-on-surface">照片信息</h3>
+                <div className="px-6 py-5 border-b border-white/5 flex justify-between items-center bg-transparent">
+                  <h3 className="text-xl font-headline font-bold text-on-surface tracking-wide">照片信息</h3>
                   <div className="flex gap-2">
-                    <button className="p-1 hover:bg-surface-variant rounded transition-colors" title="分享">
-                      <span className="material-symbols-outlined text-on-surface-variant">share</span>
+                    <button className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface" title="分享">
+                      <Share2 size={18} />
                     </button>
-                    <button className="p-1 hover:bg-surface-variant rounded transition-colors" title="下载">
-                      <span className="material-symbols-outlined text-on-surface-variant">download</span>
+                    <button className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface" title="下载">
+                      <Download size={18} />
                     </button>
                     <button
                       onClick={() => setShowSidebar(false)}
-                      className="p-1 hover:bg-surface-variant rounded transition-colors"
+                      className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface"
                       title="关闭侧边栏"
                     >
-                      <span className="material-symbols-outlined text-on-surface-variant">close</span>
+                      <X size={18} />
                     </button>
                   </div>
                 </div>
 
               {/* 侧边栏内容 */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar">
+              <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
                 {/* 胶片档案 */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">胶片档案</h4>
-                  <div className="bg-surface-container-low rounded-lg overflow-hidden">
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-on-surface-variant/80 pl-1">胶片档案</h4>
+                  <div className="bg-[#151515] rounded-xl p-8 shadow-sm">
                     {roll.filmStock ? (
                       <>
                         {/* 卡片上半部分 - LOGO和型号 */}
-                        <div className="bg-surface-container-low pl-8 pr-3 py-4 flex items-center gap-6">
-                          {(() => {
-                            const brandName = roll.filmStock.split(' ')[0];
-                            const brand = commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
-                            if (brand?.logoUrl) {
-                              return (
-                                <div className="w-12 h-12">
-                                  <img 
-                                    src={brand.logoUrl} 
-                                    alt={brand.name} 
-                                    className="w-full h-full object-contain" 
-                                  />
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <div className="w-12 h-12 bg-yellow-500 flex items-center justify-center">
-                                  <span className="text-black font-bold text-lg">{brandName.charAt(0)}</span>
-                                </div>
-                              );
-                            }
-                          })()}
-                          <div className="flex flex-col justify-center flex-1">
-                            <h5 className="text-on-surface font-bold text-lg leading-tight font-lingxun">{roll.filmStock.split(' ')[0]}</h5>
-                            <h6 className="text-on-surface font-bold text-xl leading-tight font-lingxun">{roll.filmStock.split(' ').slice(1).join(' ')}</h6>
+                        <div className="flex items-center gap-6 mb-8">
+                          <div className="shrink-0">
+                            {(() => {
+                              const brandName = roll.filmStock.split(' ')[0];
+                              const brand = commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
+                              if (brand?.logoUrl) {
+                                return (
+                                  <div className="w-[72px] h-[72px] rounded-[24px] overflow-hidden bg-transparent">
+                                    <img 
+                                      src={brand.logoUrl} 
+                                      alt={brand.name} 
+                                      className="w-full h-full object-cover" 
+                                    />
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <div className="w-[72px] h-[72px] bg-yellow-500 rounded-[24px] flex items-center justify-center">
+                                    <span className="text-black font-serif font-bold text-3xl">{brandName.charAt(0)}</span>
+                                  </div>
+                                );
+                              }
+                            })()}
+                          </div>
+                          <div className="flex flex-col justify-center">
+                            <h5 className="text-[#f4f4f5] font-serif text-[28px] leading-[1.1] tracking-wide lining-nums">{roll.filmStock.split(' ')[0]}</h5>
+                            <h6 className="text-[#f4f4f5] font-serif text-[28px] leading-[1.1] tracking-wide lining-nums mt-1">{roll.filmStock.split(' ').slice(1).join(' ')}</h6>
                           </div>
                         </div>
                         {/* 卡片下半部分 - 类型和画幅 */}
-                        <div className="pl-8 pr-3 py-4 grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-xs text-on-surface-variant mb-1">胶片类型</p>
-                            <p className="text-sm text-on-surface">
+                            <p className="text-[#a1a1aa] text-[13px] mb-2">胶片类型</p>
+                            <p className="text-[#f4f4f5] text-base font-medium">
                               {roll.filmType === 'COLOR_NEGATIVE' ? '彩色负片' : 
                                roll.filmType === 'BW_NEGATIVE' ? '黑白负片' : 
                                roll.filmType === 'COLOR_POSITIVE' ? '彩色正片' : 
@@ -826,26 +835,26 @@ export default function FilmRoll() {
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs text-on-surface-variant mb-1">画幅规格</p>
-                            <p className="text-sm text-on-surface">{roll.format || '暂无数据'}</p>
+                            <p className="text-[#a1a1aa] text-[13px] mb-2">画幅规格</p>
+                            <p className="text-[#f4f4f5] text-base font-medium">{roll.format || '暂无数据'}</p>
                           </div>
                         </div>
                       </>
                     ) : (
-                      <div className="p-8 text-center">
-                        <p className="text-sm text-on-surface-variant">暂无胶片档案信息</p>
-                        <p className="text-xs text-on-surface-variant mt-1">可在编辑相册时添加</p>
+                      <div className="py-6 text-center">
+                        <p className="text-[#a1a1aa] text-sm">暂无胶片档案信息</p>
+                        <p className="text-[#a1a1aa]/60 text-xs mt-1">可在编辑相册时添加</p>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* 拍摄信息 */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">拍摄信息</h4>
-                  <div className="bg-surface-container-low rounded-lg p-3 space-y-2">
-                    <div className="flex items-center gap-0.5">
-                      <span className="w-18 text-xs text-on-surface-variant">拍摄日期</span>
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">拍摄信息</h4>
+                  <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
+                    <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">拍摄日期</span>
                       {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'shotDate' ? (
                         <input
                           type="date"
@@ -868,13 +877,13 @@ export default function FilmRoll() {
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                          className="flex-1 text-sm text-on-surface bg-surface-container border border-primary rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
                           placeholder="选择日期"
                         />
                       ) : (
                         <span 
-                          className="flex-1 text-sm text-on-surface cursor-pointer hover:text-primary transition-colors"
+                          className="flex-1 text-sm font-medium text-on-surface/90 text-right cursor-pointer group-hover:text-primary transition-colors"
                           onClick={() => {
                             if (!frames[currentFrame]) return;
                             setEditingField({ frameId: frames[currentFrame].id, field: 'shotDate' });
@@ -885,8 +894,8 @@ export default function FilmRoll() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-0.5">
-                      <span className="w-18 text-xs text-on-surface-variant">拍摄地点</span>
+                    <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">拍摄地点</span>
                       {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'location' ? (
                         <input
                           type="text"
@@ -909,13 +918,13 @@ export default function FilmRoll() {
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                          className="flex-1 text-sm text-on-surface bg-surface-container border border-primary rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
                           placeholder="输入拍摄地点"
                         />
                       ) : (
                         <span 
-                          className="flex-1 text-sm text-on-surface cursor-pointer hover:text-primary transition-colors"
+                          className="flex-1 text-sm font-medium text-on-surface/90 text-right cursor-pointer group-hover:text-primary transition-colors"
                           onClick={() => {
                             if (!frames[currentFrame]) return;
                             setEditingField({ frameId: frames[currentFrame].id, field: 'location' });
@@ -926,8 +935,8 @@ export default function FilmRoll() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-0.5">
-                      <span className="w-18 text-xs text-on-surface-variant">相机型号</span>
+                    <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">相机型号</span>
                       {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'camera' ? (
                         <input
                           type="text"
@@ -950,13 +959,13 @@ export default function FilmRoll() {
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                          className="flex-1 text-sm text-on-surface bg-surface-container border border-primary rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
                           placeholder="输入相机型号"
                         />
                       ) : (
                         <span 
-                          className="flex-1 text-sm text-on-surface cursor-pointer hover:text-primary transition-colors"
+                          className="flex-1 text-sm font-medium text-on-surface/90 text-right cursor-pointer group-hover:text-primary transition-colors"
                           onClick={() => {
                             if (!frames[currentFrame]) return;
                             setEditingField({ frameId: frames[currentFrame].id, field: 'camera' });
@@ -967,8 +976,8 @@ export default function FilmRoll() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-0.5">
-                      <span className="w-18 text-xs text-on-surface-variant">镜头型号</span>
+                    <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">镜头型号</span>
                       {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'lens' ? (
                         <input
                           type="text"
@@ -991,13 +1000,13 @@ export default function FilmRoll() {
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                          className="flex-1 text-sm text-on-surface bg-surface-container border border-primary rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
                           placeholder="输入镜头型号"
                         />
                       ) : (
                         <span 
-                          className="flex-1 text-sm text-on-surface cursor-pointer hover:text-primary transition-colors"
+                          className="flex-1 text-sm font-medium text-on-surface/90 text-right cursor-pointer group-hover:text-primary transition-colors"
                           onClick={() => {
                             if (!frames[currentFrame]) return;
                             setEditingField({ frameId: frames[currentFrame].id, field: 'lens' });
@@ -1012,13 +1021,13 @@ export default function FilmRoll() {
                 </div>
 
                 {/* 曝光参数 */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">曝光参数</h4>
-                  <div className="bg-surface-container-low rounded-lg p-3 space-y-2">
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">曝光参数</h4>
+                  <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
                     {frames[currentFrame] ? (
                       <>
-                        <div className="flex items-center gap-2">
-                          <span className="w-24 text-xs text-on-surface-variant">光圈</span>
+                        <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
+                          <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">光圈</span>
                           {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'aperture' ? (
                             <input
                               type="text"
@@ -1041,13 +1050,13 @@ export default function FilmRoll() {
                                 setEditingField(null);
                               }}
                               onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                              className="flex-1 text-sm text-on-surface bg-surface-container border border-primary rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                               autoFocus
                               placeholder="例如: f/2.8"
                             />
                           ) : (
                             <span 
-                              className="flex-1 text-sm text-on-surface cursor-pointer hover:text-primary transition-colors"
+                              className="flex-1 text-sm font-medium text-on-surface/90 text-right cursor-pointer group-hover:text-primary transition-colors"
                               onClick={() => {
                                 if (!frames[currentFrame]) return;
                                 setEditingField({ frameId: frames[currentFrame].id, field: 'aperture' });
@@ -1058,8 +1067,8 @@ export default function FilmRoll() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-24 text-xs text-on-surface-variant">快门</span>
+                        <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
+                          <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">快门</span>
                           {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'shutterSpeed' ? (
                             <input
                               type="text"
@@ -1082,13 +1091,13 @@ export default function FilmRoll() {
                                 setEditingField(null);
                               }}
                               onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                              className="flex-1 text-sm text-on-surface bg-surface-container border border-primary rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                               autoFocus
                               placeholder="例如: 1/60s"
                             />
                           ) : (
                             <span 
-                              className="flex-1 text-sm text-on-surface cursor-pointer hover:text-primary transition-colors"
+                              className="flex-1 text-sm font-medium text-on-surface/90 text-right cursor-pointer group-hover:text-primary transition-colors"
                               onClick={() => {
                                 if (!frames[currentFrame]) return;
                                 setEditingField({ frameId: frames[currentFrame].id, field: 'shutterSpeed' });
@@ -1099,8 +1108,8 @@ export default function FilmRoll() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-24 text-xs text-on-surface-variant">感光度</span>
+                        <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
+                          <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">感光度</span>
                           {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'iso' ? (
                             <input
                               type="text"
@@ -1123,13 +1132,13 @@ export default function FilmRoll() {
                                 setEditingField(null);
                               }}
                               onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                              className="flex-1 text-sm text-on-surface bg-surface-container border border-primary rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                               autoFocus
                               placeholder="例如: 400"
                             />
                           ) : (
                             <span 
-                              className="flex-1 text-sm text-on-surface cursor-pointer hover:text-primary transition-colors"
+                              className="flex-1 text-sm font-medium text-on-surface/90 text-right cursor-pointer group-hover:text-primary transition-colors"
                               onClick={() => {
                                 if (!frames[currentFrame]) return;
                                 setEditingField({ frameId: frames[currentFrame].id, field: 'iso' });
@@ -1148,37 +1157,47 @@ export default function FilmRoll() {
                 </div>
 
                 {/* 存储信息 */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">存储信息</h4>
-                  <div className="bg-surface-container-low rounded-lg p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-24 text-xs text-on-surface-variant">存储格式</span>
-                      <span className="flex-1 text-sm text-on-surface">WebP</span>
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">存储信息</h4>
+                  <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
+                    <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">存储格式</span>
+                      <span className="flex-1 text-sm font-medium text-on-surface/90 text-right">
+                        {frames[currentFrame]?.fileFormat 
+                          ? frames[currentFrame].fileFormat!.split('/').pop()?.toUpperCase() 
+                          : 'WebP'}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-24 text-xs text-on-surface-variant">文件大小</span>
-                      <span className="flex-1 text-sm text-on-surface">暂无数据</span>
+                    <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">文件大小</span>
+                      <span className="flex-1 text-sm font-medium text-on-surface/90 text-right">
+                        {frames[currentFrame]?.fileSize 
+                          ? (frames[currentFrame].fileSize! >= 1024 * 1024 
+                              ? `${(frames[currentFrame].fileSize! / (1024 * 1024)).toFixed(2)} MB` 
+                              : `${(frames[currentFrame].fileSize! / 1024).toFixed(1)} KB`)
+                          : '暂无数据'}
+                      </span>
                     </div>
                   </div>
                 </div>
                 
                 {/* 标签 */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">标签</h4>
-                  <div className="bg-surface-container-low rounded-lg p-3">
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">标签</h4>
+                  <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-4">
                     {frames[currentFrame] ? (
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
                           {/* 胶卷公共标签 */}
                           {roll.tags && roll.tags.length > 0 && roll.tags.map((tag: string, index: number) => (
-                            <div key={`roll-${index}`} className="flex items-center px-2 py-1 bg-surface-container-highest text-on-surface-variant text-xs font-medium rounded">
+                            <div key={`roll-${index}`} className="flex items-center px-2.5 py-1 bg-surface-container-highest text-on-surface-variant/80 text-[10px] font-bold tracking-wider rounded-lg">
                               <span>{tag}</span>
                             </div>
                           ))}
                           {/* 当前帧自定义标签 */}
                           {frames[currentFrame]?.tags && frames[currentFrame].tags.length > 0 ? (
                             frames[currentFrame].tags.map((tag: string, index: number) => (
-                              <div key={index} className="flex items-center px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded">
+                              <div key={index} className="flex items-center px-2.5 py-1 bg-primary/20 text-primary text-[10px] font-bold tracking-wider rounded-lg border border-primary/20">
                                 <span>{tag}</span>
                                 <button 
                                   onClick={async () => {
@@ -1196,7 +1215,7 @@ export default function FilmRoll() {
                                       showToast('删除标签失败，请重试', 'error');
                                     }
                                   }}
-                                  className="ml-1 text-primary hover:text-primary/80 focus:outline-none"
+                                  className="ml-1.5 text-primary/70 hover:text-primary focus:outline-none"
                                 >
                                   ×
                                 </button>
@@ -1205,7 +1224,7 @@ export default function FilmRoll() {
                           ) : null}
                           {/* 无标签提示 */}
                           {(!roll.tags || roll.tags.length === 0) && (!frames[currentFrame].tags || frames[currentFrame].tags.length === 0) && (
-                            <span className="text-sm text-on-surface-variant">暂无标签</span>
+                            <span className="text-xs font-medium text-on-surface-variant/50">暂无标签</span>
                           )}
                         </div>
                         <div>
@@ -1370,9 +1389,7 @@ export default function FilmRoll() {
               className="absolute right-4 top-4 p-2 bg-surface-container/80 text-on-surface rounded-full z-10"
               title={showSidebar ? "隐藏侧边栏" : "显示侧边栏"}
             >
-              <span className="material-symbols-outlined">
-                {showSidebar ? "close" : "info"}
-              </span>
+                {showSidebar ? <X size={20} /> : <Info size={20} />}
             </button>
           </motion.div>
         )}
@@ -1415,7 +1432,7 @@ export default function FilmRoll() {
                 onClick={() => setShowExportModal(false)}
                 className="text-on-surface-variant hover:text-on-surface transition-colors"
               >
-                <span className="material-symbols-outlined">close</span>
+                <X size={24} />
               </button>
             </div>
             <div className="p-6">
@@ -1515,7 +1532,7 @@ export default function FilmRoll() {
           <div className="bg-surface-container rounded-lg shadow-2xl p-6 max-w-md w-full mx-4 animate-in fade-in slide-in-from-bottom-5">
             <div className="text-center mb-6">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                <span className="material-symbols-outlined text-primary text-3xl">cloud_upload</span>
+                <CloudUpload size={48} className="text-primary" />
               </div>
               <h3 className="text-lg font-bold text-on-surface mb-2">上传中...</h3>
               <p className="text-sm text-on-surface-variant">正在上传您的照片，请稍候</p>
@@ -1546,12 +1563,10 @@ export default function FilmRoll() {
         <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded shadow-2xl backdrop-blur-md flex items-center gap-3 transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${
           toast.type === 'error' ? 'bg-error/90 text-on-error' : 'bg-surface-container-highest/90 text-on-surface border border-outline-variant/30'
         }`}>
-          <span className="material-symbols-outlined text-xl">
-            {toast.type === 'error' ? 'error' : 'check_circle'}
-          </span>
+            {toast.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
           <div className="text-sm font-label whitespace-pre-wrap">{toast.message}</div>
           <button onClick={() => setToast(null)} className="ml-2 opacity-50 hover:opacity-100">
-            <span className="material-symbols-outlined text-base">close</span>
+            <X size={16} />
           </button>
         </div>
       )}

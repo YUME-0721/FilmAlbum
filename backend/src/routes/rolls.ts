@@ -50,7 +50,8 @@ rolls.get('/', authOptional(), async (c) => {
            (SELECT json_group_array(json_object(
              'id', id, 'imageUrl', image_url, 'previewUrl', preview_url, 'frameNumber', frame_number,
              'aperture', aperture, 'shutterSpeed', shutter_speed, 'iso', iso,
-             'description', description, 'sortOrder', sort_order, 'tags', tags
+             'description', description, 'sortOrder', sort_order, 'tags', tags,
+             'fileSize', file_size, 'fileFormat', file_format
            )) FROM (SELECT * FROM frames WHERE roll_id = r.id ORDER BY sort_order)) as frames_data
     FROM rolls r
     JOIN users u ON r.user_id = u.id
@@ -154,6 +155,8 @@ rolls.get('/:id', authOptional(), async (c) => {
         iso: f.iso,
         description: f.description,
         sortOrder: f.sort_order,
+        fileSize: f.file_size,
+        fileFormat: f.file_format,
         tags: JSON.parse((f.tags as string) || '[]')
       })) ?? [],
       isOwner: String(currentUserId) === String(roll.user_id),
@@ -330,6 +333,8 @@ rolls.post('/:id/frames', authRequired(), async (c) => {
       shutterSpeed?: string;
       iso?: string;
       description?: string;
+      fileSize?: number;
+      fileFormat?: string;
     }>;
   }>();
 
@@ -348,13 +353,13 @@ rolls.post('/:id/frames', authRequired(), async (c) => {
     const id = generateId();
     const order = currentOrder++;
     return c.env.DB.prepare(
-      `INSERT INTO frames (id, roll_id, image_url, preview_url, frame_number, aperture, shutter_speed, iso, description, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO frames (id, roll_id, image_url, preview_url, frame_number, aperture, shutter_speed, iso, description, sort_order, file_size, file_format)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       id, rollId, frame.imageUrl,
       frame.previewUrl ?? null, frame.frameNumber ?? '', frame.aperture ?? '',
       frame.shutterSpeed ?? '', frame.iso ?? '',
-      frame.description ?? '', order
+      frame.description ?? '', order, frame.fileSize ?? 0, frame.fileFormat ?? ''
     );
   });
 

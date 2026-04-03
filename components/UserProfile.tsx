@@ -18,6 +18,11 @@ import ProfileEditForm from './ProfileEditForm';
 import FeedCard from './FeedCard';
 import CreatePostModal from './CreatePostModal';
 import { commonBrands, brandMap, getBrandDisplayName, filterFilmStocks } from '../src/constants/brands';
+import { 
+  User, UserX, UserPlus, UserMinus, Pencil, Library, History, Camera, 
+  Search, Calendar, Filter, FolderPlus, ChevronRight, PlusCircle, 
+  ChevronDown, Maximize, Circle, Timer, Star, MessageSquare, Trash2 
+} from 'lucide-react';
 
 /** 用户资料类型 */
 export interface UserProfileData {
@@ -556,7 +561,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   if (!profile) {
     return (
       <main className="max-w-7xl mx-auto px-8 pt-12 pb-24 flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <span className="material-symbols-outlined text-6xl text-on-surface-variant/20">person_off</span>
+        <UserX size={64} className="text-on-surface-variant/20" />
         <div className="text-on-surface-variant font-label text-sm tracking-widest uppercase">未找到用户或未登录</div>
         {!currentUser && (
           <a href="/login" className="bg-primary text-on-primary px-8 py-2 text-xs font-bold hover:bg-primary-dim transition-colors uppercase tracking-widest">
@@ -577,7 +582,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             {profile?.avatarUrl ? (
               <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             ) : (
-              <span className="material-symbols-outlined text-[80px] text-on-surface-variant/30">person</span>
+              <User size={80} className="text-on-surface-variant/30" />
             )}
           </div>
           <div className="absolute bottom-0 right-0 bg-primary text-on-primary px-2 py-0.5 text-[10px] font-label uppercase tracking-widest">
@@ -602,25 +607,26 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                 className="bg-primary text-on-primary px-8 py-2 text-xs font-bold hover:bg-primary-dim transition-colors flex items-center gap-2 uppercase tracking-widest"
                 onClick={() => setShowEditProfileModal(true)}
               >
-                <span className="material-symbols-outlined text-sm">edit</span>
+                <Pencil size={14} />
                 编辑资料
               </button>
             ) : (
               <>
                 <button
-                  onClick={handleFollow}
                   className={`px-8 py-2 text-xs font-bold transition-colors flex items-center gap-2 uppercase tracking-widest ${
                     profile?.isFollowing
                       ? 'bg-surface-container-highest text-on-surface border border-outline-variant/20 hover:bg-surface-bright'
                       : 'bg-primary text-on-primary hover:bg-primary-dim'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-sm fill-1">
-                    {profile?.isFollowing ? 'person_remove' : 'person_add'}
-                  </span>
+                  {profile?.isFollowing ? <UserMinus size={14} /> : <UserPlus size={14} />}
                   {profile?.isFollowing ? '已关注' : '关注'}
                 </button>
-                <button className="bg-surface-container-highest text-on-surface px-8 py-2 text-xs font-bold hover:bg-surface-bright transition-colors border border-outline-variant/20 uppercase tracking-widest">
+                <button 
+                  onClick={() => navigate(`/messages/${targetUserId}`)}
+                  className="bg-surface-container-highest text-on-surface px-8 py-2 text-xs font-bold hover:bg-surface-bright transition-colors border border-outline-variant/20 uppercase tracking-widest flex items-center gap-2"
+                >
+                  <MessageSquare size={14} />
                   发送消息
                 </button>
               </>
@@ -656,7 +662,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
               onClick={() => setActiveTab('album')}
               className={`pb-4 text-sm font-bold tracking-[0.2em] uppercase flex items-center gap-2 transition-all relative ${activeTab === 'album' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
             >
-              <span className="material-symbols-outlined text-[20px]">photo_library</span>
+              <Library size={18} />
               <span>相册</span>
               {activeTab === 'album' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary animate-in fade-in slide-in-from-left-2 shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]" />}
             </button>
@@ -665,7 +671,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             onClick={() => setActiveTab('activity')}
             className={`pb-4 text-sm font-bold tracking-[0.2em] uppercase flex items-center gap-2 transition-all relative ${activeTab === 'activity' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
           >
-            <span className="material-symbols-outlined text-[20px]">history</span>
+            <History size={18} />
             <span>动态</span>
             {activeTab === 'activity' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary animate-in fade-in slide-in-from-left-2 shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]" />}
           </button>
@@ -675,7 +681,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
               onClick={() => setActiveTab('gear')}
               className={`pb-4 text-sm font-bold tracking-[0.2em] uppercase flex items-center gap-2 transition-all relative ${activeTab === 'gear' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
             >
-              <span className="material-symbols-outlined text-[20px]">camera</span>
+              <Camera size={18} />
               <span>设备</span>
               {activeTab === 'gear' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary animate-in fade-in slide-in-from-left-2 shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]" />}
             </button>
@@ -688,7 +694,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         <div className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative group">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant/40 text-lg group-focus-within:text-primary transition-colors">search</span>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={16} />
               <input 
                 type="text" 
                 value={searchQuery}
@@ -700,7 +706,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 border border-outline-variant/10 rounded-sm hover:border-outline-variant/30 transition-colors">
-                <span className="material-symbols-outlined text-sm text-on-surface-variant/40">calendar_today</span>
+                <Calendar size={14} className="text-on-surface-variant/40" />
                 <select 
                   aria-label="年份筛选"
                   value={yearFilter}
@@ -715,7 +721,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
               </div>
 
               <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 border border-outline-variant/10 rounded-sm hover:border-outline-variant/30 transition-colors">
-                <span className="material-symbols-outlined text-sm text-on-surface-variant/40">filter_list</span>
+                <Filter size={14} className="text-on-surface-variant/40" />
                 <select 
                   aria-label="胶片类型筛选"
                   value={filmFilter}
@@ -735,7 +741,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             onClick={() => setShowCreateModal(true)}
             className="bg-primary text-on-primary px-6 py-2.5 text-xs font-bold hover:bg-primary-dim transition-all shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-[0.2em] rounded-sm active:scale-95"
           >
-            <span className="material-symbols-outlined text-base">create_new_folder</span>
+            <FolderPlus size={16} />
             新建相册
           </button>
         </div>
@@ -757,18 +763,18 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                       卷号 #{String(rolls.length - index).padStart(3, '0')}: {roll.title}
                     </h2>
                     <span className="px-2 py-0.5 bg-secondary-container text-secondary text-[10px] font-label rounded-sm tracking-widest whitespace-nowrap">{roll.filmStock}</span>
-                    {profile?.isOwner && (
-                      <button
-                        onClick={() => handleEditRoll(roll)}
-                        className="text-on-surface-variant hover:text-primary transition-colors"
-                        title="编辑相册"
-                      >
-                        <span className="material-symbols-outlined text-sm">edit</span>
-                      </button>
-                    )}
+                      {profile?.isOwner && (
+                        <button
+                          onClick={() => handleEditRoll(roll)}
+                          className="text-on-surface-variant hover:text-primary transition-colors"
+                          title="编辑相册"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      )}
                   </div>
                   <div className="flex items-center gap-2 text-on-surface-variant font-label text-xs md:text-sm tracking-tighter opacity-70 group-hover:opacity-100 transition-opacity">
-                    <span className="material-symbols-outlined text-sm">event</span>
+                    <Calendar size={14} />
                     {roll.shotDate} — {roll.location}
                   </div>
                 </div>
@@ -788,7 +794,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                           <div className="flex items-center gap-2 text-white/90 text-[10px] font-label tracking-widest uppercase">
-                            <span className="material-symbols-outlined text-sm">collections</span>
+                            <Library size={14} />
                             查看该卷共 {roll.frames.length} 张底片
                           </div>
                         </div>
@@ -829,7 +835,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                           onClick={() => navigate(`/roll/${roll.id}`)}
                           title="查看完整胶卷"
                         >
-                          <span className="material-symbols-outlined text-2xl text-on-surface-variant group-hover/more:text-primary transition-colors">arrow_forward_ios</span>
+                          <ChevronRight size={24} className="text-on-surface-variant group-hover/more:text-primary transition-colors" />
                         </div>
                       </>
                     ) : (
@@ -847,7 +853,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-32 text-on-surface-variant bg-surface-container-lowest border border-outline-variant/10 border-dashed">
-            <span className="material-symbols-outlined text-[64px] mb-6 opacity-30">photo_library</span>
+            <Library size={64} className="mb-6 opacity-30 mx-auto" />
             <p className="font-headline font-bold text-xl mb-2 text-on-surface">相册空空如也</p>
             {profile?.isOwner ? (
               <>
@@ -856,7 +862,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                   onClick={() => setShowCreateModal(true)}
                   className="bg-primary text-on-primary px-8 py-3 text-sm font-bold hover:bg-primary-dim transition-colors flex items-center gap-2 uppercase tracking-widest"
                 >
-                  <span className="material-symbols-outlined text-base">add_circle</span>
+                  <PlusCircle size={16} />
                   开启第一卷胶卷
                 </button>
               </>
@@ -894,7 +900,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                     onClick={loadMorePosts}
                     className="flex items-center gap-2 px-8 py-3 border border-outline-variant/20 hover:border-primary/50 text-on-surface-variant hover:text-primary transition-all font-label tracking-widest text-sm uppercase"
                   >
-                    <span className="material-symbols-outlined">expand_more</span>
+                    <ChevronDown size={18} />
                     加载更多
                   </button>
                 </div>
@@ -902,7 +908,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-on-surface-variant">
-              <span className="material-symbols-outlined text-[48px] mb-4 opacity-30">history</span>
+              <History size={48} className="mb-4 opacity-30" />
               <p className="font-body text-sm">暂无动态</p>
             </div>
           )}
@@ -916,7 +922,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 border border-outline-variant/10 rounded-sm hover:border-outline-variant/30 transition-colors">
-                <span className="material-symbols-outlined text-sm text-on-surface-variant/40">filter_list</span>
+                <Filter size={14} className="text-on-surface-variant/40" />
                 <select 
                   aria-label="设备状态筛选"
                   value={selectedStatus}
@@ -936,7 +942,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                 onClick={() => setShowAddGearModal(true)}
                 className="bg-primary text-on-primary px-6 py-2.5 text-xs font-bold hover:bg-primary-dim transition-all shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-[0.2em] rounded-sm active:scale-95"
               >
-                <span className="material-symbols-outlined text-base">add_circle</span>
+                <PlusCircle size={16} />
                 添加设备
               </button>
             )}
@@ -968,7 +974,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                       />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center text-white/10 group-hover:text-white/20 transition-colors">
-                        <span className="material-symbols-outlined text-[64px] mb-2 font-light">photo_camera</span>
+                        <Camera size={64} strokeWidth={1} />
                       </div>
                     )}
                     
@@ -1005,19 +1011,19 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                     <div className="flex flex-wrap gap-2">
                       {item.formats.length > 0 && (
                         <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
-                          <span className="material-symbols-outlined text-[14px]">aspect_ratio</span>
+                          <Maximize size={14} />
                           {item.formats.join(', ')}
                         </div>
                       )}
                       {item.mount && (
                         <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
-                          <span className="material-symbols-outlined text-[14px]">radio_button_unchecked</span>
+                          <Circle size={14} />
                           {item.mount}
                         </div>
                       )}
                       {item.shotCount > 0 && (
                         <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
-                          <span className="material-symbols-outlined text-[14px]">shutter_speed</span>
+                          <Timer size={14} />
                           {item.shotCount} 卷
                         </div>
                       )}
@@ -1033,15 +1039,15 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                         {item.rating > 0 && (
                           <div className="flex items-center gap-0.5 shrink-0">
                             {[...Array(5)].map((_, i) => (
-                              <span 
+                              <Star 
                                 key={i} 
-                                className={`material-symbols-outlined text-[16px] ${
-                                  i < item.rating ? 'text-yellow-400 fill-current drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' : 'text-white/10'
+                                size={16}
+                                className={`${
+                                  i < item.rating 
+                                    ? 'text-yellow-400 fill-current drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' 
+                                    : 'text-white/10'
                                 }`}
-                                style={{ fontVariationSettings: i < item.rating ? "'FILL' 1" : "'FILL' 0" }}
-                              >
-                                {i < item.rating ? 'star' : 'star'}
-                              </span>
+                              />
                             ))}
                           </div>
                         )}
@@ -1083,14 +1089,14 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                           }}
                           className="flex-1 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-white/80 hover:text-white text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5"
                         >
-                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                          <Pencil size={14} />
                           编辑
                         </button>
                         <button 
                           onClick={() => handleDeleteGear(item.id)}
                           className="flex-1 bg-white/5 hover:bg-red-500/20 border border-white/5 hover:border-red-500/30 text-white/80 hover:text-red-400 text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5"
                         >
-                          <span className="material-symbols-outlined text-[14px]">delete</span>
+                          <Trash2 size={14} />
                           删除
                         </button>
                       </div>
@@ -1101,7 +1107,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-32 text-on-surface-variant bg-surface-container-lowest border border-outline-variant/10 border-dashed">
-              <span className="material-symbols-outlined text-[64px] mb-6 opacity-30">camera</span>
+              <Camera size={64} className="mb-6 opacity-30" />
               <p className="font-headline font-bold text-xl mb-2 text-on-surface">暂无设备</p>
               {profile?.isOwner ? (
                 <>
@@ -1110,7 +1116,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                     onClick={() => setShowAddGearModal(true)}
                     className="bg-primary text-on-primary px-8 py-3 text-sm font-bold hover:bg-primary-dim transition-colors flex items-center gap-2 uppercase tracking-widest"
                   >
-                    <span className="material-symbols-outlined text-base">add_circle</span>
+                    <PlusCircle size={16} />
                     添加设备
                   </button>
                 </>

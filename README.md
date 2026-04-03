@@ -1,8 +1,8 @@
 <div align="center">
-<img width="1200" alt="Film Album Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+
 </div>
 
-# 居流相册 (Film Album)
+# 居流相册 (Film Album) 开发中！半成品！
 
 > **属于胶片摄影师的数字角落。让每一卷底片，都在数字世界找到最美的一站。**
 
@@ -95,9 +95,15 @@ npm run db:init -- --remote
 
 ---
 
-## 📸 预览
+## 📸 界面预览
 
-*(请在此处替换或添加项目的实际屏幕截图)*
+<div align="center">
+  <img width="800" src="./Screenshots/home.png" alt="瀑布流主页视图" />
+  <br/><br/>
+  <img width="800" src="./Screenshots/speace.png" alt="摄影师个人空间" />
+  <img width="800" src="./Screenshots/pic.png" alt="数字观片台与胶片档案" />
+  <br/><br/>
+</div>
 
 ---
 
