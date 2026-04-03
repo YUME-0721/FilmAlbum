@@ -282,7 +282,7 @@ auth.post('/login', async (c) => {
     c.env.JWT_SECRET
   );
 
-  c.header('Set-Cookie', `token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 3600}`);
+  c.header('Set-Cookie', `token=${token}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=${7 * 24 * 3600}`);
 
   return c.json({
     success: true,
@@ -298,7 +298,7 @@ auth.post('/login', async (c) => {
 
 /** POST /api/auth/logout - 登出 */
 auth.post('/logout', (c) => {
-  c.header('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+  c.header('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=0');
   return c.json({ success: true });
 });
 
@@ -346,7 +346,7 @@ auth.post('/change-password', authRequired(), async (c) => {
   ).bind(body.email).run();
 
   // 清除登录状态，要求用户重新登录
-  c.header('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+  c.header('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=0');
 
   return c.json({ success: true, message: '密码修改成功，请重新登录' });
 });
@@ -394,7 +394,7 @@ auth.post('/reset-password', async (c) => {
   ).bind(body.email).run();
 
   // 清除登录状态，要求用户重新登录
-  c.header('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+  c.header('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=0');
 
   return c.json({ success: true, message: '密码重置成功，请重新登录' });
 });
@@ -422,7 +422,7 @@ auth.post('/delete-account', authRequired(), async (c) => {
     await c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
 
     // 清除登录状态
-    c.header('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+    c.header('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=0');
 
     return c.json({ success: true, message: '账号注销成功' });
   } catch (error) {

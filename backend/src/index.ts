@@ -28,14 +28,18 @@ app.use('*', cors({
       'http://127.0.0.1:3000',
       'http://127.0.0.1:5173'
     ];
-    // 生产环境：允许 Cloudflare Pages 域名
-    if (origin?.endsWith('.pages.dev') || allowedOrigins.includes(origin ?? '')) {
+    // 生产环境：允许 Cloudflare Pages 域名和自定义域名
+    if (
+      origin?.endsWith('.pages.dev') || 
+      origin === 'https://filmalbum.072199.xyz' ||
+      allowedOrigins.includes(origin ?? '')
+    ) {
       return origin ?? '';
     }
     return '';
   },
   credentials: true,
-  allowHeaders: ['Content-Type', 'Authorization'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 

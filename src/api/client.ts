@@ -27,7 +27,10 @@ async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  // 确保 API_BASE_URL 不带尾部斜杠，endpoint 带头部斜杠
+  const base = API_BASE_URL.replace(/\/$/, '');
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${base}${path}`;
 
   const config: RequestInit = {
     credentials: 'include',
