@@ -6,11 +6,16 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import { Search, Mail, User, Settings as SettingsIcon } from 'lucide-react';
+import SearchOverlay from './SearchOverlay';
+import { useState } from 'react';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 export default function Layout() {
+  const { t } = useTranslation();
   const { isLoggedIn, user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -35,7 +40,7 @@ export default function Layout() {
               to="/" 
               className={`pb-1 transition-all font-bold ${!isFeed ? 'text-primary border-b-2 border-primary' : 'text-on-surface hover:text-primary'}`}
             >
-              推荐
+              {t('nav.recommend')}
             </Link>
             <Link 
               to="/?tab=feed" 
@@ -47,20 +52,24 @@ export default function Layout() {
                 }
               }}
             >
-              动态
+              {t('nav.feed')}
             </Link>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-6">
-            <button className="text-on-surface hover:text-primary transition-colors">
+            <button 
+              onClick={() => setIsSearchOpen(true)}
+              className="text-on-surface hover:text-primary transition-colors"
+              title={t('nav.search')}
+            >
               <Search size={20} strokeWidth={2.5} />
             </button>
             {isLoggedIn && (
               <button 
                 onClick={() => navigate('/messages')}
                 className="text-on-surface hover:text-primary transition-colors"
-                title="消息"
+                title={t('nav.messages')}
               >
                 <Mail size={20} strokeWidth={2.5} />
               </button>
@@ -84,7 +93,7 @@ export default function Layout() {
                 <button
                   onClick={() => navigate('/settings')}
                   className="text-on-surface-variant hover:text-primary transition-colors"
-                  title="设置"
+                  title={t('nav.settings')}
                 >
                   <SettingsIcon size={20} strokeWidth={2.5} />
                 </button>
@@ -94,7 +103,7 @@ export default function Layout() {
                 onClick={() => navigate('/login')}
                 className="bg-primary text-on-primary px-5 py-1.5 text-sm font-semibold rounded-sm hover:bg-primary-dim active:scale-95 duration-200 transition-all"
               >
-                登录
+                {t('nav.login')}
               </button>
             )}
           </div>
@@ -110,13 +119,19 @@ export default function Layout() {
       <footer className="bg-surface border-t border-outline-variant/5 w-full py-16 px-8 mt-auto">
         <div className="flex flex-col items-center justify-center max-w-[1920px] mx-auto space-y-4 text-center">
           <div className="text-lg font-bold text-on-surface-variant font-headline tracking-[0.1em]">
-            Film Album | 记录不曾褪色的时光
+            {t('login.slogan')}
           </div>
           <div className="font-label text-[10px] text-on-surface-variant/40 tracking-[0.4em] uppercase">
             @YUME 2026
           </div>
         </div>
       </footer>
+
+      {/* Global Search Overlay */}
+      <SearchOverlay 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
     </div>
   );
 }

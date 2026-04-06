@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useAuth } from '../src/context/AuthContext';
 import { deletePost, type PostListItem } from '../src/api/posts';
 import { User, Pencil, Trash2, Heart, MessageSquare, Share2 } from 'lucide-react';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 /** 相对时间格式化 */
-function formatRelativeTime(dateString: string) {
+function formatRelativeTime(dateString: string, language: string) {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -12,11 +13,14 @@ function formatRelativeTime(dateString: string) {
   const diffMins = Math.floor(diffSecs / 60);
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
-  if (diffSecs < 60) return '刚刚';
-  if (diffMins < 60) return `${diffMins}分钟前`;
-  if (diffHours < 24) return `${diffHours}小时前`;
-  if (diffDays < 7) return `${diffDays}天前`;
-  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+  
+  const isEn = language === 'en-US';
+  
+  if (diffSecs < 60) return isEn ? 'Just now' : '刚刚';
+  if (diffMins < 60) return isEn ? `${diffMins}m ago` : `${diffMins}分钟前`;
+  if (diffHours < 24) return isEn ? `${diffHours}h ago` : `${diffHours}小时前`;
+  if (diffDays < 7) return isEn ? `${diffDays}d ago` : `${diffDays}天前`;
+  return date.toLocaleDateString(language, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 interface FeedCardProps {
@@ -27,6 +31,7 @@ interface FeedCardProps {
 }
 
 export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardProps) {
+  const { t, language } = useTranslation();
   const [imgIdx, setImgIdx] = useState(0);
   const imgs = post.images?.length ? post.images : (post.coverImage ? [{ url: post.coverImage, previewUrl: post.coverImage }] : []);
   const hasMultiple = imgs.length > 1;
@@ -36,7 +41,7 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('确定要删除这条动态吗？')) {
+    if (window.confirm(t('common.confirm'))) {
       try {
         const res = await deletePost(post.id);
         if (res.success && onDelete) {
@@ -75,7 +80,7 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[#e7e5e5] font-semibold text-sm leading-tight">{post.author.nickname}</p>
-          <p className="text-[#666] text-xs mt-0.5">{formatRelativeTime(post.createdAt)}</p>
+          <p className="text-[#666] text-xs mt-0.5">{formatRelativeTime(post.createdAt, language)}</p>
         </div>
         
         {/* 操作按钮 (Owner Only) */}
@@ -121,17 +126,17 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
           <div className="flex flex-wrap gap-3 mt-2">
             {post.filmType && (
               <span className="text-[10px] uppercase tracking-widest text-[#666]">
-                <span className="text-primary/70 mr-1">胶片</span>{post.filmType}
+                <span className="text-primary/70 mr-1">{t('roll.film')}</span>{post.filmType}
               </span>
             )}
             {post.camera && (
               <span className="text-[10px] uppercase tracking-widest text-[#666]">
-                <span className="text-primary/70 mr-1">相机</span>{post.camera}
+                <span className="text-primary/70 mr-1">{t('roll.camera')}</span>{post.camera}
               </span>
             )}
             {post.lens && (
               <span className="text-[10px] uppercase tracking-widest text-[#666]">
-                <span className="text-primary/70 mr-1">镜头</span>{post.lens}
+                <span className="text-primary/70 mr-1">{t('roll.lens')}</span>{post.lens}
               </span>
             )}
           </div>
@@ -183,16 +188,16 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
         <div className="flex items-center gap-5 text-[#666] text-sm">
           <button className="flex items-center gap-1.5 hover:text-[#aaa] transition-colors">
             <Heart size={18} />
-            <span className="text-xs">{post.likesCount > 0 ? post.likesCount : '点赞'}</span>
+            <span className="text-xs">{post.likesCount > 0 ? post.likesCount : t('profile.likes')}</span>
           </button>
           <button className="flex items-center gap-1.5 hover:text-[#aaa] transition-colors" onClick={onClick}>
             <MessageSquare size={18} />
-            <span className="text-xs">{post.commentsCount > 0 ? post.commentsCount : '评论'}</span>
+            <span className="text-xs">{post.commentsCount > 0 ? post.commentsCount : t('profile.tabs.post')}</span>
           </button>
         </div>
         <button className="flex items-center gap-1 text-[#555] hover:text-[#aaa] transition-colors text-xs">
           <Share2 size={16} />
-          分享
+          Share
         </button>
       </div>
     </article>

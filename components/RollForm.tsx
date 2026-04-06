@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { filterFilmStocks } from '../src/constants/brands';
 import { X, Tag } from 'lucide-react';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 interface RollFormProps {
   isEditing: boolean;
@@ -81,6 +82,7 @@ export default function RollForm({
   gearList,
   isLoadingGear
 }: RollFormProps) {
+  const { t } = useTranslation();
   // 使用rollForm作为formData
   const formData = rollForm;
   const setFormData = setRollForm;
@@ -115,18 +117,18 @@ export default function RollForm({
           <X size={24} />
         </button>
         <h2 className="text-2xl font-headline font-bold mb-8 text-on-surface tracking-tight">
-          {isEditing ? '编辑相册详情' : '新建胶卷相册'}
+          {isEditing ? t('roll.edit') : t('roll.new')}
         </h2>
         
         <form onSubmit={onSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label htmlFor={isEditing ? "edit-title" : "new-roll-title"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">胶卷集名称 *</label>
+            <label htmlFor={isEditing ? "edit-title" : "new-roll-title"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.title')} *</label>
             <input 
               id={isEditing ? "edit-title" : "new-roll-title"}
               type="text" 
               autoFocus={!isEditing}
               required
-              placeholder="例如：City Solitude / 2024 春节记事"
+              placeholder="e.g.: City Solitude / 2024 Lunar New Year"
               value={formData.title}
               onChange={e => setFormData({...formData, title: e.target.value})}
               onFocus={() => {
@@ -139,20 +141,20 @@ export default function RollForm({
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label htmlFor={isEditing ? "edit-film-stock" : "new-roll-film-stock"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">胶卷型号</label>
+                <label htmlFor={isEditing ? "edit-film-stock" : "new-roll-film-stock"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.stock')}</label>
                 <button 
                   type="button"
                   onClick={() => setShowFilmStockManagement(true)}
                   className="text-xs font-bold text-primary hover:underline"
                 >
-                  管理型号
+                  {t('roll.form.management')}
                 </button>
               </div>
               <div className="relative">
                 <input
                   id={isEditing ? "edit-film-stock" : "new-roll-film-stock"}
                   type="text"
-                  placeholder="示例：Lucky C200"
+                  placeholder="e.g.: Lucky C200"
                   value={formData.filmStock}
                   onChange={e => {
                     setFormData({...formData, filmStock: e.target.value});
@@ -167,7 +169,7 @@ export default function RollForm({
                 {filmStockSearch && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-surface-container-low border border-outline-variant/30 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
                     {isLoadingFilmStocks ? (
-                      <div className="px-4 py-2 text-sm text-on-surface-variant">加载中...</div>
+                      <div className="px-4 py-2 text-sm text-on-surface-variant">{t('common.loading')}</div>
                     ) : (
                       <>
                         {filterFilmStocks(filmStocks, filmStockSearch)
@@ -190,11 +192,11 @@ export default function RollForm({
               </div>
             </div>
             <div className="space-y-2">
-              <label htmlFor={isEditing ? "edit-location" : "new-roll-location"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">拍摄地点</label>
+              <label htmlFor={isEditing ? "edit-location" : "new-roll-location"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.location')}</label>
               <input 
                 id={isEditing ? "edit-location" : "new-roll-location"}
                 type="text" 
-                placeholder="示例：陕西省西安市"
+                placeholder="e.g.: Xi'an, Shaanxi"
                 value={formData.location}
                 onChange={e => setFormData({...formData, location: e.target.value})}
                 onFocus={() => {
@@ -208,12 +210,12 @@ export default function RollForm({
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label htmlFor={isEditing ? "edit-camera" : "new-roll-camera"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">相机型号</label>
+              <label htmlFor={isEditing ? "edit-camera" : "new-roll-camera"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.camera')}</label>
               <div className="relative">
                 <input 
                   id={isEditing ? "edit-camera" : "new-roll-camera"}
                   type="text" 
-                  placeholder="示例：Nikon F3"
+                  placeholder="e.g.: Nikon F3"
                   value={formData.camera}
                   onChange={e => {
                     setFormData({...formData, camera: e.target.value});
@@ -228,7 +230,7 @@ export default function RollForm({
                 {cameraSearch !== '' && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-surface-container-low border border-outline-variant/30 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
                     {isLoadingGear ? (
-                      <div className="px-4 py-2 text-sm text-on-surface-variant">加载中...</div>
+                      <div className="px-4 py-2 text-sm text-on-surface-variant">{t('common.loading')}</div>
                     ) : (
                       <>
                         {(() => {
@@ -279,12 +281,12 @@ export default function RollForm({
               </div>
             </div>
             <div className="space-y-2">
-              <label htmlFor={isEditing ? "edit-lens" : "new-roll-lens"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">镜头型号</label>
+              <label htmlFor={isEditing ? "edit-lens" : "new-roll-lens"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.lens')}</label>
               <div className="relative">
                 <input 
                   id={isEditing ? "edit-lens" : "new-roll-lens"}
                   type="text" 
-                  placeholder="示例：NIKKOR 50mm f1.8D"
+                  placeholder="e.g.: NIKKOR 50mm f1.8D"
                   value={formData.lens}
                   onChange={e => {
                     setFormData({...formData, lens: e.target.value});
@@ -299,7 +301,7 @@ export default function RollForm({
                 {lensSearch !== '' && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-surface-container-low border border-outline-variant/30 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
                     {isLoadingGear ? (
-                      <div className="px-4 py-2 text-sm text-on-surface-variant">加载中...</div>
+                      <div className="px-4 py-2 text-sm text-on-surface-variant">{t('common.loading')}</div>
                     ) : (
                       <>
                         {(() => {
@@ -340,7 +342,7 @@ export default function RollForm({
                                   >
                                     {lens}
                                     {gear.status === 'using' && index === 0 && (
-                                      <span className="ml-2 text-xs text-primary">使用中</span>
+                                      <span className="ml-2 text-xs text-primary">{t('gear.status.using')}</span>
                                     )}
                                   </div>
                                 ));
@@ -363,7 +365,7 @@ export default function RollForm({
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label htmlFor={isEditing ? "edit-start-date" : "new-roll-start-date"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">拍摄开始时间</label>
+              <label htmlFor={isEditing ? "edit-start-date" : "new-roll-start-date"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.startDate')}</label>
               <input 
                 id={isEditing ? "edit-start-date" : "new-roll-start-date"}
                 type="date" 
@@ -386,7 +388,7 @@ export default function RollForm({
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor={isEditing ? "edit-end-date" : "new-roll-end-date"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">拍摄结束时间</label>
+              <label htmlFor={isEditing ? "edit-end-date" : "new-roll-end-date"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.endDate')}</label>
               <input 
                 id={isEditing ? "edit-end-date" : "new-roll-end-date"}
                 type="date" 
@@ -412,7 +414,7 @@ export default function RollForm({
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label htmlFor={isEditing ? "edit-format" : "new-roll-format"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">画幅</label>
+              <label htmlFor={isEditing ? "edit-format" : "new-roll-format"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.format')}</label>
               <select 
                 id={isEditing ? "edit-format" : "new-roll-format"}
                 value={formData.format === '135' ? '135' : formData.format}
@@ -423,16 +425,16 @@ export default function RollForm({
                 }}
                 className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-4 py-3 text-sm text-on-surface outline-none transition-colors"
               >
-                <option value="135_half">半格（135）</option>
-                <option value="135">35mm（135）</option>
-                <option value="645">645（120）</option>
-                <option value="120">6x6（120）</option>
-                <option value="6x7">6x7（120）</option>
-                <option value="6x9">6x9（120）</option>
+                <option value="135_half">{t('roll.form.formats.half')}</option>
+                <option value="135">{t('roll.form.formats.full')}</option>
+                <option value="645">{t('roll.form.formats.medium645')}</option>
+                <option value="120">{t('roll.form.formats.medium66')}</option>
+                <option value="6x7">{t('roll.form.formats.medium67')}</option>
+                <option value="6x9">{t('roll.form.formats.medium69')}</option>
               </select>
             </div>
             <div className="space-y-2">
-              <label htmlFor={isEditing ? "edit-film-type" : "new-roll-film-type"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">底片类型</label>
+              <label htmlFor={isEditing ? "edit-film-type" : "new-roll-film-type"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.type')}</label>
               <select 
                 id={isEditing ? "edit-film-type" : "new-roll-film-type"}
                 value={formData.filmType}
@@ -443,23 +445,23 @@ export default function RollForm({
                 }}
                 className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-4 py-3 text-sm text-on-surface outline-none transition-colors"
               >
-                <option value="COLOR_NEGATIVE">彩色负片</option>
-                <option value="BW_NEGATIVE">黑白负片</option>
-                <option value="COLOR_POSITIVE">彩色正片 (反转片)</option>
-                <option value="BW_POSITIVE">黑白正片 (反转片)</option>
+                <option value="COLOR_NEGATIVE">Color Negative</option>
+                <option value="BW_NEGATIVE">B&W</option>
+                <option value="COLOR_POSITIVE">Color Positive (Slide)</option>
+                <option value="BW_POSITIVE">B&W Positive</option>
               </select>
             </div>
           </div>
           <div className="space-y-3">
             <label htmlFor={isEditing ? "edit-tags" : "new-roll-tags"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1 flex items-center gap-2">
               <Tag size={14} />
-              自定义标签
+              {t('roll.form.tags')}
             </label>
             <div className="space-y-3">
               <input 
                 id={isEditing ? "edit-tags" : "new-roll-tags"}
                 type="text" 
-                placeholder="键入标签后按空格或回车添加..."
+                placeholder={t('roll.form.tagsPlaceholder')}
                 value={tagInput}
                 onChange={e => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
@@ -498,14 +500,14 @@ export default function RollForm({
               onClick={onCancel}
               className="px-6 py-3 text-sm font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
             >
-              取消
+              {t('common.cancel')}
             </button>
             <button 
               type="submit" 
               disabled={isSubmitting}
               className="bg-primary text-on-primary px-8 py-3 text-sm font-bold uppercase tracking-widest hover:bg-primary-dim transition-colors disabled:opacity-50 flex items-center gap-2"
             >
-              {isSubmitting ? (isEditing ? '更新中...' : '创建中...') : (isEditing ? '提交更新' : '提交创建')}
+              {isSubmitting ? t('common.submitting') : (isEditing ? t('common.update') : t('common.create'))}
             </button>
           </div>
         </form>

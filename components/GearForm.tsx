@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Gear } from '../src/api/gear';
 import { X, Loader2, CheckCircle2, ImagePlus, Star } from 'lucide-react';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 interface GearFormProps {
   isEditing: boolean;
@@ -51,6 +52,7 @@ export default function GearForm({
   currentLensInput, 
   setCurrentLensInput 
 }: GearFormProps) {
+  const { t } = useTranslation();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'uploading' | 'success'>('idle');
@@ -59,7 +61,7 @@ export default function GearForm({
     const newErrors: Record<string, string> = {};
     
     if (!gearForm.cameraModel.trim()) {
-      newErrors.cameraModel = '请输入相机型号';
+      newErrors.cameraModel = t('common.error');
     }
     
     if (gearForm.lensModels.length === 0) {
@@ -108,7 +110,7 @@ export default function GearForm({
           <X size={20} />
         </button>
         <h2 className="text-xl font-headline font-bold mb-6 text-on-surface tracking-tight">
-          {isEditing ? '编辑拍摄设备' : '添加拍摄设备'}
+          {isEditing ? t('gear.edit') : t('gear.add')}
         </h2>
         
         {/* 提交状态提示 */}
@@ -117,13 +119,13 @@ export default function GearForm({
             {submitStatus === 'uploading' && (
               <div className="flex items-center gap-2 text-on-surface">
                 <Loader2 className="animate-spin" size={16} />
-                <span className="text-sm">{isEditing ? '更新设备中...' : '上传设备中...'}</span>
+                <span className="text-sm">{isEditing ? t('common.loading') : t('common.loading')}</span>
               </div>
             )}
             {submitStatus === 'success' && (
               <div className="flex items-center gap-2 text-success">
                 <CheckCircle2 size={16} />
-                <span className="text-sm">{isEditing ? '设备更新成功' : '设备添加成功'}</span>
+                <span className="text-sm">{isEditing ? t('common.success') : t('common.success')}</span>
               </div>
             )}
           </div>
@@ -134,7 +136,7 @@ export default function GearForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* 设备图片上传 */}
             <div className="space-y-2">
-              <label className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">设备照片</label>
+              <label className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('gear.form.image')}</label>
               <div className="relative aspect-[16/9] bg-surface-container-low border border-dashed border-outline-variant/30 rounded-sm overflow-hidden cursor-pointer hover:border-primary/50 transition-colors">
                 {gearImage ? (
                   <img 
@@ -151,7 +153,7 @@ export default function GearForm({
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-on-surface-variant/30">
                     <ImagePlus size={48} className="mb-2" />
-                    <p className="text-xs">点击上传设备照片</p>
+                    <p className="text-xs">{t('common.upload')}</p>
                   </div>
                 )}
                 <input 
@@ -181,15 +183,15 @@ export default function GearForm({
                   }}
                   className={`w-full bg-surface-container-low border ${errors.lensType ? 'border-error' : 'border-outline-variant/30'} focus:border-primary px-3 py-2 text-sm text-on-surface outline-none transition-colors`}
                 >
-                  <option value="interchangeable">可更换镜头</option>
-                  <option value="fixed">不可更换镜头</option>
+                  <option value="interchangeable">Interchangeable</option>
+                  <option value="fixed">Fixed Lens</option>
                 </select>
                 {errors.lensType && (
                   <p className="text-xs text-error">{errors.lensType}</p>
                 )}
               </div>
               <div className="space-y-1">
-                <label htmlFor="gear-status" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">设备状态 *</label>
+                <label htmlFor="gear-status" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('gear.form.status')} *</label>
                 <select 
                   id="gear-status"
                   required
@@ -202,9 +204,9 @@ export default function GearForm({
                   }}
                   className={`w-full bg-surface-container-low border ${errors.status ? 'border-error' : 'border-outline-variant/30'} focus:border-primary px-3 py-2 text-sm text-on-surface outline-none transition-colors`}
                 >
-                  <option value="using">正在使用</option>
-                  <option value="used">使用过的</option>
-                  <option value="wanted">想要的</option>
+                  <option value="using">{t('gear.status.using')}</option>
+                  <option value="used">{t('gear.status.used')}</option>
+                  <option value="wanted">{t('gear.status.wanted')}</option>
                 </select>
                 {errors.status && (
                   <p className="text-xs text-error">{errors.status}</p>
@@ -216,12 +218,12 @@ export default function GearForm({
           {/* 相机型号和镜头型号 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label htmlFor="gear-camera-model" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">相机型号 *</label>
+              <label htmlFor="gear-camera-model" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('gear.form.camera')} *</label>
               <input 
                 id="gear-camera-model"
                 type="text" 
                 required
-                placeholder="例如：Leica M6"
+                placeholder="e.g.: Leica M6"
                 value={gearForm.cameraModel}
                 onChange={e => {
                   setGearForm({...gearForm, cameraModel: e.target.value});
@@ -237,14 +239,14 @@ export default function GearForm({
             </div>
             <div className="space-y-1">
               <label htmlFor="gear-lens-model" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">
-                镜头型号 * {gearForm.lensType === 'interchangeable' && <span className="text-on-surface-variant/50 normal-case">(按回车添加多个)</span>}
+                {t('gear.form.lens')} * {gearForm.lensType === 'interchangeable' && <span className="text-on-surface-variant/50 normal-case">(Enter to add)</span>}
               </label>
               <div className="space-y-2">
                 <input 
                   id="gear-lens-model"
                   type="text" 
                   required={gearForm.lensModels.length === 0}
-                  placeholder="例如：Summicron 35mm f/2"
+                  placeholder="e.g.: Summicron 35mm f/2"
                   value={currentLensInput}
                   onChange={e => setCurrentLensInput(e.target.value)}
                   onKeyDown={e => {
@@ -305,7 +307,7 @@ export default function GearForm({
           {/* 胶卷规格和拍摄张数 */}
           <div className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">画幅规格</label>
+              <label className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.format')}</label>
               <div className="flex flex-wrap gap-2">
                 {['半格', '135', '645', '6x6', '6x7', '6x9'].map(format => (
                   <button
@@ -331,7 +333,7 @@ export default function GearForm({
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">拍摄张数（按画幅规格）</label>
+              <label className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('gear.count')}</label>
               {gearForm.formats.map(format => (
                 <div key={format} className="flex items-center gap-2">
                   <span className="text-sm text-on-surface-variant min-w-[40px]">{format}:</span>
@@ -354,7 +356,7 @@ export default function GearForm({
                 </div>
               ))}
               {gearForm.formats.length === 0 && (
-                <p className="text-xs text-on-surface-variant/50">请先选择画幅规格</p>
+                <p className="text-xs text-on-surface-variant/50">Please select formats first</p>
               )}
             </div>
           </div>
@@ -362,7 +364,7 @@ export default function GearForm({
           {/* 评分和外部详情链接 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">评分</label>
+              <label className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('gear.form.rating')}</label>
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
                   <button
@@ -378,10 +380,9 @@ export default function GearForm({
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-on-surface-variant/50">点击星星进行评分，共5颗星</p>
             </div>
             <div className="space-y-1">
-              <label htmlFor="gear-external-url" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">外部详情链接</label>
+              <label htmlFor="gear-external-url" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">URL</label>
               <input 
                 id="gear-external-url"
                 type="url" 
@@ -395,7 +396,7 @@ export default function GearForm({
 
           {/* 自定义评价 */}
           <div className="space-y-1">
-            <label htmlFor="gear-review" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">自定义评价</label>
+            <label htmlFor="gear-review" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('gear.form.review')}</label>
             <input 
               id="gear-review"
               type="text" 
@@ -414,7 +415,7 @@ export default function GearForm({
               onClick={onCancel}
               className="px-5 py-2 text-xs font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
             >
-              取消
+              {t('common.cancel')}
             </button>
             <button 
               type="submit" 
@@ -424,10 +425,10 @@ export default function GearForm({
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin" size={16} />
-                  {isEditing ? '更新中...' : '添加中...'}
+                  {t('common.loading')}
                 </>
               ) : (
-                isEditing ? '更新设备' : '添加设备'
+                isEditing ? t('common.update') : t('common.add')
               )}
             </button>
           </div>

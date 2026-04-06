@@ -8,8 +8,10 @@ import Notification from '../components/Notification.tsx';
 import { sendCode } from '../src/api/auth.ts';
 import { post } from '../src/api/client.ts';
 import { Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -27,7 +29,7 @@ export default function ResetPassword() {
   const handleSendCode = async () => {
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setShowNotification(true);
-      setNotificationMessage('请输入有效的邮箱地址');
+      setNotificationMessage(t('login.emailLabel'));
       setNotificationType('error');
       return;
     }
@@ -37,7 +39,7 @@ export default function ResetPassword() {
       const result = await sendCode(email, 'reset-password');
       if (result.success) {
         setShowNotification(true);
-        setNotificationMessage('验证码发送成功');
+        setNotificationMessage(t('login.sendCodeSuccess'));
         setNotificationType('success');
         // 开始倒计时
         setCountdown(60);
@@ -55,7 +57,7 @@ export default function ResetPassword() {
           setShowNotification(true);
           setNotificationMessage(
             <div>
-              <p>该邮箱未注册</p>
+              <p>{t('login.emailNotRegistered')}</p>
               <button 
                 onClick={() => {
                   setShowNotification(false);
@@ -63,20 +65,20 @@ export default function ResetPassword() {
                 }}
                 className="mt-2 text-primary hover:underline text-sm"
               >
-                去注册
+                {t('login.goToRegister')}
               </button>
             </div>
           );
           setNotificationType('warning');
         } else {
           setShowNotification(true);
-          setNotificationMessage(result.error || '发送验证码失败');
+          setNotificationMessage(result.error || t('common.error'));
           setNotificationType('error');
         }
       }
     } catch (err: any) {
       setShowNotification(true);
-      setNotificationMessage(err.message || '发送验证码失败');
+      setNotificationMessage(err.message || t('common.error'));
       setNotificationType('error');
     } finally {
       setIsSendingCode(false);
@@ -90,7 +92,7 @@ export default function ResetPassword() {
     try {
       if (!email || !/\S+@\S+\.\S+/.test(email)) {
         setShowNotification(true);
-        setNotificationMessage('请输入有效的邮箱地址');
+        setNotificationMessage(t('login.emailLabel'));
         setNotificationType('error');
         setIsSubmitting(false);
         return;
@@ -98,7 +100,7 @@ export default function ResetPassword() {
 
       if (!code) {
         setShowNotification(true);
-        setNotificationMessage('请输入验证码');
+        setNotificationMessage(t('login.verifyCodeEmpty'));
         setNotificationType('error');
         setIsSubmitting(false);
         return;
@@ -106,7 +108,7 @@ export default function ResetPassword() {
 
       if (!newPassword || newPassword.length < 6) {
         setShowNotification(true);
-        setNotificationMessage('新密码长度至少 6 位');
+        setNotificationMessage(t('login.passwordTooShort'));
         setNotificationType('error');
         setIsSubmitting(false);
         return;
@@ -114,7 +116,7 @@ export default function ResetPassword() {
 
       if (newPassword !== confirmPassword) {
         setShowNotification(true);
-        setNotificationMessage('两次输入的密码不一致');
+        setNotificationMessage(t('login.passwordsNotMatch'));
         setNotificationType('error');
         setIsSubmitting(false);
         return;
@@ -127,19 +129,19 @@ export default function ResetPassword() {
       });
       if (result.success) {
         setShowNotification(true);
-        setNotificationMessage('密码重置成功，请重新登录');
+        setNotificationMessage(t('login.resetSuccess'));
         setNotificationType('success');
         setTimeout(() => {
           navigate('/login');
         }, 1500);
       } else {
         setShowNotification(true);
-        setNotificationMessage(result.error || '密码重置失败');
+        setNotificationMessage(result.error || t('common.error'));
         setNotificationType('error');
       }
     } catch (err: any) {
       setShowNotification(true);
-      setNotificationMessage(err.message || '网络错误');
+      setNotificationMessage(err.message || t('common.error'));
       setNotificationType('error');
     } finally {
       setIsSubmitting(false);
@@ -155,7 +157,7 @@ export default function ResetPassword() {
             Film Album
           </Link>
           <p className="text-on-surface-variant mt-3 text-sm font-body">
-            重置密码
+            {t('login.resetPasswordTitle')}
           </p>
         </div>
 
@@ -163,7 +165,7 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-              邮箱
+              {t('login.emailLabel')}
             </label>
             <input
               type="email"
@@ -177,14 +179,14 @@ export default function ResetPassword() {
 
           <div>
             <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-              新密码
+              {t('login.newPasswordLabel')}
             </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="至少 6 位密码"
+                placeholder={t('login.passwordHint')}
                 minLength={6}
                 className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                 required
@@ -201,14 +203,14 @@ export default function ResetPassword() {
 
           <div>
             <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-              确认新密码
+              {t('login.confirmNewPasswordLabel')}
             </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="再次输入新密码"
+                placeholder={t('login.confirmNewPasswordLabel')}
                 minLength={6}
                 className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                 required
@@ -225,14 +227,14 @@ export default function ResetPassword() {
 
           <div>
             <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-              邮箱验证码
+              {t('login.verifyCode')}
             </label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="输入验证码"
+                placeholder={t('login.verifyCode')}
                 className="flex-1 bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                 required
               />
@@ -242,7 +244,7 @@ export default function ResetPassword() {
                 disabled={isSendingCode || countdown > 0}
                 className="bg-surface-container-low border border-outline-variant px-4 py-3 text-sm font-body hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSendingCode ? '发送中...' : countdown > 0 ? `${countdown}s` : '发送验证码'}
+                {isSendingCode ? t('common.uploading') : countdown > 0 ? `${countdown}s` : t('login.sendCode')}
               </button>
             </div>
           </div>
@@ -252,12 +254,12 @@ export default function ResetPassword() {
             disabled={isSubmitting}
             className="w-full bg-primary text-on-primary py-3 text-sm font-bold hover:bg-primary-dim transition-colors uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? '处理中...' : '重置密码'}
+            {isSubmitting ? t('common.submitting') : t('login.resetPasswordTitle')}
           </button>
 
           <div className="text-center mt-4">
             <Link to="/login" className="text-sm text-primary hover:underline">
-              返回登录
+              {t('login.backToLogin')}
             </Link>
           </div>
         </form>
@@ -265,7 +267,7 @@ export default function ResetPassword() {
         {/* 底部装饰 */}
         <div className="mt-12 pt-8 border-t border-outline-variant/10 text-center">
           <p className="text-[10px] font-label text-on-surface-variant uppercase tracking-[0.3em]">
-            Film Album · 记录不曾褪色的时光
+            {t('login.slogan')}
           </p>
         </div>
         

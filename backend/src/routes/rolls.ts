@@ -32,8 +32,8 @@ rolls.get('/', authOptional(), async (c) => {
   }
 
   if (filmType) {
-    whereClause += ' AND r.film_stock LIKE ?';
-    params.push(`%${filmType}%`);
+    whereClause += ' AND r.film_type = ?';
+    params.push(filmType);
   }
 
   if (tag) {
@@ -51,6 +51,7 @@ rolls.get('/', authOptional(), async (c) => {
              'id', id, 'imageUrl', image_url, 'previewUrl', preview_url, 'frameNumber', frame_number,
              'aperture', aperture, 'shutterSpeed', shutter_speed, 'iso', iso,
              'description', description, 'sortOrder', sort_order, 'tags', tags,
+             'shotDate', shot_date, 'location', location, 'camera', camera, 'lens', lens,
              'fileSize', file_size, 'fileFormat', file_format
            )) FROM (SELECT * FROM frames WHERE roll_id = r.id ORDER BY sort_order)) as frames_data
     FROM rolls r
@@ -155,6 +156,10 @@ rolls.get('/:id', authOptional(), async (c) => {
         iso: f.iso,
         description: f.description,
         sortOrder: f.sort_order,
+        shotDate: f.shot_date,
+        location: f.location,
+        camera: f.camera,
+        lens: f.lens,
         fileSize: f.file_size,
         fileFormat: f.file_format,
         tags: JSON.parse((f.tags as string) || '[]')

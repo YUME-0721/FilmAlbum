@@ -15,6 +15,7 @@ import filmStocksRoutes from './routes/film-stocks';
 import gearRoutes from './routes/gear';
 import messagesRoutes from './routes/messages';
 import notificationsRoutes from './routes/notifications';
+import searchRoutes from './routes/search';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -53,6 +54,7 @@ app.route('/api/film-stocks', filmStocksRoutes);
 app.route('/api/gear', gearRoutes);
 app.route('/api/messages', messagesRoutes);
 app.route('/api/notifications', notificationsRoutes);
+app.route('/api/search', searchRoutes);
 
 // 健康检查
 app.get('/api/health', (c) => {

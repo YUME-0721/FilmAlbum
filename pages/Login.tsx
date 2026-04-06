@@ -8,8 +8,10 @@ import { useAuth } from '../src/context/AuthContext.tsx';
 import Notification from '../components/Notification.tsx';
 import { sendCode } from '../src/api/auth.ts';
 import { Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 export default function Login() {
+  const { t } = useTranslation();
   const location = useLocation();
   const [isRegister, setIsRegister] = useState(location.state?.isRegister || false);
   const [email, setEmail] = useState('');
@@ -39,28 +41,28 @@ export default function Login() {
   const handleSendCode = async () => {
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setShowNotification(true);
-      setNotificationMessage('请输入有效的邮箱地址');
+      setNotificationMessage(t('common.error'));
       setNotificationType('error');
       return;
     }
 
     if (!password) {
       setShowNotification(true);
-      setNotificationMessage('请输入密码');
+      setNotificationMessage(t('login.inputPassword'));
       setNotificationType('error');
       return;
     }
 
     if (password.length < 6) {
       setShowNotification(true);
-      setNotificationMessage('密码长度至少 6 位');
+      setNotificationMessage(t('login.passwordTooShort'));
       setNotificationType('error');
       return;
     }
 
     if (password !== confirmPassword) {
       setShowNotification(true);
-      setNotificationMessage('两次输入的密码不一致');
+      setNotificationMessage(t('login.passwordsNotMatch'));
       setNotificationType('error');
       return;
     }
@@ -71,7 +73,7 @@ export default function Login() {
       if (result.success) {
         setError('');
         setShowNotification(true);
-        setNotificationMessage('验证码发送成功');
+        setNotificationMessage(t('common.success'));
         setNotificationType('success');
         // 开始倒计时
         setCountdown(60);
@@ -86,12 +88,12 @@ export default function Login() {
         }, 1000);
       } else {
         setShowNotification(true);
-        setNotificationMessage(result.error || '发送验证码失败');
+        setNotificationMessage(result.error || t('common.error'));
         setNotificationType('error');
       }
     } catch (err: any) {
       setShowNotification(true);
-      setNotificationMessage(err.message || '发送验证码失败');
+      setNotificationMessage(err.message || t('common.error'));
       setNotificationType('error');
     } finally {
       setIsSendingCode(false);
@@ -107,21 +109,21 @@ export default function Login() {
       if (isRegister) {
         if (!nickname.trim()) {
           setShowNotification(true);
-          setNotificationMessage('请输入昵称');
+          setNotificationMessage(t('common.error'));
           setNotificationType('error');
           setIsSubmitting(false);
           return;
         }
         if (!code) {
           setShowNotification(true);
-          setNotificationMessage('请输入验证码');
+          setNotificationMessage(t('login.verifyCodeEmpty'));
           setNotificationType('error');
           setIsSubmitting(false);
           return;
         }
         if (password !== confirmPassword) {
           setShowNotification(true);
-          setNotificationMessage('两次输入的密码不一致');
+          setNotificationMessage(t('login.passwordsNotMatch'));
           setNotificationType('error');
           setIsSubmitting(false);
           return;
@@ -137,7 +139,7 @@ export default function Login() {
         setIsRegister(false);
         // 设置成功提示
         setShowNotification(true);
-        setNotificationMessage('注册成功，请重新登录');
+        setNotificationMessage(t('common.success'));
         setNotificationType('success');
         setIsSubmitting(false);
         return;
@@ -145,14 +147,14 @@ export default function Login() {
       
       await login(email, password);
       setShowNotification(true);
-      setNotificationMessage('登录成功');
+      setNotificationMessage(t('common.success'));
       setNotificationType('success');
       setTimeout(() => {
         navigate('/space');
       }, 1500);
     } catch (err) {
       setShowNotification(true);
-      setNotificationMessage(err instanceof Error ? err.message : '操作失败');
+      setNotificationMessage(err instanceof Error ? err.message : t('common.error'));
       setNotificationType('error');
     } finally {
       setIsSubmitting(false);
@@ -168,7 +170,7 @@ export default function Login() {
             Film Album
           </Link>
           <p className="text-on-surface-variant mt-3 text-sm font-body">
-            {isRegister ? '创建账号，开始记录你的胶片故事' : '欢迎回来，继续你的胶片旅程'}
+            {isRegister ? t('login.createAccount') : t('login.welcome')}
           </p>
         </div>
 
@@ -178,13 +180,13 @@ export default function Login() {
             onClick={() => { setIsRegister(false); setError(''); }}
             className={`flex-1 pb-3 text-sm font-bold tracking-widest uppercase transition-colors ${!isRegister ? 'border-b-2 border-primary text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
           >
-            登录
+            {t('login.login')}
           </button>
           <button
             onClick={() => { setIsRegister(true); setError(''); }}
             className={`flex-1 pb-3 text-sm font-bold tracking-widest uppercase transition-colors ${isRegister ? 'border-b-2 border-primary text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
           >
-            注册
+            {t('login.register')}
           </button>
         </div>
 
@@ -192,7 +194,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-              邮箱
+              {t('login.email')}
             </label>
             <input
               type="email"
@@ -206,14 +208,14 @@ export default function Login() {
 
           <div>
             <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-              密码
+              {t('login.password')}
             </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="至少 6 位密码"
+                placeholder="Password"
                 minLength={6}
                 className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                 required
@@ -231,7 +233,7 @@ export default function Login() {
           {!isRegister && (
             <div className="text-right mt-2">
               <Link to="/reset-password" className="text-sm text-primary hover:underline">
-                忘记密码？
+                {t('login.forgotPassword')}
               </Link>
             </div>
           )}
@@ -240,14 +242,14 @@ export default function Login() {
             <>
               <div>
                 <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-                  确认密码
+                  {t('login.confirmPassword')}
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="再次输入密码"
+                    placeholder={t('login.confirmPassword')}
                     minLength={6}
                     className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                     required
@@ -264,13 +266,13 @@ export default function Login() {
               
               <div>
                 <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-                  昵称
+                  {t('login.nickname')}
                 </label>
                 <input
                   type="text"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
-                  placeholder="你的显示名称"
+                  placeholder={t('login.nickname')}
                   className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                   required
                 />
@@ -278,14 +280,14 @@ export default function Login() {
               
               <div>
                 <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-                  邮箱验证码
+                  {t('login.verifyCode')}
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    placeholder="输入验证码"
+                    placeholder={t('login.verifyCode')}
                     className="flex-1 bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                     required
                   />
@@ -295,7 +297,7 @@ export default function Login() {
                     disabled={isSendingCode || countdown > 0}
                     className="bg-surface-container-low border border-outline-variant px-4 py-3 text-sm font-body hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSendingCode ? '发送中...' : countdown > 0 ? `${countdown}s` : '发送验证码'}
+                    {isSendingCode ? t('common.uploading') : countdown > 0 ? `${countdown}s` : t('login.sendCode')}
                   </button>
                 </div>
               </div>
@@ -309,14 +311,14 @@ export default function Login() {
             disabled={isSubmitting}
             className="w-full bg-primary text-on-primary py-3 text-sm font-bold hover:bg-primary-dim transition-colors uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? '处理中...' : isRegister ? '创建账号' : '登录'}
+            {isSubmitting ? t('login.submitting') : isRegister ? t('login.register') : t('login.login')}
           </button>
         </form>
 
         {/* 底部装饰 */}
         <div className="mt-12 pt-8 border-t border-outline-variant/10 text-center">
           <p className="text-[10px] font-label text-on-surface-variant uppercase tracking-[0.3em]">
-            Film Album · 记录不曾褪色的时光
+            {t('login.slogan')}
           </p>
         </div>
         

@@ -25,27 +25,29 @@ import {
 import { get } from '../src/api/client';
 import { UserProfileData } from '../components/UserProfile';
 import { Lock, MessageCircle, User, Inbox, ArrowLeft, MoreVertical, Smile, Send, Mail, Heart, Bell, MessageSquare, Settings, Reply } from 'lucide-react';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 // 格式化时间
-function formatTime(dateString: string) {
+function formatTime(dateString: string, locale: string = 'zh-CN') {
   const date = new Date(dateString);
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
   
   if (isToday) {
-    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
   }
   
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const hour = date.getHours().toString().padStart(2, '0');
-  const minute = date.getMinutes().toString().padStart(2, '0');
-  
-  return `${year}年${month}月${day}日 ${hour}时${minute}分`;
+  return date.toLocaleString(locale, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
 
 export default function Messages() {
+  const { t, language } = useTranslation();
   const { userId: urlUserId } = useParams();
   const navigate = useNavigate();
   const { user: currentUser, isLoggedIn } = useAuth();
@@ -218,12 +220,12 @@ export default function Messages() {
      return (
       <main className="max-w-7xl mx-auto px-8 pt-24 pb-24 flex flex-col items-center justify-center min-h-[60vh] gap-6">
         <Lock size={64} className="text-on-surface-variant/20 italic" />
-        <div className="text-on-surface-variant font-label text-sm tracking-widest uppercase">请先登录以查看消息</div>
+        <div className="text-on-surface-variant font-label text-sm tracking-widest uppercase">{t('messages.loginRequired')}</div>
         <button 
           onClick={() => navigate('/login')}
           className="bg-primary text-on-primary px-8 py-2 text-xs font-bold hover:bg-primary-dim transition-colors uppercase tracking-widest"
         >
-          去登录
+          {t('login.login')}
         </button>
       </main>
     );
@@ -235,15 +237,15 @@ export default function Messages() {
       <div className="w-20 md:w-64 bg-surface-container-low border border-outline-variant/10 rounded-2xl flex flex-col py-8 shadow-sm">
         <div className="px-6 mb-10 hidden md:flex items-center gap-2">
           <MessageCircle className="text-primary" size={24} />
-          <h1 className="text-lg font-bold tracking-tight">消息中心</h1>
+          <h1 className="text-lg font-bold tracking-tight">{t('messages.title')}</h1>
         </div>
 
         <nav className="flex-1 space-y-2 px-3">
           {[
-            { id: 'messages', label: '我的消息', icon: MessageSquare, count: counts.messages },
-            { id: 'replies', label: '回复我的', icon: Reply, count: counts.COMMENT },
-            { id: 'likes', label: '收到的赞', icon: Heart, count: counts.LIKE },
-            { id: 'system', label: '系统通知', icon: Bell, count: counts.SYSTEM },
+            { id: 'messages', label: t('messages.sidebar.messages'), icon: MessageSquare, count: counts.messages },
+            { id: 'replies', label: t('messages.sidebar.replies'), icon: Reply, count: counts.COMMENT },
+            { id: 'likes', label: t('messages.sidebar.likes'), icon: Heart, count: counts.LIKE },
+            { id: 'system', label: t('messages.sidebar.system'), icon: Bell, count: counts.SYSTEM },
           ].map((item) => (
             <button
               key={item.id}
@@ -274,7 +276,7 @@ export default function Messages() {
         <div className="mt-auto px-3 pt-6 border-t border-outline-variant/5 space-y-2">
           <button className="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant/60 hover:bg-surface-container-high rounded-xl transition-all">
             <Settings size={20} />
-            <span className="text-xs font-bold hidden md:inline">消息设置</span>
+            <span className="text-xs font-bold hidden md:inline">{t('messages.sidebar.settings')}</span>
           </button>
         </div>
       </div>
@@ -287,16 +289,16 @@ export default function Messages() {
       } ${(activeUserId || activeCategory !== 'messages') && 'hidden md:flex'}`}>
         <div className="p-5 border-b border-outline-variant/10 flex justify-between items-center">
           <h2 className="font-bold text-on-surface">
-            {activeCategory === 'messages' ? '近期对话' : 
-             activeCategory === 'replies' ? '所有回复' : 
-             activeCategory === 'likes' ? '给我的赞' : '系统消息'}
+            {activeCategory === 'messages' ? t('messages.list.recent') : 
+             activeCategory === 'replies' ? t('messages.list.allReplies') : 
+             activeCategory === 'likes' ? t('messages.list.receivedLikes') : t('messages.list.systemTitle')}
           </h2>
           {activeCategory !== 'messages' && notifications.length > 0 && (
             <button 
               onClick={() => readAllNotifications({ replies: 'COMMENT', likes: 'LIKE', system: 'SYSTEM' }[activeCategory] as string).then(fetchCounts)}
               className="text-[10px] font-bold uppercase tracking-widest text-primary/60 hover:text-primary transition-colors"
             >
-              全部标记已读
+              {t('messages.list.markAllRead')}
             </button>
           )}
         </div>
@@ -330,7 +332,7 @@ export default function Messages() {
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <div className="flex justify-between items-baseline mb-0.5">
                         <h3 className="font-bold text-sm text-on-surface truncate pr-2">{conv.counterpart.nickname}</h3>
-                        <span className="text-[10px] text-on-surface-variant/60 font-label">{formatTime(conv.createdAt)}</span>
+                        <span className="text-[10px] text-on-surface-variant/60 font-label">{formatTime(conv.createdAt, language)}</span>
                       </div>
                       <p className="text-xs text-on-surface-variant truncate opacity-60">
                         {conv.content}
@@ -342,7 +344,7 @@ export default function Messages() {
             ) : (
               <div className="flex flex-col items-center justify-center p-12 h-64 text-center opacity-30 select-none">
                 <Inbox size={48} className="mb-2" />
-                <p className="text-xs font-label uppercase tracking-widest">暂无聊天记录</p>
+                <p className="text-xs font-label uppercase tracking-widest">{t('messages.list.emptyConv')}</p>
               </div>
             )
           ) : (
@@ -371,15 +373,15 @@ export default function Messages() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-baseline mb-2">
                         <span className="text-sm font-bold text-on-surface truncate">{notif.sender.nickname}</span>
-                        <span className="text-xs text-on-surface-variant/40 font-label">{formatTime(notif.createdAt)}</span>
+                        <span className="text-xs text-on-surface-variant/40 font-label">{formatTime(notif.createdAt, language)}</span>
                       </div>
                       <p className="text-sm text-on-surface-variant leading-relaxed mb-3">
-                        {notif.type === 'LIKE' ? '点赞了你的帖子' : 
-                         notif.type === 'COMMENT' ? `回复了你：${notif.content}` : notif.content}
+                        {notif.type === 'LIKE' ? t('messages.notif.liked') : 
+                         notif.type === 'COMMENT' ? `${t('messages.notif.replied')}${notif.content}` : notif.content}
                       </p>
                       {notif.post && (
                         <div className="bg-white/50 border border-outline-variant/10 rounded-xl p-3 text-xs text-on-surface-variant/60 truncate italic shadow-sm hover:border-primary/20 transition-colors">
-                          帖子：{notif.post.title}
+                          {t('messages.notif.post')}{notif.post.title}
                         </div>
                       )}
                     </div>
@@ -392,7 +394,7 @@ export default function Messages() {
             ) : (
                <div className="flex flex-col items-center justify-center p-12 h-64 text-center opacity-30 select-none">
                 <Bell size={48} className="mb-2" />
-                <p className="text-xs font-label uppercase tracking-widest">暂无通知</p>
+                <p className="text-xs font-label uppercase tracking-widest">{t('messages.list.emptyNotif')}</p>
               </div>
             )
           )}
@@ -427,7 +429,7 @@ export default function Messages() {
                     className="font-bold text-on-surface hover:text-primary transition-colors cursor-pointer" 
                     onClick={() => navigate(`/space/${activeUserId}`)}
                   >
-                    {activeUser?.nickname || '加载中...'}
+                    {activeUser?.nickname || t('messages.chat.loading')}
                   </h2>
                   <span className="text-[10px] text-on-surface-variant font-label uppercase tracking-widest opacity-60">ID: {activeUserId}</span>
                 </div>
@@ -454,7 +456,7 @@ export default function Messages() {
                     <div key={msg.id} className="flex flex-col">
                       {showTime && (
                         <div className="text-center mb-4">
-                          <span className="text-[10px] font-label text-on-surface-variant/40 uppercase tracking-widest bg-surface-container-highest px-3 py-1 rounded-full">{formatTime(msg.createdAt)}</span>
+                          <span className="text-[10px] font-label text-on-surface-variant/40 uppercase tracking-widest bg-surface-container-highest px-3 py-1 rounded-full">{formatTime(msg.createdAt, language)}</span>
                         </div>
                       )}
                       <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} items-end gap-2 group`}>
@@ -478,7 +480,7 @@ export default function Messages() {
                         </div>
                         {isMine && (
                           <span className={`text-[10px] font-label transition-opacity ${msg.isRead ? 'text-primary' : 'text-on-surface-variant/30'}`}>
-                            {msg.isRead ? '已读' : '未读'}
+                            {msg.isRead ? t('messages.chat.read') : t('messages.chat.unread')}
                           </span>
                         )}
                       </div>
@@ -487,7 +489,7 @@ export default function Messages() {
                 })
               ) : (
                  <div className="flex-1 flex flex-col items-center justify-center opacity-30">
-                    <p className="text-xs font-label uppercase tracking-widest italic">没有消息记录，打个招呼吧</p>
+                    <p className="text-xs font-label uppercase tracking-widest italic">{t('messages.chat.empty')}</p>
                  </div>
               )}
             </div>
@@ -507,7 +509,7 @@ export default function Messages() {
                       handleSend();
                     }
                   }}
-                  placeholder="写点什么..."
+                  placeholder={t('messages.chat.placeholder')}
                   className="w-full bg-surface-container-high/50 border border-outline-variant/20 rounded-2xl px-5 py-3 pr-12 text-sm text-on-surface focus:border-primary/50 focus:bg-surface-container-high transition-all outline-none resize-none min-h-[48px] max-h-32 custom-scrollbar"
                   rows={1}
                 />
@@ -534,9 +536,9 @@ export default function Messages() {
                   <Mail size={48} className="italic" />
                 </div>
              </div>
-             <h2 className="text-xl font-headline font-bold text-on-surface mb-2 tracking-wide">欢迎开启对话</h2>
+             <h2 className="text-xl font-headline font-bold text-on-surface mb-2 tracking-wide">{t('messages.chat.welcome')}</h2>
              <p className="text-sm text-on-surface-variant max-w-xs leading-relaxed font-label opacity-60">
-               从列表选择一个会话开始聊天，或者去作者空间打个招呼。
+               {t('messages.chat.welcomeDesc')}
              </p>
           </div>
         ) : (
@@ -544,8 +546,8 @@ export default function Messages() {
              <div className="w-24 h-24 mb-6 border-2 border-dashed border-outline-variant/30 rounded-full flex items-center justify-center">
                 <Bell size={32} />
              </div>
-             <h3 className="font-bold text-on-surface mb-1">待处理提醒</h3>
-             <p className="text-xs text-on-surface-variant font-label">点击左侧列表条目查看详情</p>
+             <h3 className="font-bold text-on-surface mb-1">{t('messages.chat.pending')}</h3>
+             <p className="text-xs text-on-surface-variant font-label">{t('messages.chat.pendingDesc')}</p>
           </div>
           )}
         </div>

@@ -9,8 +9,10 @@ import { useSettings } from '../src/context/SettingsContext.tsx';
 import Notification from '../components/Notification.tsx';
 import { sendCode } from '../src/api/auth.ts';
 import { post } from '../src/api/client.ts';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 export default function Settings() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('interface');
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -40,7 +42,7 @@ export default function Settings() {
       if (result.success) {
         setError('');
         setShowNotification(true);
-        setNotificationMessage('验证码发送成功');
+        setNotificationMessage(t('common.success'));
         setNotificationType('success');
         // 开始倒计时
         setCountdown(60);
@@ -55,7 +57,7 @@ export default function Settings() {
         }, 1000);
       } else {
         setShowNotification(true);
-        setNotificationMessage(result.error || '发送验证码失败');
+        setNotificationMessage(result.error || t('common.error'));
         setNotificationType('error');
       }
     } catch (err: any) {
@@ -80,7 +82,7 @@ export default function Settings() {
     }
     if (!code) {
       setShowNotification(true);
-      setNotificationMessage('请输入验证码');
+      setNotificationMessage(t('common.error'));
       setNotificationType('error');
       return;
     }
@@ -98,7 +100,7 @@ export default function Settings() {
     }
     if (newPassword !== confirmPassword) {
       setShowNotification(true);
-      setNotificationMessage('两次输入的密码不一致');
+      setNotificationMessage(t('common.error'));
       setNotificationType('error');
       return;
     }
@@ -111,7 +113,7 @@ export default function Settings() {
       });
       if (result.success) {
         setShowNotification(true);
-        setNotificationMessage('密码修改成功，请重新登录');
+        setNotificationMessage(t('common.success'));
         setNotificationType('success');
         // 清除表单
         setCode('');
@@ -143,7 +145,7 @@ export default function Settings() {
 
   // 注销账号
   const handleDeleteAccount = async () => {
-    if (window.confirm('确定要注销账号吗？此操作不可恢复。')) {
+    if (window.confirm(t('common.confirm'))) {
       try {
         const result = await post('/auth/delete-account');
         if (result.success) {
@@ -170,7 +172,7 @@ export default function Settings() {
   return (
     <main className="min-h-[calc(100vh-4rem)] px-8 py-16">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-8">设置</h1>
+        <h1 className="text-2xl font-bold mb-8">{t('settings.title')}</h1>
 
         {/* 标签切换 */}
         <div className="flex mb-8 border-b border-outline-variant/15">
@@ -178,13 +180,13 @@ export default function Settings() {
             onClick={() => setActiveTab('interface')}
             className={`flex-1 pb-3 text-sm font-bold tracking-widest uppercase transition-colors ${activeTab === 'interface' ? 'border-b-2 border-primary text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
           >
-            界面设置
+            {t('settings.interface')}
           </button>
           <button
             onClick={() => setActiveTab('account')}
             className={`flex-1 pb-3 text-sm font-bold tracking-widest uppercase transition-colors ${activeTab === 'account' ? 'border-b-2 border-primary text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
           >
-            账号设置
+            {t('settings.account')}
           </button>
         </div>
 
@@ -195,13 +197,13 @@ export default function Settings() {
           <div className="space-y-6">
             <div>
               <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-                界面语言
+                {t('settings.language')}
               </label>
               <select 
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as 'zh-CN' | 'en-US')}
                 className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body outline-none transition-colors"
-                aria-label="界面语言"
+                aria-label={t('settings.language')}
               >
                 <option value="zh-CN">简体中文</option>
                 <option value="en-US">English</option>
@@ -210,7 +212,7 @@ export default function Settings() {
             
             <div>
               <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-                主题模式
+                {t('settings.theme')}
               </label>
               <div className="flex gap-4">
                 <button 
@@ -221,7 +223,7 @@ export default function Settings() {
                       : 'bg-surface-container-low border border-outline-variant hover:bg-surface-container'
                   }`}
                 >
-                  浅色
+                  {t('settings.light')}
                 </button>
                 <button 
                   onClick={() => setThemeMode('dark')}
@@ -231,7 +233,7 @@ export default function Settings() {
                       : 'bg-surface-container-low border border-outline-variant hover:bg-surface-container'
                   }`}
                 >
-                  深色
+                  {t('settings.dark')}
                 </button>
                 <button 
                   onClick={() => setThemeMode('system')}
@@ -241,7 +243,7 @@ export default function Settings() {
                       : 'bg-surface-container-low border border-outline-variant hover:bg-surface-container'
                   }`}
                 >
-                  跟随系统
+                  {t('settings.system')}
                 </button>
               </div>
             </div>
@@ -253,17 +255,17 @@ export default function Settings() {
           <div className="space-y-8">
             {/* 修改密码 */}
             <div>
-              <h2 className="text-lg font-semibold mb-4">修改密码</h2>
+              <h2 className="text-lg font-semibold mb-4">{t('settings.changePassword')}</h2>
               <form onSubmit={handleChangePassword} className="space-y-4">
                 <div>
                   <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-                    新密码
+                    {t('settings.newPassword')}
                   </label>
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="至少 6 位密码"
+                    placeholder="At least 6 characters"
                     minLength={6}
                     className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                     required
@@ -272,13 +274,13 @@ export default function Settings() {
                 
                 <div>
                   <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-                    确认密码
+                    {t('settings.confirmPassword')}
                   </label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="再次输入密码"
+                    placeholder="Repeat password"
                     minLength={6}
                     className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                     required
@@ -287,14 +289,14 @@ export default function Settings() {
                 
                 <div>
                   <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-                    验证码
+                    {t('settings.verifyCode')}
                   </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
-                      placeholder="输入验证码"
+                      placeholder="Enter code"
                       className="flex-1 bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                       required
                     />
@@ -302,9 +304,9 @@ export default function Settings() {
                       type="button"
                       onClick={handleSendCode}
                       disabled={isSendingCode || countdown > 0}
-                      className="bg-surface-container-low border border-outline-variant px-4 py-3 text-sm font-body hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-surface-container-low border border-outline-variant px-4 py-3 text-sm font-body hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
                     >
-                      {isSendingCode ? '发送中...' : countdown > 0 ? `${countdown}s` : '发送验证码'}
+                      {isSendingCode ? 'Sending...' : countdown > 0 ? `${countdown}s` : t('settings.sendCode')}
                     </button>
                   </div>
                 </div>
@@ -313,7 +315,7 @@ export default function Settings() {
                   type="submit"
                   className="w-full bg-primary text-on-primary py-3 text-sm font-bold hover:bg-primary-dim transition-colors uppercase tracking-widest"
                 >
-                  修改密码
+                  {t('settings.changePassword')}
                 </button>
               </form>
             </div>
@@ -322,9 +324,9 @@ export default function Settings() {
             <div>
               <button
                 onClick={handleLogout}
-                className="w-full bg-surface-container-low border border-outline-variant py-3 text-sm font-body hover:bg-surface-container transition-colors"
+                className="w-full bg-surface-container-low border border-outline-variant py-3 text-sm font-bold tracking-widest uppercase hover:bg-surface-container transition-colors"
               >
-                退出登录
+                {t('nav.logout')}
               </button>
             </div>
             
@@ -332,9 +334,9 @@ export default function Settings() {
             <div>
               <button
                 onClick={handleDeleteAccount}
-                className="w-full bg-red-500/10 border border-red-500/30 text-red-400 py-3 text-sm font-body hover:bg-red-500/20 transition-colors"
+                className="w-full bg-red-500/10 border border-red-500/30 text-red-400 py-3 text-sm font-bold tracking-widest uppercase hover:bg-red-500/20 transition-colors"
               >
-                注销账号
+                {t('settings.deleteAccount')}
               </button>
             </div>
           </div>

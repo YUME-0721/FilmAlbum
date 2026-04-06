@@ -11,6 +11,7 @@ import { getFilmStocks, createFilmStock, updateFilmStock, deleteFilmStock, type 
 import { getGear, type Gear } from '../src/api/gear.ts';
 import { commonBrands } from '../src/constants/brands';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from '../src/hooks/useTranslation';
 import FilmStockManager from '../components/FilmStockManager';
 import RollForm from '../components/RollForm';
 import { 
@@ -56,6 +57,7 @@ const FALLBACK_ROLL: RollDetail = {
 };
 
 export default function FilmRoll() {
+  const { t, language } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [roll, setRoll] = useState<RollDetail>(FALLBACK_ROLL);
@@ -115,6 +117,13 @@ export default function FilmRoll() {
   const [isDesktop, setIsDesktop] = useState(false); // 窗口宽度大于高度
   const [editingField, setEditingField] = useState<{frameId: string, field: string} | null>(null); // 当前正在编辑的字段
   const [editValue, setEditValue] = useState(''); // 编辑字段的值
+  const [slideDirection, setSlideDirection] = useState(0); // 1 = 下一张（向左），-1 = 上一张（向右）
+
+  /** 切换帧，附带方向感知 */
+  const goToFrame = useCallback((targetIndex: number) => {
+    setSlideDirection(targetIndex > currentFrame ? 1 : -1);
+    setCurrentFrame(targetIndex);
+  }, [currentFrame]);
 
   // 检测窗口宽高比
   useEffect(() => {
@@ -291,7 +300,7 @@ export default function FilmRoll() {
     if (!id) return;
     
     setConfirmDialog({
-      message: '确定要删除这个胶卷相册吗？此操作不可恢复。',
+      message: t('common.confirm_delete'),
       onConfirm: async () => {
         try {
           await deleteRoll(id);
@@ -430,7 +439,7 @@ export default function FilmRoll() {
       <main className="min-h-screen bg-surface flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-on-surface-variant">加载中...</p>
+          <p className="text-on-surface-variant">{t('common.loading')}</p>
         </div>
       </main>
     );
@@ -461,7 +470,7 @@ export default function FilmRoll() {
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
               className="p-2 hover:bg-surface-variant rounded-full transition-colors"
-              title="添加照片"
+              title={t('common.upload')}
             >
               <ImagePlus size={24} />
             </button>
@@ -469,7 +478,7 @@ export default function FilmRoll() {
               type="button"
               onClick={() => setShowEditModal(true)}
               className="p-2 hover:bg-surface-variant rounded-full transition-colors"
-              title="编辑"
+              title={t('common.edit')}
             >
               <Pencil size={24} />
             </button>
@@ -477,7 +486,7 @@ export default function FilmRoll() {
               type="button"
               onClick={handleExport}
               className="p-2 hover:bg-surface-variant rounded-full transition-colors"
-              title="导出"
+              title="Export"
             >
               <Download size={24} />
             </button>
@@ -485,7 +494,7 @@ export default function FilmRoll() {
               type="button"
               onClick={handleDeleteRoll}
               className="p-2 hover:bg-error/10 text-error rounded-full transition-colors"
-              title="删除"
+              title={t('common.delete')}
             >
               <Trash2 size={24} />
             </button>
@@ -523,10 +532,10 @@ export default function FilmRoll() {
             <span>{roll.format === '135' ? '135' : roll.format === '120' ? '120' : roll.format || '-'}</span>
           </div>
           <div className="flex items-center gap-1">
-            <span>{roll.filmType === 'COLOR_NEGATIVE' ? '彩色负片' : 
-                 roll.filmType === 'BW_NEGATIVE' ? '黑白负片' : 
-                 roll.filmType === 'COLOR_POSITIVE' ? '彩色正片' : 
-                 roll.filmType === 'BW_POSITIVE' ? '黑白正片' : 
+            <span>{roll.filmType === 'COLOR_NEGATIVE' ? 'Color Negative' : 
+                 roll.filmType === 'BW_NEGATIVE' ? 'B&W Negative' : 
+                 roll.filmType === 'COLOR_POSITIVE' ? 'Color Positive' : 
+                 roll.filmType === 'BW_POSITIVE' ? 'B&W Positive' : 
                  roll.filmType || '-'}</span>
           </div>
           {roll.filmStock && (
@@ -556,7 +565,7 @@ export default function FilmRoll() {
         {frames.length === 0 ? (
           <div className="text-center py-12 text-on-surface-variant">
             <Library size={64} className="mb-4 opacity-30 mx-auto" />
-            <p>还没有照片，点击上方按钮添加</p>
+            <p>{t('roll.empty')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-6 min-h-[calc(100vh-300px)]">
@@ -649,103 +658,119 @@ export default function FilmRoll() {
 
             {/* 主内容区 */}
             <div className="absolute inset-0 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+              {/* 上一张 - 固定在全屏区域左侧 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToFrame(currentFrame > 0 ? currentFrame - 1 : frames.length - 1);
+                }}
+                className="absolute left-8 top-1/2 -translate-y-1/2 p-2 text-white/70 hover:text-white z-10"
+              >
+                <ChevronLeft size={48} />
+              </button>
+
+              {/* 下一张 - 固定在全屏区域右侧 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToFrame(currentFrame < frames.length - 1 ? currentFrame + 1 : 0);
+                }}
+                className={`absolute top-1/2 -translate-y-1/2 p-2 text-white/70 hover:text-white z-10 ${showSidebar && isDesktop ? 'right-[336px]' : 'right-8'}`}
+              >
+                <ChevronRight size={48} />
+              </button>
+
               {/* 图片 */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9, x: 0 }}
-                animate={{ opacity: 1, scale: 1, x: showSidebar && isDesktop ? -144 : 0 }}
+                animate={{ opacity: 1, scale: 1, x: showSidebar && isDesktop ? -116 : 0 }}
                 exit={{ opacity: 0, scale: 0.9, x: 0 }}
                 transition={{ duration: 0.2 }}
                 className="relative max-w-[70vw] max-h-[80vh] flex flex-col items-center"
               >
-                {/* 上一张 */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentFrame(prev => prev > 0 ? prev - 1 : frames.length - 1);
-                  }}
-                  className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-16 p-2 text-white/70 hover:text-white z-10"
-                >
-                  <ChevronLeft size={48} />
-                </button>
-
-                <div onClick={(e) => e.stopPropagation()}>
-                  {frames[currentFrame] && (
-                    <div className={`w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-8' : 'bg-black p-8'}`}>
-                      <div className="flex justify-center">
-                        <img
-                          src={frames[currentFrame].imageUrl}
-                          alt={frames[currentFrame].frameNumber}
-                          className={`object-contain ${borderType === 'none' ? 'max-w-full max-h-[80vh]' : 'max-w-[90%] max-h-[70vh]'}`}
-                        />
-                      </div>
-                      {/* 边框底部信息 */}
-                      {(borderType === 'white' || borderType === 'black') && (
-                        <div className={`mt-6 flex justify-between items-center ${borderType === 'white' ? 'text-gray-800' : 'text-white'}`}>
-                          {/* 左侧胶片档案 */}
-                          {borderOptions.showFilmStock && (
-                            <div className="flex items-center gap-4">
-                              {(() => {
-                                const brandName = roll.filmStock.split(' ')[0];
-                                const brand = commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
-                                if (brand?.logoUrl) {
-                                  return (
-                                    <div className="w-10 h-10">
-                                      <img 
-                                        src={brand.logoUrl} 
-                                        alt={brand.name} 
-                                        className="w-full h-full object-contain" 
-                                      />
-                                    </div>
-                                  );
-                                } else {
-                                  return (
-                                    <div className="w-10 h-10 bg-yellow-500 flex items-center justify-center">
-                                      <span className="text-black font-bold text-sm">{brandName.charAt(0)}</span>
-                                    </div>
-                                  );
-                                }
-                              })()}
-                              <div>
-                                <h5 className="font-bold font-lingxun">{roll.filmStock.split(' ')[0]}</h5>
-                                <h6 className="font-bold font-lingxun">{roll.filmStock.split(' ').slice(1).join(' ')}</h6>
+                <div onClick={(e) => e.stopPropagation()} className="relative overflow-hidden">
+                  <AnimatePresence mode="popLayout" custom={slideDirection} initial={false}>
+                    {frames[currentFrame] && (
+                      <motion.div
+                        key={currentFrame}
+                        custom={slideDirection}
+                        variants={{
+                          enter: (dir: number) => ({ opacity: 0, x: dir * 60 }),
+                          center: { opacity: 1, x: 0 },
+                          exit: (dir: number) => ({ opacity: 0, x: dir * -40 }),
+                        }}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+                      >
+                        <div className={`w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-8' : 'bg-black p-8'}`}>
+                          <div className="flex justify-center">
+                            <img
+                              src={frames[currentFrame].imageUrl}
+                              alt={frames[currentFrame].frameNumber}
+                              className={`object-contain ${borderType === 'none' ? 'max-w-full max-h-[80vh]' : 'max-w-[90%] max-h-[70vh]'}`}
+                            />
+                          </div>
+                          {/* 边框底部信息 */}
+                          {(borderType === 'white' || borderType === 'black') && (
+                            <div className={`mt-6 flex justify-between items-center ${borderType === 'white' ? 'text-gray-800' : 'text-white'}`}>
+                              {/* 左侧胶片档案 */}
+                              {borderOptions.showFilmStock && (
+                                <div className="flex items-center gap-4">
+                                  {(() => {
+                                    const brandName = roll.filmStock.split(' ')[0];
+                                    const brand = commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
+                                    if (brand?.logoUrl) {
+                                      return (
+                                        <div className="w-10 h-10">
+                                          <img 
+                                            src={brand.logoUrl} 
+                                            alt={brand.name} 
+                                            className="w-full h-full object-contain" 
+                                          />
+                                        </div>
+                                      );
+                                    } else {
+                                      return (
+                                        <div className="w-10 h-10 bg-yellow-500 flex items-center justify-center">
+                                          <span className="text-black font-bold text-sm">{brandName.charAt(0)}</span>
+                                        </div>
+                                      );
+                                    }
+                                  })()}
+                                  <div>
+                                    <h5 className="font-bold font-lingxun">{roll.filmStock.split(' ')[0]}</h5>
+                                    <h6 className="font-bold font-lingxun">{roll.filmStock.split(' ').slice(1).join(' ')}</h6>
+                                  </div>
+                                </div>
+                              )}
+                              {/* 右侧信息 */}
+                              <div className="text-right">
+                                {borderOptions.showCamera && roll.camera && (
+                                  <p className="text-sm">{roll.camera}</p>
+                                )}
+                                {borderOptions.showLens && roll.lens && (
+                                  <p className="text-sm">{roll.lens}</p>
+                                )}
+                                {borderOptions.showDate && roll.shotDate && (
+                                  <p className="text-sm">{roll.shotDate}</p>
+                                )}
+                                {borderOptions.showExposure && frames[currentFrame] && (frames[currentFrame].aperture || frames[currentFrame].shutterSpeed || frames[currentFrame].iso) && (
+                                  <p className="text-sm">
+                                    {frames[currentFrame].aperture && `${frames[currentFrame].aperture} `}
+                                    {frames[currentFrame].shutterSpeed && `${frames[currentFrame].shutterSpeed} `}
+                                    {frames[currentFrame].iso && `ISO ${frames[currentFrame].iso}`}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           )}
-                          {/* 右侧信息 */}
-                          <div className="text-right">
-                            {borderOptions.showCamera && roll.camera && (
-                              <p className="text-sm">{roll.camera}</p>
-                            )}
-                            {borderOptions.showLens && roll.lens && (
-                              <p className="text-sm">{roll.lens}</p>
-                            )}
-                            {borderOptions.showDate && roll.shotDate && (
-                              <p className="text-sm">{roll.shotDate}</p>
-                            )}
-                            {borderOptions.showExposure && frames[currentFrame] && (frames[currentFrame].aperture || frames[currentFrame].shutterSpeed || frames[currentFrame].iso) && (
-                              <p className="text-sm">
-                                {frames[currentFrame].aperture && `${frames[currentFrame].aperture} `}
-                                {frames[currentFrame].shutterSpeed && `${frames[currentFrame].shutterSpeed} `}
-                                {frames[currentFrame].iso && `ISO ${frames[currentFrame].iso}`}
-                              </p>
-                            )}
-                          </div>
                         </div>
-                      )}
-                    </div>
-                  )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-
-                {/* 下一张 */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentFrame(prev => prev < frames.length - 1 ? prev + 1 : 0);
-                  }}
-                  className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-16 p-2 text-white/70 hover:text-white z-10"
-                >
-                  <ChevronRight size={48} />
-                </button>
               </motion.div>
 
               {/* 张数提示 */}
@@ -757,27 +782,27 @@ export default function FilmRoll() {
             {/* 右侧侧边栏 */}
             {showSidebar && (
               <motion.div
-                initial={{ x: 400, opacity: 0 }}
+                initial={{ x: 320, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                exit={{ x: 400, opacity: 0 }}
+                exit={{ x: 320, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="absolute right-0 top-0 bottom-0 w-[400px] bg-surface-container-lowest/80 backdrop-blur-3xl border-l border-white/5 flex flex-col z-20 no-scrollbar shadow-2xl"
+                className="absolute right-0 top-0 bottom-0 w-[320px] bg-surface-container-lowest/80 backdrop-blur-3xl border-l border-white/5 flex flex-col z-20 no-scrollbar shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* 侧边栏顶部 */}
                 <div className="px-6 py-5 border-b border-white/5 flex justify-between items-center bg-transparent">
-                  <h3 className="text-xl font-headline font-bold text-on-surface tracking-wide">照片信息</h3>
+                  <h3 className="text-xl font-headline font-bold text-on-surface tracking-wide">{t('roll.info')}</h3>
                   <div className="flex gap-2">
-                    <button className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface" title="分享">
+                    <button className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface" title="Share">
                       <Share2 size={18} />
                     </button>
-                    <button className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface" title="下载">
+                    <button className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface" title="Download">
                       <Download size={18} />
                     </button>
                     <button
                       onClick={() => setShowSidebar(false)}
                       className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface"
-                      title="关闭侧边栏"
+                      title={t('common.cancel')}
                     >
                       <X size={18} />
                     </button>
@@ -788,8 +813,8 @@ export default function FilmRoll() {
               <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
                 {/* 胶片档案 */}
                 <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-on-surface-variant/80 pl-1">胶片档案</h4>
-                  <div className="bg-[#151515] rounded-xl p-8 shadow-sm">
+                  <h4 className="text-sm font-medium text-on-surface-variant/80 pl-1">{t('roll.archive')}</h4>
+                  <div className="bg-[#151515] rounded-xl p-6 shadow-sm">
                     {roll.filmStock ? (
                       <>
                         {/* 卡片上半部分 - LOGO和型号 */}
@@ -825,25 +850,25 @@ export default function FilmRoll() {
                         {/* 卡片下半部分 - 类型和画幅 */}
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[#a1a1aa] text-[13px] mb-2">胶片类型</p>
+                            <p className="text-[#a1a1aa] text-[13px] mb-2">{t('roll.type')}</p>
                             <p className="text-[#f4f4f5] text-base font-medium">
-                              {roll.filmType === 'COLOR_NEGATIVE' ? '彩色负片' : 
-                               roll.filmType === 'BW_NEGATIVE' ? '黑白负片' : 
-                               roll.filmType === 'COLOR_POSITIVE' ? '彩色正片' : 
-                               roll.filmType === 'BW_POSITIVE' ? '黑白正片' : 
-                               roll.filmType || '暂无数据'}
+                              {roll.filmType === 'COLOR_NEGATIVE' ? 'Color Negative' : 
+                               roll.filmType === 'BW_NEGATIVE' ? 'B&W Negative' : 
+                               roll.filmType === 'COLOR_POSITIVE' ? 'Color Positive' : 
+                               roll.filmType === 'BW_POSITIVE' ? 'B&W Positive' : 
+                               roll.filmType || '-'}
                             </p>
                           </div>
                           <div>
-                            <p className="text-[#a1a1aa] text-[13px] mb-2">画幅规格</p>
-                            <p className="text-[#f4f4f5] text-base font-medium">{roll.format || '暂无数据'}</p>
+                            <p className="text-[#a1a1aa] text-[13px] mb-2">{t('roll.form.format')}</p>
+                            <p className="text-[#f4f4f5] text-base font-medium">{roll.format || '-'}</p>
                           </div>
                         </div>
                       </>
                     ) : (
                       <div className="py-6 text-center">
-                        <p className="text-[#a1a1aa] text-sm">暂无胶片档案信息</p>
-                        <p className="text-[#a1a1aa]/60 text-xs mt-1">可在编辑相册时添加</p>
+                        <p className="text-[#a1a1aa] text-sm">{t('roll.empty')}</p>
+                        <p className="text-[#a1a1aa]/60 text-xs mt-1">Can be added in album settings</p>
                       </div>
                     )}
                   </div>
@@ -851,10 +876,10 @@ export default function FilmRoll() {
 
                 {/* 拍摄信息 */}
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">拍摄信息</h4>
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">{t('roll.shotInfo')}</h4>
                   <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
                     <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">拍摄日期</span>
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">{t('roll.date')}</span>
                       {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'shotDate' ? (
                         <input
                           type="date"
@@ -870,16 +895,14 @@ export default function FilmRoll() {
                               }
                             } catch (error) {
                               console.error('更新失败:', error);
-                              // 模拟更新成功，以便在后端不可用时也能测试前端功能
-                              setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, shotDate: editValue } : frame));
-                              showToast('拍摄日期已更新（模拟）');
+                              showToast('更新失败，请重试', 'error');
                             }
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                          className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
-                          placeholder="选择日期"
+                          placeholder={roll.shotDate || "选择日期"}
                         />
                       ) : (
                         <span 
@@ -887,15 +910,15 @@ export default function FilmRoll() {
                           onClick={() => {
                             if (!frames[currentFrame]) return;
                             setEditingField({ frameId: frames[currentFrame].id, field: 'shotDate' });
-                            setEditValue(frames[currentFrame].shotDate || roll.shotDate || '');
+                            setEditValue(frames[currentFrame].shotDate || '');
                           }}
                         >
-                          {frames[currentFrame]?.shotDate || roll.shotDate || '暂无数据'}
+                          {frames[currentFrame]?.shotDate || roll.shotDate || '-'}
                         </span>
                       )}
                     </div>
                     <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">拍摄地点</span>
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">{t('roll.location')}</span>
                       {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'location' ? (
                         <input
                           type="text"
@@ -911,16 +934,14 @@ export default function FilmRoll() {
                               }
                             } catch (error) {
                               console.error('更新失败:', error);
-                              // 模拟更新成功，以便在后端不可用时也能测试前端功能
-                              setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, location: editValue } : frame));
-                              showToast('拍摄地点已更新（模拟）');
+                              showToast('更新失败，请重试', 'error');
                             }
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                          className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
-                          placeholder="输入拍摄地点"
+                          placeholder={roll.location || "输入拍摄地点"}
                         />
                       ) : (
                         <span 
@@ -928,15 +949,15 @@ export default function FilmRoll() {
                           onClick={() => {
                             if (!frames[currentFrame]) return;
                             setEditingField({ frameId: frames[currentFrame].id, field: 'location' });
-                            setEditValue(frames[currentFrame].location || roll.location || '');
+                            setEditValue(frames[currentFrame].location || '');
                           }}
                         >
-                          {frames[currentFrame]?.location || roll.location || '暂无数据'}
+                          {frames[currentFrame]?.location || roll.location || '-'}
                         </span>
                       )}
                     </div>
                     <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">相机型号</span>
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">{t('roll.camera')}</span>
                       {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'camera' ? (
                         <input
                           type="text"
@@ -952,16 +973,14 @@ export default function FilmRoll() {
                               }
                             } catch (error) {
                               console.error('更新失败:', error);
-                              // 模拟更新成功，以便在后端不可用时也能测试前端功能
-                              setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, camera: editValue } : frame));
-                              showToast('相机型号已更新（模拟）');
+                              showToast('更新失败，请重试', 'error');
                             }
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                          className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
-                          placeholder="输入相机型号"
+                          placeholder={roll.camera || "输入相机型号"}
                         />
                       ) : (
                         <span 
@@ -969,15 +988,15 @@ export default function FilmRoll() {
                           onClick={() => {
                             if (!frames[currentFrame]) return;
                             setEditingField({ frameId: frames[currentFrame].id, field: 'camera' });
-                            setEditValue(frames[currentFrame].camera || roll.camera || '');
+                            setEditValue(frames[currentFrame].camera || '');
                           }}
                         >
-                          {frames[currentFrame]?.camera || roll.camera || '暂无数据'}
+                          {frames[currentFrame]?.camera || roll.camera || '-'}
                         </span>
                       )}
                     </div>
                     <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">镜头型号</span>
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">{t('roll.lens')}</span>
                       {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'lens' ? (
                         <input
                           type="text"
@@ -993,16 +1012,14 @@ export default function FilmRoll() {
                               }
                             } catch (error) {
                               console.error('更新失败:', error);
-                              // 模拟更新成功，以便在后端不可用时也能测试前端功能
-                              setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, lens: editValue } : frame));
-                              showToast('镜头型号已更新（模拟）');
+                              showToast('更新失败，请重试', 'error');
                             }
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                          className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
-                          placeholder="输入镜头型号"
+                          placeholder={roll.lens || "输入镜头型号"}
                         />
                       ) : (
                         <span 
@@ -1010,10 +1027,10 @@ export default function FilmRoll() {
                           onClick={() => {
                             if (!frames[currentFrame]) return;
                             setEditingField({ frameId: frames[currentFrame].id, field: 'lens' });
-                            setEditValue(frames[currentFrame].lens || roll.lens || '');
+                            setEditValue(frames[currentFrame].lens || '');
                           }}
                         >
-                          {frames[currentFrame]?.lens || roll.lens || '暂无数据'}
+                          {frames[currentFrame]?.lens || roll.lens || '-'}
                         </span>
                       )}
                     </div>
@@ -1022,12 +1039,12 @@ export default function FilmRoll() {
 
                 {/* 曝光参数 */}
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">曝光参数</h4>
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">{t('roll.exposure')}</h4>
                   <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
                     {frames[currentFrame] ? (
                       <>
                         <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                          <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">光圈</span>
+                          <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">{t('roll.aperture')}</span>
                           {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'aperture' ? (
                             <input
                               type="text"
@@ -1043,14 +1060,12 @@ export default function FilmRoll() {
                                   }
                                 } catch (error) {
                                   console.error('更新失败:', error);
-                                  // 模拟更新成功，以便在后端不可用时也能测试前端功能
-                                  setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, aperture: editValue } : frame));
-                                  showToast('光圈已更新（模拟）');
+                                  showToast('更新失败，请重试', 'error');
                                 }
                                 setEditingField(null);
                               }}
                               onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                              className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                               autoFocus
                               placeholder="例如: f/2.8"
                             />
@@ -1068,7 +1083,7 @@ export default function FilmRoll() {
                           )}
                         </div>
                         <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                          <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">快门</span>
+                          <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">{t('roll.shutter')}</span>
                           {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'shutterSpeed' ? (
                             <input
                               type="text"
@@ -1084,14 +1099,12 @@ export default function FilmRoll() {
                                   }
                                 } catch (error) {
                                   console.error('更新失败:', error);
-                                  // 模拟更新成功，以便在后端不可用时也能测试前端功能
-                                  setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, shutterSpeed: editValue } : frame));
-                                  showToast('快门已更新（模拟）');
+                                  showToast('更新失败，请重试', 'error');
                                 }
                                 setEditingField(null);
                               }}
                               onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                              className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                               autoFocus
                               placeholder="例如: 1/60s"
                             />
@@ -1108,8 +1121,8 @@ export default function FilmRoll() {
                             </span>
                           )}
                         </div>
-                        <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                          <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">感光度</span>
+                        <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/10 rounded-xl transition-colors group">
+                          <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">{t('roll.iso')}</span>
                           {editingField?.frameId === frames[currentFrame]?.id && editingField?.field === 'iso' ? (
                             <input
                               type="text"
@@ -1125,14 +1138,12 @@ export default function FilmRoll() {
                                   }
                                 } catch (error) {
                                   console.error('更新失败:', error);
-                                  // 模拟更新成功，以便在后端不可用时也能测试前端功能
-                                  setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, iso: editValue } : frame));
-                                  showToast('感光度已更新（模拟）');
+                                  showToast('更新失败，请重试', 'error');
                                 }
                                 setEditingField(null);
                               }}
                               onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                              className="flex-1 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                               autoFocus
                               placeholder="例如: 400"
                             />
@@ -1151,17 +1162,17 @@ export default function FilmRoll() {
                         </div>
                       </>
                     ) : (
-                      <p className="text-sm text-on-surface-variant">暂无曝光参数</p>
+                      <p className="text-sm text-on-surface-variant">No details</p>
                     )}
                   </div>
                 </div>
 
                 {/* 存储信息 */}
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">存储信息</h4>
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">Storage</h4>
                   <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
                     <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">存储格式</span>
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">Format</span>
                       <span className="flex-1 text-sm font-medium text-on-surface/90 text-right">
                         {frames[currentFrame]?.fileFormat 
                           ? frames[currentFrame].fileFormat!.split('/').pop()?.toUpperCase() 
@@ -1169,7 +1180,7 @@ export default function FilmRoll() {
                       </span>
                     </div>
                     <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">文件大小</span>
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">Size</span>
                       <span className="flex-1 text-sm font-medium text-on-surface/90 text-right">
                         {frames[currentFrame]?.fileSize 
                           ? (frames[currentFrame].fileSize! >= 1024 * 1024 
@@ -1183,7 +1194,7 @@ export default function FilmRoll() {
                 
                 {/* 标签 */}
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">标签</h4>
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">{t('roll.tags')}</h4>
                   <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-4">
                     {frames[currentFrame] ? (
                       <div className="space-y-2">
@@ -1224,14 +1235,14 @@ export default function FilmRoll() {
                           ) : null}
                           {/* 无标签提示 */}
                           {(!roll.tags || roll.tags.length === 0) && (!frames[currentFrame].tags || frames[currentFrame].tags.length === 0) && (
-                            <span className="text-xs font-medium text-on-surface-variant/50">暂无标签</span>
+                            <span className="text-xs font-medium text-on-surface-variant/50">No Tags</span>
                           )}
                         </div>
                         <div>
                           <input
                             ref={tagInputRef}
                             type="text"
-                            placeholder="按回车添加"
+                            placeholder="Enter to add"
                             onKeyPress={async (e) => {
                               if (e.key === 'Enter' && e.currentTarget.value.trim() && frames[currentFrame]) {
                                 const newTag = e.currentTarget.value.trim();
@@ -1264,9 +1275,8 @@ export default function FilmRoll() {
                   </div>
                 </div>
 
-                {/* 边框设置 */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">边框</h4>
+                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">Frame Border</h4>
                   <div className="bg-surface-container-low rounded-lg p-3 space-y-2">
                     <div className="flex items-center gap-2">
                       <input 
@@ -1277,7 +1287,7 @@ export default function FilmRoll() {
                         onChange={() => setBorderType('none')} 
                         className="w-4 h-4 text-primary" 
                       />
-                      <label htmlFor="border-none" className="text-sm text-on-surface">无边框</label>
+                      <label htmlFor="border-none" className="text-sm text-on-surface">None</label>
                     </div>
                     <div className="flex items-center gap-2">
                       <input 
@@ -1288,7 +1298,7 @@ export default function FilmRoll() {
                         onChange={() => setBorderType('white')} 
                         className="w-4 h-4 text-primary" 
                       />
-                      <label htmlFor="border-white" className="text-sm text-on-surface">经典白边</label>
+                      <label htmlFor="border-white" className="text-sm text-on-surface">Classic White</label>
                     </div>
                     <div className="flex items-center gap-2">
                       <input 
@@ -1299,13 +1309,13 @@ export default function FilmRoll() {
                         onChange={() => setBorderType('black')} 
                         className="w-4 h-4 text-primary" 
                       />
-                      <label htmlFor="border-black" className="text-sm text-on-surface">黑色边框</label>
+                      <label htmlFor="border-black" className="text-sm text-on-surface">Black Border</label>
                     </div>
                     
                     {/* 经典白边选项 */}
                     {borderType === 'white' && (
                       <div className="mt-3 pt-3 border-t border-outline-variant/30 space-y-2">
-                        <h5 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">显示信息</h5>
+                        <h5 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Display Info</h5>
                         <div className="flex items-center gap-2">
                           <input 
                             type="checkbox" 
@@ -1361,13 +1371,12 @@ export default function FilmRoll() {
                   </div>
                 </div>
 
-                {/* 导出设置 */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">导出</h4>
+                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">Output</h4>
                   <div className="bg-surface-container-low rounded-lg p-3 space-y-2">
                     <div className="flex items-center gap-2">
                       <input type="checkbox" id="export-with-border" className="w-4 h-4 text-primary" />
-                      <label htmlFor="export-with-border" className="text-sm text-on-surface">带边框导出</label>
+                      <label htmlFor="export-with-border" className="text-sm text-on-surface">Export with border</label>
                     </div>
                     <button className="w-full bg-primary text-on-primary py-2 rounded-lg text-sm font-medium hover:bg-primary-dim transition-colors">
                       导出图片
@@ -1427,7 +1436,7 @@ export default function FilmRoll() {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-surface-container rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-surface-container border-b border-outline-variant/30 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-on-surface">导出胶卷相册</h2>
+              <h2 className="text-xl font-bold text-on-surface">Export Roll Album</h2>
               <button
                 onClick={() => setShowExportModal(false)}
                 className="text-on-surface-variant hover:text-on-surface transition-colors"
@@ -1456,7 +1465,7 @@ export default function FilmRoll() {
                   ))}
                 </div>
                 <div className="mt-8 pt-4 border-t border-gray-200 text-center text-gray-400 text-sm">
-                  使用 Film Album 导出
+                  Exported with Film Album
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
@@ -1464,13 +1473,13 @@ export default function FilmRoll() {
                   onClick={() => setShowExportModal(false)}
                   className="px-6 py-2 text-on-surface-variant hover:text-on-surface transition-colors"
                 >
-                  取消
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleDownloadExport}
                   className="px-6 py-2 bg-primary text-on-primary rounded-lg hover:bg-primary-dim transition-colors"
                 >
-                  下载图片
+                  {t('common.save')}
                 </button>
               </div>
             </div>
@@ -1482,20 +1491,20 @@ export default function FilmRoll() {
       {confirmDialog && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-surface-container rounded-lg shadow-2xl w-full max-w-md p-6">
-            <h3 className="text-lg font-bold text-on-surface mb-4">确认操作</h3>
+            <h3 className="text-lg font-bold text-on-surface mb-4">{t('common.confirm')}</h3>
             <p className="text-on-surface-variant mb-6">{confirmDialog.message}</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setConfirmDialog(null)}
                 className="px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors"
               >
-                取消
+                {t('common.cancel')}
               </button>
               <button
                 onClick={confirmDialog.onConfirm}
                 className="px-4 py-2 bg-error text-on-error rounded-lg hover:bg-error/80 transition-colors"
               >
-                确认
+                {t('common.confirm')}
               </button>
             </div>
           </div>
@@ -1526,7 +1535,6 @@ export default function FilmRoll() {
         />
       )}
 
-      {/* 上传进度悬浮窗口 */}
       {isUploading && uploadStatus && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-surface-container rounded-lg shadow-2xl p-6 max-w-md w-full mx-4 animate-in fade-in slide-in-from-bottom-5">
@@ -1534,8 +1542,8 @@ export default function FilmRoll() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
                 <CloudUpload size={48} className="text-primary" />
               </div>
-              <h3 className="text-lg font-bold text-on-surface mb-2">上传中...</h3>
-              <p className="text-sm text-on-surface-variant">正在上传您的照片，请稍候</p>
+              <h3 className="text-lg font-bold text-on-surface mb-2">{t('common.uploading')}</h3>
+              <p className="text-sm text-on-surface-variant">Your photos are being archived, please wait.</p>
             </div>
             <div className="space-y-4">
               <div className="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
@@ -1545,11 +1553,11 @@ export default function FilmRoll() {
                 ></div>
               </div>
               <div className="flex items-center justify-between text-xs text-on-surface-variant">
-                <span>正在上传第 {uploadStatus.current} 张</span>
+                <span>Uploading {uploadStatus.current}</span>
                 <span>{uploadStatus.current} / {uploadStatus.total}</span>
               </div>
               <div className="text-xs text-on-surface-variant text-center">
-                上传完成后窗口将自动关闭
+                Window will close automatically after completion
               </div>
             </div>
           </div>

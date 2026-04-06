@@ -9,6 +9,7 @@ import CreatePostModal from '../components/CreatePostModal.tsx';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import FeedCard from '../components/FeedCard';
 import { User, Heart, MessageSquare, ChevronDown, Plus } from 'lucide-react';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 /** 后端无数据时的回退 MOCK 数据 */
 const FALLBACK_POSTS: PostListItem[] = [
@@ -96,6 +97,7 @@ function formatCount(count: number): string {
 const HEIGHT_POOL = ['400px', '550px', '320px', '480px', '380px', '520px'];
 
 export default function Home() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -180,15 +182,15 @@ export default function Home() {
       <header className="mb-12">
         <h1 className="font-headline text-4xl md:text-5xl text-on-surface mb-4 leading-tight">
           {activeTab === 'feed' ? (
-            <>居流动态<span className="text-primary"> 小屋</span></>
+            <>{t('home.feedTitle')}<span className="text-primary"> {t('home.feedAccent')}</span></>
           ) : (
-            <>数字时代的<span className="text-primary">光影印迹</span></>
+            <>{t('home.title')}<span className="text-primary">{t('home.titleAccent')}</span></>
           )}
         </h1>
         <p className="text-on-surface-variant text-base">
           {activeTab === 'feed'
-            ? '来自你和你关注的人的最新动态'
-            : '精选全球胶片摄影师的视觉作品，捕捉那些在快门瞬间被永恒定格的叙事。'
+            ? t('home.feedSubtitle')
+            : t('home.subtitle')
           }
         </p>
       </header>
@@ -197,7 +199,7 @@ export default function Home() {
       {isLoading && (
         <div className="flex justify-center py-20">
           <div className="text-on-surface-variant font-label text-sm tracking-widest uppercase animate-pulse">
-            加载中...
+            {t('common.loading')}
           </div>
         </div>
       )}
@@ -272,7 +274,7 @@ export default function Home() {
               />
             )) : (
               <div className="text-center py-20 text-on-surface-variant">
-                暂无动态，快去关注一些有趣的人吧！
+                {t('home.emptyFeed')}
               </div>
             )}
           </section>
@@ -287,7 +289,7 @@ export default function Home() {
             className="flex items-center gap-2 px-8 py-3 border border-outline-variant/20 hover:border-primary/50 text-on-surface-variant hover:text-primary transition-all font-label tracking-widest text-sm uppercase"
           >
             <ChevronDown size={18} />
-            探索更多作品
+            {t('home.exploreMore')}
           </button>
         </div>
       )}
