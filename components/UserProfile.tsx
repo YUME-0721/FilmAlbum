@@ -282,11 +282,11 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         await fetchGear();
         showToast(t('profile.gear.createSuccess'));
       } else {
-        showToast(t('common.error'), 'error');
+        showToast(res.error || t('common.error'), 'error');
       }
     } catch (err) {
       console.error('Failed to create gear:', err);
-      showToast(t('common.error'), 'error');
+      showToast(err instanceof Error ? err.message : t('common.error'), 'error');
     }
   };
 
@@ -333,11 +333,11 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         await fetchGear();
         showToast(t('profile.gear.updateSuccess'));
       } else {
-        showToast(t('common.error'), 'error');
+        showToast(res.error || t('common.error'), 'error');
       }
     } catch (err) {
       console.error('Failed to update gear:', err);
-      showToast(t('common.error'), 'error');
+      showToast(err instanceof Error ? err.message : t('common.error'), 'error');
     } finally {
       setIsSubmitting(false);
     }

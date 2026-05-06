@@ -267,7 +267,7 @@ export default function FilmRoll() {
       }
     } catch (error) {
       console.error('上传照片失败:', error);
-      showToast('上传照片失败', 'error');
+      showToast(error instanceof Error ? error.message : '上传照片失败', 'error');
     } finally {
       setIsUploading(false);
       setUploadStatus(null);

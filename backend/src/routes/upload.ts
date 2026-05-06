@@ -9,28 +9,22 @@ import { authRequired } from '../middleware/auth';
 
 const upload = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
-/**
- * 上传图片到图床
- * @param file 文件
- * @param imgBedUrl 图床 URL
- * @param imgBedToken 图床 Token
- * @param folderPath 上传目录
- * @param isPreview 是否为预览图
- */
 async function uploadToImgBed(
   file: File,
   imgBedUrl: string,
   imgBedToken: string,
   folderPath: string,
-  isPreview: boolean
+  isPreview: boolean,
+  imgBedChannel: string = 'huggingface',
+  imgBedNameType: string = 'index'
 ) {
   const uploadFormData = new FormData();
   uploadFormData.append('file', file);
 
   // 构建查询参数
   const urlParams = new URLSearchParams({
-    uploadChannel: 'huggingface',
-    uploadNameType: 'index',
+    uploadChannel: imgBedChannel,
+    uploadNameType: imgBedNameType,
     serverCompress: 'true',
     serverWebp: 'true',
     uploadFolder: isPreview ? `${folderPath}preview/` : folderPath
@@ -92,12 +86,19 @@ upload.post('/', authRequired(), async (c) => {
 
   // NOTE: 优先从 system_settings 数据库读取图床配置，env 变量作为兜底
   const imgBedSettings = await c.env.DB.prepare(
-    "SELECT key, value FROM system_settings WHERE key IN ('img_bed_url','img_bed_token','img_bed_path')"
+    "SELECT key, value FROM system_settings WHERE key IN ('img_bed_url','img_bed_token','img_bed_path','img_bed_channel','img_bed_name_type')"
   ).all<{ key: string; value: string }>();
   const ibMap = imgBedSettings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
-  const imgBedUrl   = ibMap['img_bed_url']   || c.env.IMG_BED_URL;
-  const imgBedToken = ibMap['img_bed_token'] || c.env.IMG_BED_TOKEN;
-  const imgBedPath  = ibMap['img_bed_path']  || '/FilmAlbum/';
+  const imgBedUrl      = ibMap['img_bed_url']      || c.env.IMG_BED_URL;
+  const imgBedToken    = ibMap['img_bed_token']    || c.env.IMG_BED_TOKEN;
+  const imgBedPath     = ibMap['img_bed_path']     || '/FilmAlbum/';
+  const imgBedChannel  = ibMap['img_bed_channel']  || 'huggingface';
+  const imgBedNameType = ibMap['img_bed_name_type'] || 'index';
+
+  // 校验图床配置
+  if (!imgBedUrl || !imgBedToken) {
+    return c.json({ success: false, error: '请先在管理员后台配置图床地址和 Token' }, 400);
+  }
 
   try {
     const rollId = c.req.query('rollId');
@@ -120,17 +121,17 @@ upload.post('/', authRequired(), async (c) => {
         : `${basePath}${displayUserId}/`;
 
     // 上传图片：头像使用压缩模式，其他使用原图模式
-    const uploadUrl = await uploadToImgBed(file, imgBedUrl, imgBedToken, folderPath, false);
+    const uploadUrl = await uploadToImgBed(file, imgBedUrl, imgBedToken, folderPath, false, imgBedChannel, imgBedNameType);
 
     // 处理预览图
     let previewUrl = null;
     if (type !== 'filmStock' && !isAvatarUpload) {
       if (previewFile && typeof previewFile !== 'string') {
         // 前端已提供压缩后的预览图，直接上传到预览目录
-        previewUrl = await uploadToImgBed(previewFile, imgBedUrl, imgBedToken, folderPath, true);
+        previewUrl = await uploadToImgBed(previewFile, imgBedUrl, imgBedToken, folderPath, true, imgBedChannel, imgBedNameType);
       } else if (generatePreview) {
         // 后端生成预览图（使用原图压缩）
-        previewUrl = await uploadToImgBed(file, imgBedUrl, imgBedToken, folderPath, true);
+        previewUrl = await uploadToImgBed(file, imgBedUrl, imgBedToken, folderPath, true, imgBedChannel, imgBedNameType);
       }
     }
 

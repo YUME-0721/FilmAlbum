@@ -94,6 +94,8 @@ admin.get('/settings', adminAuthRequired(), async (c) => {
   if (!settingsMap['default_language']) settingsMap['default_language'] = 'zh-CN';
   if (!settingsMap['lv2_roll_limit']) settingsMap['lv2_roll_limit'] = '10';
   if (!settingsMap['img_bed_path']) settingsMap['img_bed_path'] = '/FilmAlbum/';
+  if (!settingsMap['img_bed_channel']) settingsMap['img_bed_channel'] = 'huggingface';
+  if (!settingsMap['img_bed_name_type']) settingsMap['img_bed_name_type'] = 'index';
   if (!settingsMap['api_base_url']) settingsMap['api_base_url'] = '';
 
   return c.json({

@@ -120,7 +120,7 @@ export default function ProfileEditForm({ profile, onSubmit, onCancel }: Profile
         setErrors({ submit: result.error || '更新失败' });
       }
     } catch (error) {
-      setErrors({ submit: '网络错误' });
+      setErrors({ submit: error instanceof Error ? error.message : '网络错误' });
     } finally {
       setIsSubmitting(false);
     }

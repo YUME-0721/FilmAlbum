@@ -1,7 +1,7 @@
 /**
  * 设备管理 API
  */
-import { get, post, put, del, uploadFile } from './client.ts';
+import { get, post, put, del, uploadFile, type ApiResponse } from './client.ts';
 
 export interface Gear {
   id: string;
@@ -37,7 +37,7 @@ export async function createGear(data: {
   externalUrl: string;
   review: string;
   rating: number;
-}, file?: File): Promise<{ success: boolean; data?: { id: string } }> {
+}, file?: File): Promise<ApiResponse<{ id: string }>> {
   const formData = new FormData();
   
   formData.append('cameraModel', data.cameraModel);
@@ -62,7 +62,7 @@ export async function createGear(data: {
 /** 获取设备列表
  * @param status 设备状态过滤
  */
-export async function getGear(status?: 'used' | 'using' | 'wanted'): Promise<{ success: boolean; data?: Gear[] }> {
+export async function getGear(status?: 'used' | 'using' | 'wanted'): Promise<ApiResponse<Gear[]>> {
   const params = status ? `?status=${status}` : '';
   return await get<Gear[]>(`/gear${params}`);
 }
@@ -88,7 +88,7 @@ export async function updateGear(
     rating: number;
   },
   file?: File
-): Promise<{ success: boolean }> {
+): Promise<ApiResponse> {
   const formData = new FormData();
   
   formData.append('cameraModel', data.cameraModel);
@@ -113,6 +113,6 @@ export async function updateGear(
 /** 删除设备
  * @param id 设备ID
  */
-export async function deleteGear(id: string): Promise<{ success: boolean }> {
+export async function deleteGear(id: string): Promise<ApiResponse> {
   return await del(`/gear/${id}`);
 }

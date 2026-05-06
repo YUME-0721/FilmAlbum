@@ -111,7 +111,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
       const newImages = results.map(res => ({ url: res.url, previewUrl: res.previewUrl || res.url }));
       setSelectedImages(prev => [...prev, ...newImages]);
     } catch (err) {
-      alert(t('common.error'));
+      alert(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -142,7 +142,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
 
   const submitPost = async () => {
     if (!title.trim()) {
-      alert(t('common.error'));
+      alert("请输入标题");
       return;
     }
     setIsSubmitting(true);
@@ -168,10 +168,10 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
         onSuccess();
         onClose();
       } else {
-        alert(t('common.error'));
+        alert(res.error || t('common.error'));
       }
     } catch (err) {
-      alert(t('common.error'));
+      alert(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setIsSubmitting(false);
     }
