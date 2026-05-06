@@ -1,5 +1,7 @@
 <div align="center">
   <img width="100%" src="./Screenshots/logo.webp" alt="logo" />
+  <br/>
+  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/YUME-0721/FilmAlbum&root=backend"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare Workers" /></a>
   <br/><br/>
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
   <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" />
@@ -51,84 +53,72 @@
 
 项目采用全栈 **Cloudflare** 方案，部署成本接近 **￥0**。请按照以下步骤依次操作：
 
-### 1. 准备工作
-在开始之前，你需要准备好以下服务：
-- [Cloudflare 账号](https://dash.cloudflare.com/)：用于托管前端、后端及数据库。
-- [Resend 账号](https://resend.com/)：用于发送邮箱验证码，免费额度充足，注册后获取 **API Key**。
-- [CloudFlare-ImgBed 图床](https://github.com/marlowe-j/cloudflare-imgbed)：建议自建图床，获取 **URL** 和 **API Token**。
+### 方案 A：图形化部署 (推荐 🌟)
+
+如果你不想使用命令行，可以完全通过 Cloudflare 网页后台完成部署。
+
+#### 1. 后端部署 (Workers + D1)
+1.  **创建数据库**：
+    - 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)，点击 **Workers & Pages** -> **D1** -> **Create Database**。
+    - 命名为 `film-album-db`。
+    - **初始化表结构**：进入该数据库的 **Console** 页面，从本项目 GitHub 仓库复制 `backend/src/db/schema.sql` 的内容，粘贴并点击 **Execute**。
+2.  **创建并关联 Worker**：
+    - 点击 **Workers & Pages** -> **Create Application** -> **Create Worker**。
+    - 命名为 `film-album-api` 并点击部署（初始代码无关紧要）。
+    - 进入 Worker 详情页，选择 **Settings** -> **Git Integration** -> **Connect to Git**。
+    - 选择你的仓库。在配置页面，将 **Root Directory** 设置为 `backend`。
+3.  **配置变量与绑定**：
+    - **绑定数据库**：在 Worker 的 **Settings** -> **Bindings** 中，点击 **Add Binding** -> **D1 Database**。变量名填 `DB`，数据库选择 `film-album-db`。
+    - **设置密码**：在 **Settings** -> **Variables** 中，点击 **Add Secret**。变量名填 `ADMIN_PASSWORD`，值为你的管理员密码。
+
+#### 2. 前端部署 (Pages)
+1.  点击 **Workers & Pages** -> **Create Application** -> **Pages** -> **Connect to Git**。
+2.  选择仓库。在构建设置中：
+    - **Framework preset**: `Vite`
+    - **Build command**: `npm run build`
+    - **Build output directory**: `dist`
+3.  **配置环境变量**：点击 **Add Environment Variable**，添加 `VITE_API_BASE_URL`，值为你的后端 Worker 地址（例如：`https://film-api.xxx.workers.dev/api`）。
 
 ---
 
-### 2. 后端部署 (Cloudflare Workers + D1)
+### 方案 B：命令行部署 (CLI)
 
-#### 2.1 创建并初始化数据库
-1.  **安装依赖**：
+适合开发者，通过本地终端快速完成。
+
+#### 1. 后端部署
+1.  **安装并登录**：
     ```bash
-    cd backend
-    npm install
+    cd backend && npm install
+    npx wrangler login
     ```
-2.  **创建 D1 数据库**：
+2.  **创建数据库**：
     ```bash
     npx wrangler d1 create film-album-db
     ```
-    *执行后，请记下返回结果中的 `database_id`。*
-3.  **修改配置**：打开 `backend/wrangler.toml`，将 `[[d1_databases]]` 部分的 `database_id` 替换为你刚才获取的 ID。
-4.  **初始化表结构**：
+    *记下 `database_id` 并更新到 `backend/wrangler.toml`。*
+3.  **初始化与部署**：
     ```bash
     npx wrangler d1 execute film-album-db --remote --file=./src/db/schema.sql
+    npx wrangler secret put ADMIN_PASSWORD
+    npx wrangler deploy
     ```
 
-#### 2.2 录入必要的密钥 (Secrets)
-
-只需要录入 **1 个密钥** 即可完成部署，其余所有配置均在后台 UI 中完成：
-
-```bash
-npx wrangler secret put ADMIN_PASSWORD   # 超级管理员后台的登录密码
-```
-
-> **关于 `JWT_SECRET`**：系统会自动由 `ADMIN_PASSWORD` 派生一个确定性的签名密钥，**无需手动配置**。如果你有更高的安全要求，也可以额外单独设置 `JWT_SECRET`。
-
-#### 2.3 部署代码
-```bash
-npx wrangler deploy
-```
-*完成后，你会得到一个后端 API URL（例如：`https://film-api.xxx.workers.dev`）。*
+#### 2. 前端部署
+直接在 Cloudflare Pages 后台关联 GitHub 仓库即可。
 
 ---
 
-### 3. 前端部署 (Cloudflare Pages)
+### 3. 关键：解决 Cookie 登录失效 (域名绑定)
 
-1.  **Fork 并关联**：将本项目 Fork 到你的 GitHub，在 Cloudflare Pages 中点击 "Create a project" -> "Connect to git"。
-2.  **构建配置**：
-    -   **Framework preset**: `Vite`
-    -   **Build command**: `npm run build`
-    -   **Build output directory**: `dist`
-3.  **配置环境变量 (Environment Variables)**：在 Pages 设置中添加：
-    -   `VITE_API_BASE_URL`: 填写你上面部署好的后端 URL，**必须以 `/api` 结尾**。
-    -   *(例: `https://film-api.xxx.workers.dev/api`)*
+> **⚠️ 注意**：如果前端和后端域名不属于同级（例如一个是 `.pages.dev`，一个是 `.workers.dev`），由于浏览器限制，登录会失效。
+> 
+> **解决方案**：在 Cloudflare 中为后端 Worker 绑定一个 **Custom Domain**（例如 `api.yourdomain.com`），并将前端的 `VITE_API_BASE_URL` 指向它。
 
 ---
 
-### 4. 关键：解决 Cookie 登录失效 (域名绑定)
+### 4. 初始化：通过管理员后台完成配置
 
-**⚠️ 重要注意：**
-由于浏览器对三方 Cookie 的限制，如果前端和后端域名不一致（例如一个是 `pages.dev`，一个是 `workers.dev`），会导致无法保持登录。
-
-**【推荐方案】绑定二级域名：**
-1.  在 Cloudflare 中，为你的顶级域名（例如 `example.com`）配置：
-    -   **前端**：绑定到 `example.com` 或 `www.example.com`。
-    -   **后端**：在 Workers 设置的 "Custom Domains" 中添加 `api.example.com`。
-2.  **更新环境变量**：将前端 Pages 的 `VITE_API_BASE_URL` 更新为 `https://api.example.com/api`。
-
-完成后，前端和后端将属于"同级域名"，登录状态将持久保持。
-
----
-
-### 5. 初始化：通过管理员后台完成配置
-
-部署完成后，访问 `https://your-site.com/admin`，使用第 2.2 步设置的 `ADMIN_PASSWORD` 登录。
-
-在后台中你可以完成以下配置，**无需再修改任何代码或命令行**：
+访问 `https://your-site.com/admin`，使用 `ADMIN_PASSWORD` 登录后，可直接在网页上配置图床和邮件服务。
 
 | 配置项 | 说明 |
 |--------|------|
