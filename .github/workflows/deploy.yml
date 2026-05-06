@@ -49,6 +49,8 @@ jobs:
           command: deploy
           secrets: |
             ADMIN_PASSWORD
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
   deploy-frontend:
     runs-on: ubuntu-latest
