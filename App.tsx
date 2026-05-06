@@ -66,10 +66,10 @@ export default function App() {
             {/* 登录页公开访问 */}
             <Route path="login" element={<Login />} />
             <Route path="reset-password" element={<ResetPassword />} />
-            
-            {/* 超级管理员后台 */}
-            <Route path="admin" element={<Admin />} />
           </Route>
+
+          {/* 超级管理员后台 — 独立布局，无主导航栏 */}
+          <Route path="/admin" element={<Admin />} />
         </Routes>
       </AuthProvider>
     </SettingsProvider>
