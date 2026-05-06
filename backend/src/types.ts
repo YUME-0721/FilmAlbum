@@ -8,7 +8,9 @@ import type { D1Database } from '@cloudflare/workers-types';
 /** Workers 环境绑定类型 */
 export interface Env {
   DB: D1Database;
-  JWT_SECRET: string;
+  /** JWT 签名密鑰（可选）——若不设置，自动由 ADMIN_PASSWORD 派生 */
+  JWT_SECRET?: string;
+  ADMIN_PASSWORD: string;
   IMG_BED_URL: string;
   IMG_BED_TOKEN: string;
   SMTP_HOST: string;

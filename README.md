@@ -25,6 +25,7 @@
 *   **📷 设备与胶卷库**：内置设备管理模块，追踪相机、镜头的使用频率；支持自定义胶卷型号库，涵盖从 Kodak Portra 到 Cinestill 的全线档案。
 *   **🎨 精美边框导出**：一键生成带有品牌 Logo、拍摄参数及边框的视觉长图，完美适配社交媒体分享。
 *   **🤝 社区互动**：关注你喜爱的摄影师，点赞、评论、分享，在胶片的世界里不再孤单。
+*   **🛡️ 分级权限系统**：三级用户权限（LV1 只读 / LV2 标准 / LV3 无限），通过隐藏后台灵活管理。
 
 ---
 
@@ -53,8 +54,8 @@
 ### 1. 准备工作
 在开始之前，你需要准备好以下服务：
 - [Cloudflare 账号](https://dash.cloudflare.com/)：用于托管前端、后端及数据库。
-- [Resend 账号](https://resend.com/)：用于发送邮箱验证码（免费额度充足）。
-- [CloudFlare-ImgBed 图床](https://github.com/marlowe-j/cloudflare-imgbed)：建议自建图床（或使用兼容 API 的图床），获取 `API URL` 和 `Token`。
+- [Resend 账号](https://resend.com/)：用于发送邮箱验证码，免费额度充足，注册后获取 **API Key**。
+- [CloudFlare-ImgBed 图床](https://github.com/marlowe-j/cloudflare-imgbed)：建议自建图床，获取 **URL** 和 **API Token**。
 
 ---
 
@@ -74,22 +75,18 @@
 3.  **修改配置**：打开 `backend/wrangler.toml`，将 `[[d1_databases]]` 部分的 `database_id` 替换为你刚才获取的 ID。
 4.  **初始化表结构**：
     ```bash
-    # 这一步会将本地 schema.sql 推送到 Cloudflare 线上
     npx wrangler d1 execute film-album-db --remote --file=./src/db/schema.sql
     ```
 
-#### 2.2 录入机密环境变量 (Secrets)
-为了安全，以下变量**必须**通过命令行录入，不要写在配置文件里：
+#### 2.2 录入必要的密钥 (Secrets)
+
+只需要录入 **1 个密钥** 即可完成部署，其余所有配置均在后台 UI 中完成：
+
 ```bash
-npx wrangler secret put JWT_SECRET      # 任意长字符串，用于登录鉴权
-npx wrangler secret put IMG_BED_URL     # 你的图床地址 (例: https://img.example.com)
-npx wrangler secret put IMG_BED_TOKEN   # 图床的 API Token
-npx wrangler secret put SMTP_HOST       # SMTP 服务器 (如: smtp.resend.com)
-npx wrangler secret put SMTP_PORT       # 端口 (如: 465)
-npx wrangler secret put SMTP_USER       # SMTP 用户名 (如: resend)
-npx wrangler secret put SMTP_PASSWORD   # SMTP 密钥
-npx wrangler secret put SMTP_FROM       # 发件邮箱 (如: FilmAlbum <onboarding@resend.dev>)
+npx wrangler secret put ADMIN_PASSWORD   # 超级管理员后台的登录密码
 ```
+
+> **关于 `JWT_SECRET`**：系统会自动由 `ADMIN_PASSWORD` 派生一个确定性的签名密钥，**无需手动配置**。如果你有更高的安全要求，也可以额外单独设置 `JWT_SECRET`。
 
 #### 2.3 部署代码
 ```bash
@@ -123,9 +120,36 @@ npx wrangler deploy
     -   **后端**：在 Workers 设置的 "Custom Domains" 中添加 `api.example.com`。
 2.  **更新环境变量**：将前端 Pages 的 `VITE_API_BASE_URL` 更新为 `https://api.example.com/api`。
 
-完成后，前端和后端将属于“同级域名”，登录状态将持久保持。
+完成后，前端和后端将属于"同级域名"，登录状态将持久保持。
 
 ---
+
+### 5. 初始化：通过管理员后台完成配置
+
+部署完成后，访问 `https://your-site.com/admin`，使用第 2.2 步设置的 `ADMIN_PASSWORD` 登录。
+
+在后台中你可以完成以下配置，**无需再修改任何代码或命令行**：
+
+| 配置项 | 说明 |
+|--------|------|
+| 🖼️ **图床配置** | 填写图床地址和 API Token |
+| 📧 **邮件配置** | 填写 Resend API Key 和发件人地址，可发测试邮件验证 |
+| 👥 **开放注册** | 控制是否允许新用户公开注册 |
+| 🌐 **默认语言** | 设置网站全局默认语言（中文 / English） |
+| 📁 **LV2 影集上限** | 设置 LV2 用户可创建的影集数量上限 |
+| 👤 **用户管理** | 查看所有用户，修改用户等级，手动创建账号 |
+
+---
+
+## 🛡️ 用户权限等级
+
+| 等级 | 权限说明 |
+|------|---------|
+| **LV1**（默认） | 只读权限：可浏览所有内容，但无法发帖、创建影集、添加设备或评论 |
+| **LV2** | 标准权限：可使用全部功能，但影集数量有上限（后台可配置，默认 10 个） |
+| **LV3** | 无限制权限：完全解锁，无任何数量限制 |
+
+> 新注册用户默认为 LV1，需要管理员在 `/admin` 后台手动升级等级。
 
 ---
 

@@ -9,7 +9,8 @@ import { useTranslation } from '../src/hooks/useTranslation';
 import { get, post, put } from '../src/api/client';
 import {
   ShieldAlert, Users, Film, RefreshCw, Plus,
-  Sun, Moon, Languages, LogOut, Settings2
+  Sun, Moon, Languages, LogOut, Settings2,
+  ImageUp, Mail, Eye, EyeOff, Send
 } from 'lucide-react';
 
 /** 管理员后台专属语言文本 */
@@ -49,6 +50,25 @@ const i18n = {
     lv1Desc: '只读权限',
     lv2Desc: '标准权限',
     lv3Desc: '无限制',
+    imgBedSettings: '图床配置',
+    imgBedUrl: '图床地址',
+    imgBedUrlPlaceholder: 'https://img.example.com',
+    imgBedToken: '图床 Token',
+    imgBedTokenPlaceholder: '图床 API Token',
+    saveImgBed: '保存图床配置',
+    smtpSettings: 'SMTP 邮件配置',
+    smtpFrom: '发件人',
+    smtpFromPlaceholder: 'FilmAlbum <no-reply@example.com>',
+    smtpPassword: 'Resend API Key',
+    smtpPasswordPlaceholder: 're_xxxxxxxx',
+    saveSmtp: '保存邮件配置',
+    testEmail: '发送测试邮件',
+    testEmailTo: '收件邮筱',
+    sendTest: '发送测试',
+    sending: '发送中...',
+    saved: '保存成功',
+    saving: '保存中...',
+    smtpNote: '目前仅支持 Resend。只需填入 Resend API Key 和发件人即可。',
   },
   'en-US': {
     title: 'Super Admin',
@@ -85,6 +105,25 @@ const i18n = {
     lv1Desc: 'Read-only',
     lv2Desc: 'Standard',
     lv3Desc: 'Unlimited',
+    imgBedSettings: 'Image Bed Config',
+    imgBedUrl: 'Image Bed URL',
+    imgBedUrlPlaceholder: 'https://img.example.com',
+    imgBedToken: 'Image Bed Token',
+    imgBedTokenPlaceholder: 'API Token',
+    saveImgBed: 'Save Image Bed Config',
+    smtpSettings: 'Email (SMTP) Config',
+    smtpFrom: 'From Address',
+    smtpFromPlaceholder: 'FilmAlbum <no-reply@example.com>',
+    smtpPassword: 'Resend API Key',
+    smtpPasswordPlaceholder: 're_xxxxxxxx',
+    saveSmtp: 'Save Email Config',
+    testEmail: 'Send Test Email',
+    testEmailTo: 'Recipient',
+    sendTest: 'Send Test',
+    sending: 'Sending...',
+    saved: 'Saved!',
+    saving: 'Saving...',
+    smtpNote: 'Only Resend is supported. Fill in the API Key and sender address.',
   }
 };
 
@@ -115,6 +154,18 @@ export default function Admin() {
   const [isLoading, setIsLoading] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', nickname: '', level: 'lv1' });
   const [createStatus, setCreateStatus] = useState({ type: '', message: '' });
+
+  // 图床配置状态
+  const [imgBed, setImgBed] = useState({ img_bed_url: '', img_bed_token: '' });
+  const [imgBedSaveStatus, setImgBedSaveStatus] = useState({ type: '', message: '' });
+  const [showImgToken, setShowImgToken] = useState(false);
+
+  // SMTP / Resend 配置状态
+  const [smtp, setSmtp] = useState({ smtp_from: '', smtp_password: '' });
+  const [smtpSaveStatus, setSmtpSaveStatus] = useState({ type: '', message: '' });
+  const [showSmtpKey, setShowSmtpKey] = useState(false);
+  const [testEmailTo, setTestEmailTo] = useState('');
+  const [testEmailStatus, setTestEmailStatus] = useState({ type: '', message: '' });
 
   useEffect(() => {
     if (token) fetchDashboardData();
@@ -169,7 +220,19 @@ export default function Admin() {
         get<{ users: any[] }>('/admin/users', undefined, { headers }),
       ]);
       if (statsRes.success && statsRes.data) setStats(statsRes.data);
-      if (settingsRes.success && settingsRes.data) setSystemSettings(settingsRes.data as any);
+      if (settingsRes.success && settingsRes.data) {
+        const s = settingsRes.data as Record<string, string>;
+        setSystemSettings(s as any);
+        // 将图床和 SMTP 配置回填到对应表单（密文不展示）
+        setImgBed({
+          img_bed_url:   s['img_bed_url']   || '',
+          img_bed_token: s['img_bed_token'] ? '••••••••' : '',
+        });
+        setSmtp({
+          smtp_from:     s['smtp_from']     || '',
+          smtp_password: s['smtp_password'] ? '••••••••' : '',
+        });
+      }
       if (usersRes.success && usersRes.data) setUsers(usersRes.data.users);
     } catch (err: any) {
       if (err.message?.includes('401') || err.message?.includes('403')) handleLogout();
@@ -216,6 +279,55 @@ export default function Admin() {
       }
     } catch (err: any) {
       setCreateStatus({ type: 'error', message: err.message || 'Error' });
+    }
+  };
+
+  // 保存图床配置
+  const handleSaveImgBed = async () => {
+    // 如果 token 字段是占位符（未修改），只更新 url
+    const payload: Record<string, string> = {};
+    if (imgBed.img_bed_url) payload['img_bed_url'] = imgBed.img_bed_url;
+    if (imgBed.img_bed_token && imgBed.img_bed_token !== '••••••••') {
+      payload['img_bed_token'] = imgBed.img_bed_token;
+    }
+    if (Object.keys(payload).length === 0) return;
+
+    setImgBedSaveStatus({ type: 'loading', message: at('saving') });
+    try {
+      const res = await put('/admin/settings/batch', payload, { headers: { Authorization: `Bearer ${token}` } });
+      setImgBedSaveStatus({ type: res.success ? 'success' : 'error', message: res.success ? at('saved') : (res.error || at('updateFailed')) });
+    } catch (err: any) {
+      setImgBedSaveStatus({ type: 'error', message: err.message || at('updateFailed') });
+    }
+  };
+
+  // 保存 SMTP 配置
+  const handleSaveSmtp = async () => {
+    const payload: Record<string, string> = {};
+    if (smtp.smtp_from) payload['smtp_from'] = smtp.smtp_from;
+    if (smtp.smtp_password && smtp.smtp_password !== '••••••••') {
+      payload['smtp_password'] = smtp.smtp_password;
+    }
+    if (Object.keys(payload).length === 0) return;
+
+    setSmtpSaveStatus({ type: 'loading', message: at('saving') });
+    try {
+      const res = await put('/admin/settings/batch', payload, { headers: { Authorization: `Bearer ${token}` } });
+      setSmtpSaveStatus({ type: res.success ? 'success' : 'error', message: res.success ? at('saved') : (res.error || at('updateFailed')) });
+    } catch (err: any) {
+      setSmtpSaveStatus({ type: 'error', message: err.message || at('updateFailed') });
+    }
+  };
+
+  // 发送测试邮件
+  const handleTestEmail = async () => {
+    if (!testEmailTo) return;
+    setTestEmailStatus({ type: 'loading', message: at('sending') });
+    try {
+      const res = await post('/admin/test-email', { to: testEmailTo }, { headers: { Authorization: `Bearer ${token}` } });
+      setTestEmailStatus({ type: res.success ? 'success' : 'error', message: res.success ? '测试邮件已发送' : (res.error || at('updateFailed')) });
+    } catch (err: any) {
+      setTestEmailStatus({ type: 'error', message: err.message || at('updateFailed') });
     }
   };
 
@@ -443,6 +555,140 @@ export default function Admin() {
                       onBlur={(e) => handleUpdateSetting('lv2_roll_limit', e.target.value)}
                       className={inputCls}
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* 图床配置 */}
+              <div className={`rounded-2xl border ${cardBg}`}>
+                <div className="px-5 py-4 border-b border-inherit">
+                  <h2 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2">
+                    <ImageUp size={16} className="text-amber-500" />
+                    {at('imgBedSettings')}
+                  </h2>
+                </div>
+                <div className="p-5 space-y-3">
+                  {imgBedSaveStatus.message && (
+                    <div className={`px-3 py-2 rounded-lg text-xs ${
+                      imgBedSaveStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                        : imgBedSaveStatus.type === 'error' ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                        : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+                    }`}>{imgBedSaveStatus.message}</div>
+                  )}
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedUrl')}</label>
+                    <input
+                      type="url"
+                      placeholder={at('imgBedUrlPlaceholder')}
+                      value={imgBed.img_bed_url}
+                      onChange={(e) => setImgBed(p => ({ ...p, img_bed_url: e.target.value }))}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedToken')}</label>
+                    <div className="relative">
+                      <input
+                        type={showImgToken ? 'text' : 'password'}
+                        placeholder={at('imgBedTokenPlaceholder')}
+                        value={imgBed.img_bed_token}
+                        onFocus={() => { if (imgBed.img_bed_token === '••••••••') setImgBed(p => ({ ...p, img_bed_token: '' })); }}
+                        onChange={(e) => setImgBed(p => ({ ...p, img_bed_token: e.target.value }))}
+                        className={`${inputCls} pr-10`}
+                      />
+                      <button type="button" onClick={() => setShowImgToken(v => !v)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${mutedText} hover:text-current`}>
+                        {showImgToken ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSaveImgBed}
+                    disabled={imgBedSaveStatus.type === 'loading'}
+                    className="w-full py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-60"
+                  >
+                    {imgBedSaveStatus.type === 'loading' ? at('saving') : at('saveImgBed')}
+                  </button>
+                </div>
+              </div>
+
+              {/* SMTP / Resend 配置 */}
+              <div className={`rounded-2xl border ${cardBg}`}>
+                <div className="px-5 py-4 border-b border-inherit">
+                  <h2 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2">
+                    <Mail size={16} className="text-violet-500" />
+                    {at('smtpSettings')}
+                  </h2>
+                </div>
+                <div className="p-5 space-y-3">
+                  <p className={`text-xs ${mutedText}`}>{at('smtpNote')}</p>
+                  {smtpSaveStatus.message && (
+                    <div className={`px-3 py-2 rounded-lg text-xs ${
+                      smtpSaveStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                        : smtpSaveStatus.type === 'error' ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                        : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+                    }`}>{smtpSaveStatus.message}</div>
+                  )}
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('smtpFrom')}</label>
+                    <input
+                      type="text"
+                      placeholder={at('smtpFromPlaceholder')}
+                      value={smtp.smtp_from}
+                      onChange={(e) => setSmtp(p => ({ ...p, smtp_from: e.target.value }))}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('smtpPassword')}</label>
+                    <div className="relative">
+                      <input
+                        type={showSmtpKey ? 'text' : 'password'}
+                        placeholder={at('smtpPasswordPlaceholder')}
+                        value={smtp.smtp_password}
+                        onFocus={() => { if (smtp.smtp_password === '••••••••') setSmtp(p => ({ ...p, smtp_password: '' })); }}
+                        onChange={(e) => setSmtp(p => ({ ...p, smtp_password: e.target.value }))}
+                        className={`${inputCls} pr-10`}
+                      />
+                      <button type="button" onClick={() => setShowSmtpKey(v => !v)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${mutedText} hover:text-current`}>
+                        {showSmtpKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSaveSmtp}
+                    disabled={smtpSaveStatus.type === 'loading'}
+                    className="w-full py-2 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-60"
+                  >
+                    {smtpSaveStatus.type === 'loading' ? at('saving') : at('saveSmtp')}
+                  </button>
+
+                  {/* 发送测试邮件 */}
+                  <div className={`mt-1 pt-3 border-t ${isDarkMode ? 'border-white/8' : 'border-gray-100'}`}>
+                    <p className="text-xs font-semibold mb-2">{at('testEmail')}</p>
+                    {testEmailStatus.message && (
+                      <div className={`mb-2 px-3 py-2 rounded-lg text-xs ${
+                        testEmailStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                          : testEmailStatus.type === 'error' ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                          : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+                      }`}>{testEmailStatus.message}</div>
+                    )}
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        placeholder={at('testEmailTo')}
+                        value={testEmailTo}
+                        onChange={(e) => setTestEmailTo(e.target.value)}
+                        className={`${inputCls} flex-1`}
+                      />
+                      <button
+                        onClick={handleTestEmail}
+                        disabled={!testEmailTo || testEmailStatus.type === 'loading'}
+                        className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg transition-all disabled:opacity-40 flex items-center gap-1.5 shrink-0"
+                      >
+                        <Send size={14} />
+                        {testEmailStatus.type === 'loading' ? '...' : at('sendTest')}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

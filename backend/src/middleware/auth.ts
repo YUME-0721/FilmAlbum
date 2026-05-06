@@ -26,6 +26,29 @@ async function getSigningKey(secret: string): Promise<CryptoKey> {
   return cachedKey;
 }
 
+/**
+ * 获取 JWT 签名密鑰
+ * NOTE: 若未配置 JWT_SECRET，自动由 ADMIN_PASSWORD + 固定盐派生，避免用户手动设置多个密鑰
+ */
+export async function getJwtSecret(env: { JWT_SECRET?: string; ADMIN_PASSWORD: string }): Promise<string> {
+  if (env.JWT_SECRET) return env.JWT_SECRET;
+  // 用 ADMIN_PASSWORD 通过 PBKDF2 派生一个确定性 JWT 密鑰
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(env.ADMIN_PASSWORD),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: encoder.encode('filmalbum-jwt-salt-v1'), iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    256
+  );
+  return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 /** Base64URL 编码 */
 function base64UrlEncode(data: ArrayBuffer | Uint8Array): string {
   const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
@@ -108,7 +131,7 @@ export function authRequired() {
       return c.json({ success: false, error: '未登录，请先登录' }, 401);
     }
 
-    const payload = await verifyJwt(token, c.env.JWT_SECRET);
+    const payload = await verifyJwt(token, await getJwtSecret(c.env));
     if (!payload) {
       return c.json({ success: false, error: '登录已过期，请重新登录' }, 401);
     }
@@ -127,7 +150,7 @@ export function authOptional() {
   return async (c: Context<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>, next: Next) => {
     const token = extractToken(c);
     if (token) {
-      const payload = await verifyJwt(token, c.env.JWT_SECRET);
+      const payload = await verifyJwt(token, await getJwtSecret(c.env));
       if (payload) {
         c.set('userId', payload.sub);
         c.set('userEmail', payload.email);

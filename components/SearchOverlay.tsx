@@ -83,7 +83,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
   const handleUserClick = (userId: string) => {
     onClose();
-    navigate(`/profile/${userId}`);
+    navigate(`/space/${userId}`);
   };
 
   const handlePostClick = (postId: string) => {

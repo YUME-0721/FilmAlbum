@@ -90,8 +90,13 @@ upload.post('/', authRequired(), async (c) => {
     return c.json({ success: false, error: '文件大小超过 20MB 限制' }, 400);
   }
 
-  const imgBedUrl = c.env.IMG_BED_URL;
-  const imgBedToken = c.env.IMG_BED_TOKEN;
+  // NOTE: 优先从 system_settings 数据库读取图床配置，env 变量作为兜底
+  const imgBedSettings = await c.env.DB.prepare(
+    "SELECT key, value FROM system_settings WHERE key IN ('img_bed_url','img_bed_token')"
+  ).all<{ key: string; value: string }>();
+  const ibMap = imgBedSettings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
+  const imgBedUrl   = ibMap['img_bed_url']   || c.env.IMG_BED_URL;
+  const imgBedToken = ibMap['img_bed_token'] || c.env.IMG_BED_TOKEN;
 
   try {
     const rollId = c.req.query('rollId');
@@ -151,8 +156,13 @@ upload.delete('/', authRequired(), async (c) => {
     return c.json({ success: false, error: '未指定文件路径' }, 400);
   }
 
-  const imgBedUrl = c.env.IMG_BED_URL;
-  const imgBedToken = c.env.IMG_BED_TOKEN;
+  // NOTE: 优先从 system_settings 数据库读取图床配置，env 变量作为兜底
+  const delSettings = await c.env.DB.prepare(
+    "SELECT key, value FROM system_settings WHERE key IN ('img_bed_url','img_bed_token')"
+  ).all<{ key: string; value: string }>();
+  const delMap = delSettings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
+  const imgBedUrl   = delMap['img_bed_url']   || c.env.IMG_BED_URL;
+  const imgBedToken = delMap['img_bed_token'] || c.env.IMG_BED_TOKEN;
   const base = imgBedUrl.replace(/\/$/, '');
  
   // 从路径中提取文件标识（去掉前导 /）

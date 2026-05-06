@@ -4,7 +4,7 @@
  */
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { signJwt, hashPassword, verifyPassword, generateId, authRequired } from '../middleware/auth';
+import { signJwt, hashPassword, verifyPassword, generateId, authRequired, getJwtSecret } from '../middleware/auth';
 
 const auth = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
@@ -38,23 +38,19 @@ auth.post('/send-code', async (c) => {
 
   // 集成 Resend API 发送验证码
   try {
-    // 1. 获取 Resend 配置
-    const smtpHost = c.env.SMTP_HOST;
-    const smtpPort = c.env.SMTP_PORT;
-    const smtpUser = c.env.SMTP_USER;
-    const smtpPassword = c.env.SMTP_PASSWORD;
-    const smtpFrom = c.env.SMTP_FROM;
+    // NOTE: 优先从 system_settings 数据库读取配置，env 变量作为兜底
+    const smtpSettings = await c.env.DB.prepare(
+      "SELECT key, value FROM system_settings WHERE key IN ('smtp_host','smtp_port','smtp_user','smtp_password','smtp_from')"
+    ).all<{ key: string; value: string }>();
 
-    if (!smtpHost || !smtpPort || !smtpUser || !smtpPassword || !smtpFrom) {
+    const sm = smtpSettings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
+
+    const smtpPassword = sm['smtp_password'] || c.env.SMTP_PASSWORD;
+    const smtpFrom     = sm['smtp_from']     || c.env.SMTP_FROM;
+
+    if (!smtpPassword || !smtpFrom) {
       throw new Error('SMTP 配置未设置');
     }
-
-    console.log(`========================================`);
-    console.log(`SMTP Host: ${smtpHost}`);
-    console.log(`SMTP Port: ${smtpPort}`);
-    console.log(`SMTP User: ${smtpUser}`);
-    console.log(`SMTP From: ${smtpFrom}`);
-    console.log(`========================================`);
 
     // 2. 构建邮件内容
     const emailContent = `亲爱的用户：
@@ -288,7 +284,7 @@ auth.post('/login', async (c) => {
 
   const token = await signJwt(
     { sub: String(user.id), email: user.email, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
-    c.env.JWT_SECRET
+    await getJwtSecret(c.env)
   );
 
   c.header('Set-Cookie', `token=${token}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=${7 * 24 * 3600}`);

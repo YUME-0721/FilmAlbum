@@ -199,6 +199,12 @@ CREATE TABLE IF NOT EXISTS system_settings (
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('open_registration', 'true');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('default_language', 'zh-CN');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('lv2_roll_limit', '10');
+-- 图床配置（初始为空，通过管理员后台配置）
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_url', '');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_token', '');
+-- Resend 邮件服务配置（初始为空，通过管理员后台配置）
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_from', '');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_password', '');
 
 -- 索引优化
 CREATE INDEX IF NOT EXISTS idx_rolls_user_id ON rolls(user_id);
