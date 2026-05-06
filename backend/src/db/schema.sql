@@ -1,7 +1,7 @@
--- FilmAlbum 数据库初始化
--- 适用于 Cloudflare D1 (SQLite)
+/* FilmAlbum 数据库初始化 */
+/* 适用于 Cloudflare D1 (SQLite) */
 
--- 用户表
+/* 用户表 */
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT UNIQUE NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
--- 关注关系
+/* 关注关系 */
 CREATE TABLE IF NOT EXISTS follows (
   follower_id INTEGER NOT NULL,
   following_id INTEGER NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS follows (
   FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 胶卷卷
+/* 胶卷卷 */
 CREATE TABLE IF NOT EXISTS rolls (
   id TEXT PRIMARY KEY,
   user_id INTEGER NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS rolls (
   shot_date TEXT,
   end_date TEXT,
   format TEXT DEFAULT '135',
-  film_type TEXT DEFAULT 'COLOR_NEGATIVE', -- COLOR_NEGATIVE, BW_NEGATIVE, COLOR_POSITIVE, BW_POSITIVE
+  film_type TEXT DEFAULT 'COLOR_NEGATIVE', /* COLOR_NEGATIVE, BW_NEGATIVE, COLOR_POSITIVE, BW_POSITIVE */
   status TEXT DEFAULT 'DRAFT',
   tags TEXT DEFAULT '[]',
   created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS rolls (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 胶卷帧（单张底片）
+/* 胶卷帧（单张底片） */
 CREATE TABLE IF NOT EXISTS frames (
   id TEXT PRIMARY KEY,
   roll_id TEXT NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS frames (
   FOREIGN KEY (roll_id) REFERENCES rolls(id) ON DELETE CASCADE
 );
 
--- 帖子（精选发布）
+/* 帖子（精选发布） */
 CREATE TABLE IF NOT EXISTS posts (
   id TEXT PRIMARY KEY,
   user_id INTEGER NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS posts (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 帖子图片
+/* 帖子图片 */
 CREATE TABLE IF NOT EXISTS post_images (
   id TEXT PRIMARY KEY,
   post_id TEXT NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS post_images (
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
 
--- 点赞
+/* 点赞 */
 CREATE TABLE IF NOT EXISTS likes (
   user_id INTEGER NOT NULL,
   post_id TEXT NOT NULL,
@@ -102,75 +102,75 @@ CREATE TABLE IF NOT EXISTS likes (
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
 
--- 评论
+/* 评论 */
 CREATE TABLE IF NOT EXISTS comments (
   id TEXT PRIMARY KEY,
   post_id TEXT NOT NULL,
   user_id INTEGER NOT NULL,
   content TEXT NOT NULL,
-  parent_id TEXT, -- 父评论 ID
-  reply_to_user_id INTEGER, -- 被回复用户 ID
+  parent_id TEXT, /* 父评论 ID */
+  reply_to_user_id INTEGER, /* 被回复用户 ID */
   created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 设备
+/* 设备 */
 CREATE TABLE IF NOT EXISTS gear (
   id TEXT PRIMARY KEY,
   user_id INTEGER NOT NULL,
   camera_model TEXT NOT NULL,
   lens_model TEXT NOT NULL,
-  lens_type TEXT NOT NULL, -- interchangeable, fixed
-  status TEXT NOT NULL, -- used, using, wanted
+  lens_type TEXT NOT NULL, /* interchangeable, fixed */
+  status TEXT NOT NULL, /* used, using, wanted */
   image_url TEXT DEFAULT '',
-  formats TEXT DEFAULT '[]', -- JSON array of formats (e.g., ["135", "120"])
+  formats TEXT DEFAULT '[]', /* JSON array of formats (e.g., ["135", "120"]) */
   shot_count INTEGER DEFAULT 0,
-  shot_counts_json TEXT DEFAULT '{}', -- 不同胶卷规格的拍摄张数
+  shot_counts_json TEXT DEFAULT '{}', /* 不同胶卷规格的拍摄张数 */
   mount TEXT DEFAULT '',
-  external_url TEXT DEFAULT '', -- 设备详情外部链接
-  review TEXT DEFAULT '', -- max 30 characters
-  rating REAL DEFAULT 0, -- 0-5
+  external_url TEXT DEFAULT '', /* 设备详情外部链接 */
+  review TEXT DEFAULT '', /* max 30 characters */
+  rating REAL DEFAULT 0, /* 0-5 */
   created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 胶卷型号
+/* 胶卷型号 */
 CREATE TABLE IF NOT EXISTS film_stocks (
   id TEXT PRIMARY KEY,
   brand TEXT NOT NULL,
   model TEXT NOT NULL,
   iso INTEGER NOT NULL,
-  format TEXT NOT NULL, -- 135, 120, 4x5, etc.
-  film_type TEXT NOT NULL, -- COLOR_NEGATIVE, BW_NEGATIVE, COLOR_POSITIVE, BW_POSITIVE
-  process TEXT NOT NULL, -- C-41, E-6, D-76, etc.
+  format TEXT NOT NULL, /* 135, 120, 4x5, etc. */
+  film_type TEXT NOT NULL, /* COLOR_NEGATIVE, BW_NEGATIVE, COLOR_POSITIVE, BW_POSITIVE */
+  process TEXT NOT NULL, /* C-41, E-6, D-76, etc. */
   created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-  UNIQUE(brand, model, iso) -- 确保品牌、型号和感光度的组合唯一
+  UNIQUE(brand, model, iso) /* 确保品牌、型号和感光度的组合唯一 */
 );
 
--- 私信消息表
+/* 私信消息表 */
 CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY,
   sender_id INTEGER NOT NULL,
   receiver_id INTEGER NOT NULL,
   content TEXT NOT NULL,
-  is_read INTEGER DEFAULT 0, -- 0 for false, 1 for true
+  is_read INTEGER DEFAULT 0, /* 0 for false, 1 for true */
   created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 通知表 (点赞、评论、系统通知)
+/* 通知表 (点赞、评论、系统通知) */
 CREATE TABLE IF NOT EXISTS notifications (
   id TEXT PRIMARY KEY,
   receiver_id INTEGER NOT NULL,
   sender_id INTEGER NOT NULL,
-  type TEXT NOT NULL, -- 'LIKE', 'COMMENT', 'SYSTEM'
-  post_id TEXT, -- 关联帖子
-  comment_id TEXT, -- 关联评论
-  content TEXT, -- 消息内容预览或消息文本
+  type TEXT NOT NULL, /* 'LIKE', 'COMMENT', 'SYSTEM' */
+  post_id TEXT, /* 关联帖子 */
+  comment_id TEXT, /* 关联评论 */
+  content TEXT, /* 消息内容预览或消息文本 */
   is_read INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE
 );
 
--- 邮箱验证码表
+/* 邮箱验证码表 */
 CREATE TABLE IF NOT EXISTS email_verifications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT NOT NULL,
@@ -188,28 +188,28 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   expires_at TEXT NOT NULL
 );
 
--- 系统设置表
+/* 系统设置表 */
 CREATE TABLE IF NOT EXISTS system_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL,
   updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
--- 插入默认系统设置
+/* 插入默认系统设置 */
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('open_registration', 'true');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('default_language', 'zh-CN');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('lv2_roll_limit', '10');
--- 图床配置（初始为空，通过管理员后台配置）
+/* 图床配置（初始为空，通过管理员后台配置） */
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_url', '');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_token', '');
--- Resend 邮件服务配置（初始为空，通过管理员后台配置）
+/* Resend 邮件服务配置（初始为空，通过管理员后台配置） */
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_from', '');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_password', '');
--- 更多配置
+/* 更多配置 */
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_path', '/FilmAlbum/');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('api_base_url', '');
 
--- 索引优化
+/* 索引优化 */
 CREATE INDEX IF NOT EXISTS idx_rolls_user_id ON rolls(user_id);
 CREATE INDEX IF NOT EXISTS idx_rolls_status ON rolls(status);
 CREATE INDEX IF NOT EXISTS idx_frames_roll_id ON frames(roll_id);
