@@ -75,6 +75,9 @@ const i18n = {
     saved: '保存成功',
     saving: '保存中...',
     smtpNote: '目前仅支持 Resend。只需填入 Resend API Key 和发件人即可。',
+    imgBedChannel: '上传渠道',
+    imgBedNameType: '命名方式',
+    imgBedPathDesc: '当前分级：路径/用户ID/胶卷ID/文件名',
   },
   'en-US': {
     title: 'Super Admin',
@@ -136,6 +139,9 @@ const i18n = {
     saved: 'Saved!',
     saving: 'Saving...',
     smtpNote: 'Only Resend is supported. Fill in the API Key and sender address.',
+    imgBedChannel: 'Upload Channel',
+    imgBedNameType: 'Naming Type',
+    imgBedPathDesc: 'Hierarchy: Path/UserID/RollID/FileName',
   }
 };
 
@@ -170,13 +176,16 @@ export default function Admin() {
   const [createStatus, setCreateStatus] = useState({ type: '', message: '' });
 
   // 图床配置状态
-  const [imgBed, setImgBed] = useState({ img_bed_url: '', img_bed_token: '', img_bed_path: '/FilmAlbum/' });
+  const [imgBed, setImgBed] = useState({ 
+    img_bed_url: '', 
+    img_bed_token: '', 
+    img_bed_path: '/FilmAlbum/',
+    img_bed_channel: 'huggingface',
+    img_bed_name_type: 'index'
+  });
   const [imgBedSaveStatus, setImgBedSaveStatus] = useState({ type: '', message: '' });
   const [showImgToken, setShowImgToken] = useState(false);
 
-  // API 配置状态
-  const [apiConfig, setApiConfig] = useState({ api_base_url: '' });
-  const [apiSaveStatus, setApiSaveStatus] = useState({ type: '', message: '' });
 
   // SMTP / Resend 配置状态
   const [smtp, setSmtp] = useState({ smtp_from: '', smtp_password: '' });
@@ -243,12 +252,11 @@ export default function Admin() {
         setSystemSettings(s as any);
         // 将图床和 SMTP 配置回填到对应表单（密文不展示）
         setImgBed({
-          img_bed_url:   s['img_bed_url']   || '',
-          img_bed_token: s['img_bed_token'] ? '••••••••' : '',
-          img_bed_path:  s['img_bed_path']  || '/FilmAlbum/',
-        });
-        setApiConfig({
-          api_base_url:  s['api_base_url']  || '',
+          img_bed_url:       s['img_bed_url']       || '',
+          img_bed_token:     s['img_bed_token'] ? '••••••••' : '',
+          img_bed_path:      s['img_bed_path']      || '/FilmAlbum/',
+          img_bed_channel:   s['img_bed_channel']   || 'huggingface',
+          img_bed_name_type: s['img_bed_name_type'] || 'index',
         });
         setSmtp({
           smtp_from:     s['smtp_from']     || '',
@@ -306,10 +314,12 @@ export default function Admin() {
 
   // 保存图床配置
   const handleSaveImgBed = async () => {
-    // 如果 token 字段是占位符（未修改），只更新 url
+    const { img_bed_url, img_bed_path, img_bed_channel, img_bed_name_type } = imgBed;
     const payload: Record<string, string> = {};
-    if (imgBed.img_bed_url) payload['img_bed_url'] = imgBed.img_bed_url;
-    if (imgBed.img_bed_path) payload['img_bed_path'] = imgBed.img_bed_path;
+    if (img_bed_url) payload['img_bed_url'] = img_bed_url;
+    if (img_bed_path) payload['img_bed_path'] = img_bed_path;
+    if (img_bed_channel) payload['img_bed_channel'] = img_bed_channel;
+    if (img_bed_name_type) payload['img_bed_name_type'] = img_bed_name_type;
     if (imgBed.img_bed_token && imgBed.img_bed_token !== '••••••••') {
       payload['img_bed_token'] = imgBed.img_bed_token;
     }
@@ -324,16 +334,6 @@ export default function Admin() {
     }
   };
 
-  // 保存 API 配置
-  const handleSaveApi = async () => {
-    setApiSaveStatus({ type: 'loading', message: at('saving') });
-    try {
-      const res = await put('/admin/settings/batch', apiConfig, { headers: { Authorization: `Bearer ${token}` } });
-      setApiSaveStatus({ type: res.success ? 'success' : 'error', message: res.success ? at('saved') : (res.error || at('updateFailed')) });
-    } catch (err: any) {
-      setApiSaveStatus({ type: 'error', message: err.message || at('updateFailed') });
-    }
-  };
 
   // 保存 SMTP 配置
   const handleSaveSmtp = async () => {
@@ -609,41 +609,71 @@ export default function Admin() {
                         : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
                     }`}>{imgBedSaveStatus.message}</div>
                   )}
-                  <div>
-                    <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedUrl')}</label>
-                    <input
-                      type="url"
-                      placeholder={at('imgBedUrlPlaceholder')}
-                      value={imgBed.img_bed_url}
-                      onChange={(e) => setImgBed(p => ({ ...p, img_bed_url: e.target.value }))}
-                      className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedToken')}</label>
-                    <div className="relative">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedUrl')}</label>
                       <input
-                        type={showImgToken ? 'text' : 'password'}
-                        placeholder={at('imgBedTokenPlaceholder')}
-                        value={imgBed.img_bed_token}
-                        onFocus={() => { if (imgBed.img_bed_token === '••••••••') setImgBed(p => ({ ...p, img_bed_token: '' })); }}
-                        onChange={(e) => setImgBed(p => ({ ...p, img_bed_token: e.target.value }))}
-                        className={`${inputCls} pr-10`}
+                        type="url"
+                        placeholder={at('imgBedUrlPlaceholder')}
+                        value={imgBed.img_bed_url}
+                        onChange={(e) => setImgBed(p => ({ ...p, img_bed_url: e.target.value }))}
+                        className={inputCls}
                       />
-                      <button type="button" onClick={() => setShowImgToken(v => !v)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${mutedText} hover:text-current`}>
-                        {showImgToken ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
                     </div>
-                  </div>
-                  <div>
-                    <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedPath')}</label>
-                    <input
-                      type="text"
-                      placeholder={at('imgBedPathPlaceholder')}
-                      value={imgBed.img_bed_path}
-                      onChange={(e) => setImgBed(p => ({ ...p, img_bed_path: e.target.value }))}
-                      className={inputCls}
-                    />
+                    <div className="sm:col-span-2">
+                      <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedToken')}</label>
+                      <div className="relative">
+                        <input
+                          type={showImgToken ? 'text' : 'password'}
+                          placeholder={at('imgBedTokenPlaceholder')}
+                          value={imgBed.img_bed_token}
+                          onFocus={() => { if (imgBed.img_bed_token === '••••••••') setImgBed(p => ({ ...p, img_bed_token: '' })); }}
+                          onChange={(e) => setImgBed(p => ({ ...p, img_bed_token: e.target.value }))}
+                          className={`${inputCls} pr-10`}
+                        />
+                        <button type="button" onClick={() => setShowImgToken(v => !v)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${mutedText} hover:text-current`}>
+                          {showImgToken ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedChannel')}</label>
+                      <select
+                        value={imgBed.img_bed_channel}
+                        onChange={(e) => setImgBed(p => ({ ...p, img_bed_channel: e.target.value }))}
+                        className={inputCls}
+                      >
+                        <option value="huggingface">HuggingFace</option>
+                        <option value="cloudflare">Cloudflare</option>
+                        <option value="r2">Cloudflare R2</option>
+                        <option value="backblaze">Backblaze B2</option>
+                        <option value="github">GitHub</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedNameType')}</label>
+                      <select
+                        value={imgBed.img_bed_name_type}
+                        onChange={(e) => setImgBed(p => ({ ...p, img_bed_name_type: e.target.value }))}
+                        className={inputCls}
+                      >
+                        <option value="index">Index (序号)</option>
+                        <option value="original">Original (原始名)</option>
+                        <option value="random">Random (随机)</option>
+                        <option value="timestamp">Timestamp (时间戳)</option>
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedPath')}</label>
+                      <input
+                        type="text"
+                        placeholder={at('imgBedPathPlaceholder')}
+                        value={imgBed.img_bed_path}
+                        onChange={(e) => setImgBed(p => ({ ...p, img_bed_path: e.target.value }))}
+                        className={inputCls}
+                      />
+                      <p className={`mt-1 text-[10px] ${mutedText}`}>{at('imgBedPathDesc')}</p>
+                    </div>
                   </div>
                   <button
                     onClick={handleSaveImgBed}
@@ -651,42 +681,6 @@ export default function Admin() {
                     className="w-full py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-60"
                   >
                     {imgBedSaveStatus.type === 'loading' ? at('saving') : at('saveImgBed')}
-                  </button>
-                </div>
-              </div>
-
-              {/* API 配置 */}
-              <div className={`rounded-2xl border ${cardBg}`}>
-                <div className="px-5 py-4 border-b border-inherit">
-                  <h2 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                    <ShieldAlert size={16} className="text-blue-500" />
-                    {at('apiSettings')}
-                  </h2>
-                </div>
-                <div className="p-5 space-y-3">
-                  {apiSaveStatus.message && (
-                    <div className={`px-3 py-2 rounded-lg text-xs ${
-                      apiSaveStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                        : apiSaveStatus.type === 'error' ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                        : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-                    }`}>{apiSaveStatus.message}</div>
-                  )}
-                  <div>
-                    <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('apiBaseUrl')}</label>
-                    <input
-                      type="url"
-                      placeholder={at('apiBaseUrlPlaceholder')}
-                      value={apiConfig.api_base_url}
-                      onChange={(e) => setApiConfig({ api_base_url: e.target.value })}
-                      className={inputCls}
-                    />
-                  </div>
-                  <button
-                    onClick={handleSaveApi}
-                    disabled={apiSaveStatus.type === 'loading'}
-                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-60"
-                  >
-                    {apiSaveStatus.type === 'loading' ? at('saving') : at('saveApi')}
                   </button>
                 </div>
               </div>
