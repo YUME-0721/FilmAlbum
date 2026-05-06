@@ -30,6 +30,7 @@ export const translations = {
       create: '提交创建',
       uploading: '上传中...',
       confirm_delete: '确定要删除吗？此操作不可恢复。',
+      sending: '发送中...',
     },
     login: {
       welcome: '欢迎回来，继续你的胶片旅程',
@@ -61,6 +62,8 @@ export const translations = {
       emailNotRegistered: '该邮箱未注册',
       goToRegister: '去注册',
       backToLogin: '返回登录',
+      emailPlaceholder: 'your@email.com',
+      passwordPlaceholder: '密码',
     },
     profile: {
       followers: '粉丝数',
@@ -77,8 +80,8 @@ export const translations = {
       joinDate: '加入日期',
       tabs: {
         album: '影集',
-        activity: '动态',
-        gear: '相机库',
+        post: '动态',
+        gear: '设备',
       },
       roll: {
         number: '卷号',
@@ -86,6 +89,7 @@ export const translations = {
         noPhoto: '无照片',
         viewFull: '查看完整胶卷',
         noPhotoDesc: '这卷胶卷还没有照片，点击进入上传底片',
+        limitReached: '您当前的等级最多只能创建 {limit} 卷胶卷',
       },
       gear: {
         add: '添加设备',
@@ -192,6 +196,9 @@ export const translations = {
       verifyCode: '验证码',
       sendCode: '发送验证码',
       deleteAccount: '注销账号',
+      newPasswordPlaceholder: '至少 6 位新密码',
+      confirmPasswordPlaceholder: '重复输入密码',
+      codePlaceholder: '输入验证码',
     },
     search: {
       placeholder: '搜索任何想看的内容：摄影师、作品标题、标签...',
@@ -281,6 +288,7 @@ export const translations = {
       create: 'Create',
       uploading: 'Uploading...',
       confirm_delete: 'Are you sure you want to delete? This action cannot be undone.',
+      sending: 'Sending...',
     },
     login: {
       welcome: 'Welcome back, continue your film journey',
@@ -312,6 +320,8 @@ export const translations = {
       emailNotRegistered: 'This email is not registered',
       goToRegister: 'Go to Register',
       backToLogin: 'Back to Login',
+      emailPlaceholder: 'your@email.com',
+      passwordPlaceholder: 'Password',
     },
     profile: {
       followers: 'Followers',
@@ -328,8 +338,8 @@ export const translations = {
       joinDate: 'Joined',
       tabs: {
         album: 'Albums',
-        activity: 'Feed',
-        gear: 'Gears',
+        post: 'Feed',
+        gear: 'Gear',
       },
       roll: {
         number: 'Roll',
@@ -337,6 +347,7 @@ export const translations = {
         noPhoto: 'No Photos',
         viewFull: 'View full roll',
         noPhotoDesc: 'This roll has no photos yet. Click to upload.',
+        limitReached: 'Your current level can only create up to {limit} rolls',
       },
       gear: {
         add: 'Add Gear',
@@ -443,6 +454,9 @@ export const translations = {
       verifyCode: 'Verification Code',
       sendCode: 'Send Code',
       deleteAccount: 'Delete Account',
+      newPasswordPlaceholder: 'At least 6 characters',
+      confirmPasswordPlaceholder: 'Repeat password',
+      codePlaceholder: 'Enter code',
     },
     search: {
       placeholder: 'Search for photographers, titles, tags...',

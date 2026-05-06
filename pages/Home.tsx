@@ -295,12 +295,14 @@ export default function Home() {
       )}
 
       {/* FAB for quick upload */}
-      <button 
-        onClick={handleFabClick}
-        className="fixed bottom-8 right-8 bg-primary text-on-primary w-14 h-14 flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 z-40 rounded-sm"
-      >
-        <Plus size={28} className="drop-shadow-md" />
-      </button>
+      {(!user || user.level !== 'lv1') && (
+        <button 
+          onClick={handleFabClick}
+          className="fixed bottom-8 right-8 bg-primary text-on-primary w-14 h-14 flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 z-40 rounded-sm"
+        >
+          <Plus size={28} className="drop-shadow-md" />
+        </button>
+      )}
 
       <CreatePostModal 
         isOpen={isCreateModalOpen} 

@@ -228,6 +228,15 @@ auth.post('/register', async (c) => {
     return c.json({ success: false, error: '验证码无效或已过期' }, 400);
   }
 
+  // 检查是否开放注册
+  const setting = await c.env.DB.prepare(
+    "SELECT value FROM system_settings WHERE key = 'open_registration'"
+  ).first<{ value: string }>();
+
+  if (setting && setting.value === 'false') {
+    return c.json({ success: false, error: '当前暂未开放注册，请联系管理员' }, 403);
+  }
+
   // 检查邮箱是否已注册
   const existing = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(body.email).first();
   if (existing) {
@@ -236,9 +245,9 @@ auth.post('/register', async (c) => {
 
   const passwordHash = await hashPassword(body.password);
   
-  // 执行插入并获取自增 ID
+  // 执行插入并获取自增 ID，默认等级为 lv1
   const result = await c.env.DB.prepare(
-    'INSERT INTO users (email, password_hash, nickname) VALUES (?, ?, ?)'
+    "INSERT INTO users (email, password_hash, nickname, level) VALUES (?, ?, ?, 'lv1')"
   ).bind(body.email, passwordHash, body.nickname).run();
 
   const autoId = result.meta.last_row_id;
@@ -265,8 +274,8 @@ auth.post('/login', async (c) => {
   }
 
   const user = await c.env.DB.prepare(
-    'SELECT id, email, password_hash, nickname, avatar_url, bio FROM users WHERE email = ?'
-  ).bind(body.email).first<{ id: number; email: string; password_hash: string; nickname: string; avatar_url: string; bio: string }>();
+    'SELECT id, email, password_hash, nickname, avatar_url, bio, level FROM users WHERE email = ?'
+  ).bind(body.email).first<{ id: number; email: string; password_hash: string; nickname: string; avatar_url: string; bio: string; level: string }>();
 
   if (!user) {
     return c.json({ success: false, error: '邮箱或密码错误' }, 401);
@@ -291,7 +300,8 @@ auth.post('/login', async (c) => {
       email: user.email,
       nickname: user.nickname,
       avatarUrl: user.avatar_url,
-      bio: user.bio
+      bio: user.bio,
+      level: user.level
     }
   });
 });
@@ -436,8 +446,8 @@ auth.get('/me', authRequired(), async (c) => {
   const userId = c.get('userId');
 
   const user = await c.env.DB.prepare(
-    'SELECT id, email, nickname, avatar_url, bio, created_at FROM users WHERE id = ?'
-  ).bind(userId).first<{ id: number; email: string; nickname: string; avatar_url: string; bio: string; created_at: string }>();
+    'SELECT id, email, nickname, avatar_url, bio, level, created_at FROM users WHERE id = ?'
+  ).bind(userId).first<{ id: number; email: string; nickname: string; avatar_url: string; bio: string; level: string; created_at: string }>();
 
   if (!user) {
     return c.json({ success: false, error: '用户不存在' }, 404);
@@ -464,6 +474,7 @@ auth.get('/me', authRequired(), async (c) => {
       nickname: user.nickname,
       avatarUrl: user.avatar_url,
       bio: user.bio,
+      level: user.level,
       followersCount: followersCount?.count ?? 0,
       followingCount: followingCount?.count ?? 0,
       likesCount: likesCount?.count ?? 0,

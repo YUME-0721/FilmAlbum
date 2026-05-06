@@ -9,6 +9,7 @@ routes = [
 [vars]
 # 图床配置
 # NOTE: 密钥类变量请通过 npx wrangler secret put 指令设置，不要存在此处
+# 必须设置的 Secret: JWT_SECRET, IMG_BED_URL, IMG_BED_TOKEN, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, ADMIN_PASSWORD
 
 [[d1_databases]]
 binding = "DB"

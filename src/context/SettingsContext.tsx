@@ -3,6 +3,7 @@
  * 管理界面语言、主题模式等用户偏好设置
  */
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { get } from '../api/client.ts';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 type Language = 'zh-CN' | 'en-US';
@@ -13,6 +14,8 @@ interface SettingsContextType {
   setThemeMode: (mode: ThemeMode) => void;
   setLanguage: (lang: Language) => void;
   isDarkMode: boolean;
+  openRegistration: boolean;
+  lv2RollLimit: number;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -46,14 +49,40 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [themeMode, setThemeModeState] = useState<ThemeMode>('dark');
   const [language, setLanguageState] = useState<Language>('zh-CN');
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [openRegistration, setOpenRegistration] = useState(true);
+  const [lv2RollLimit, setLv2RollLimit] = useState(10);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // 初始化设置
   useEffect(() => {
-    const settings = loadSettings();
-    setThemeModeState(settings.themeMode);
-    setLanguageState(settings.language);
-    setIsLoaded(true);
+    const initSettings = async () => {
+      const settings = loadSettings();
+      let defaultLang = settings.language;
+      let regOpen = true;
+      let limit = 10;
+
+      try {
+        const res = await get<{ openRegistration: boolean; defaultLanguage: Language; lv2RollLimit: number }>('/system/settings');
+        if (res.success && res.data) {
+          regOpen = res.data.openRegistration;
+          limit = res.data.lv2RollLimit;
+          // 如果本地没有保存语言偏好，则使用全局默认语言
+          if (!localStorage.getItem('language')) {
+            defaultLang = res.data.defaultLanguage;
+          }
+        }
+      } catch (error) {
+        console.error('获取系统设置失败:', error);
+      }
+
+      setThemeModeState(settings.themeMode);
+      setLanguageState(defaultLang);
+      setOpenRegistration(regOpen);
+      setLv2RollLimit(limit);
+      setIsLoaded(true);
+    };
+
+    initSettings();
   }, []);
 
   // 计算实际是否使用深色模式
@@ -113,7 +142,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       language,
       setThemeMode,
       setLanguage,
-      isDarkMode
+      isDarkMode,
+      openRegistration,
+      lv2RollLimit
     }}>
       {children}
     </SettingsContext.Provider>

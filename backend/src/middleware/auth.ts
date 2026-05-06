@@ -137,6 +137,30 @@ export function authOptional() {
   };
 }
 
+/**
+ * 权限控制中间件
+ * @param minLevel 最低需要的等级 ('lv2' | 'lv3')
+ */
+export function requireLevel(minLevel: 'lv2' | 'lv3') {
+  return async (c: Context<{ Bindings: Env; Variables: { userId: string } }>, next: Next) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ success: false, error: '未登录' }, 401);
+
+    const user = await c.env.DB.prepare('SELECT level FROM users WHERE id = ?').bind(userId).first<{ level: string }>();
+    if (!user) return c.json({ success: false, error: '用户不存在' }, 404);
+
+    if (minLevel === 'lv2' && user.level === 'lv1') {
+      return c.json({ success: false, error: '当前等级权限不足，请联系管理员升级' }, 403);
+    }
+    
+    if (minLevel === 'lv3' && (user.level === 'lv1' || user.level === 'lv2')) {
+      return c.json({ success: false, error: '当前等级权限不足，请联系管理员升级' }, 403);
+    }
+    
+    await next();
+  };
+}
+
 
 /** 从请求中提取 JWT 令牌 */
 function extractToken(c: Context): string | null {

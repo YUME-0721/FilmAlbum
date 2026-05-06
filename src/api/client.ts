@@ -66,32 +66,35 @@ async function request<T>(
 }
 
 /** GET 请求 */
-export function get<T>(endpoint: string, params?: Record<string, string>): Promise<ApiResponse<T>> {
+export function get<T>(endpoint: string, params?: Record<string, string>, options?: RequestInit): Promise<ApiResponse<T>> {
   const searchParams = params ? '?' + new URLSearchParams(params).toString() : '';
-  return request<T>(`${endpoint}${searchParams}`, { method: 'GET' });
+  return request<T>(`${endpoint}${searchParams}`, { method: 'GET', ...options });
 }
 
 /** POST 请求 */
-export function post<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+export function post<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<ApiResponse<T>> {
   return request<T>(endpoint, {
     method: 'POST',
-    body: body instanceof FormData ? body : JSON.stringify(body)
+    body: body instanceof FormData ? body : JSON.stringify(body),
+    ...options
   });
 }
 
 /** PUT 请求 */
-export function put<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+export function put<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<ApiResponse<T>> {
   return request<T>(endpoint, {
     method: 'PUT',
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    ...options
   });
 }
 
 /** DELETE 请求 */
-export function del<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+export function del<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<ApiResponse<T>> {
   return request<T>(endpoint, {
     method: 'DELETE',
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
+    ...options
   });
 }
 

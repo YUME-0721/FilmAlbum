@@ -10,6 +10,7 @@ export interface AuthUser {
   nickname: string;
   avatarUrl: string;
   bio: string;
+  level: string;
   followersCount?: number;
   followingCount?: number;
   likesCount?: number;

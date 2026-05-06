@@ -16,8 +16,10 @@ import gearRoutes from './routes/gear';
 import messagesRoutes from './routes/messages';
 import notificationsRoutes from './routes/notifications';
 import searchRoutes from './routes/search';
+import systemRoutes from './routes/system';
+import adminRoutes from './routes/admin';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env }>({ strict: false });
 
 // CORS 配置：开发环境允许本地前端访问
 app.use('*', cors({
@@ -55,6 +57,8 @@ app.route('/api/gear', gearRoutes);
 app.route('/api/messages', messagesRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/search', searchRoutes);
+app.route('/api/system', systemRoutes);
+app.route('/api/admin', adminRoutes);
 
 // 健康检查
 app.get('/api/health', (c) => {

@@ -14,6 +14,7 @@ import Login from './pages/Login.tsx';
 import ResetPassword from './pages/ResetPassword.tsx';
 import Settings from './pages/Settings.tsx';
 import Messages from './pages/Messages.tsx';
+import Admin from './pages/Admin.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
 
 export default function App() {
@@ -65,6 +66,9 @@ export default function App() {
             {/* 登录页公开访问 */}
             <Route path="login" element={<Login />} />
             <Route path="reset-password" element={<ResetPassword />} />
+            
+            {/* 超级管理员后台 */}
+            <Route path="admin" element={<Admin />} />
           </Route>
         </Routes>
       </AuthProvider>

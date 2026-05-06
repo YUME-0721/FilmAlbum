@@ -4,7 +4,7 @@
  */
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { authRequired, authOptional, generateId } from '../middleware/auth';
+import { authRequired, authOptional, generateId, requireLevel } from '../middleware/auth';
 
 const rolls = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
@@ -173,6 +173,26 @@ rolls.get('/:id', authOptional(), async (c) => {
 /** POST /api/rolls - 创建胶卷 */
 rolls.post('/', authRequired(), async (c) => {
   const userId = c.get('userId');
+
+  // 获取用户权限等级
+  const user = await c.env.DB.prepare('SELECT level FROM users WHERE id = ?').bind(userId).first<{ level: string }>();
+  if (!user) return c.json({ success: false, error: '用户不存在' }, 404);
+
+  if (user.level === 'lv1') {
+    return c.json({ success: false, error: '当前等级(lv1)不可创建胶卷，请联系管理员升级' }, 403);
+  }
+
+  if (user.level === 'lv2') {
+    // 检查已创建数量
+    const rollCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM rolls WHERE user_id = ?').bind(userId).first<{ count: number }>();
+    const limitSetting = await c.env.DB.prepare("SELECT value FROM system_settings WHERE key = 'lv2_roll_limit'").first<{ value: string }>();
+    const limit = parseInt(limitSetting?.value || '10', 10);
+    
+    if ((rollCount?.count || 0) >= limit) {
+      return c.json({ success: false, error: `当前等级(lv2)最多只能创建 ${limit} 个胶卷，请联系管理员升级` }, 403);
+    }
+  }
+
   const body = await c.req.json<{
     title: string;
     filmStock?: string;
@@ -211,7 +231,7 @@ rolls.post('/', authRequired(), async (c) => {
 });
 
 /** PUT /api/rolls/:id - 更新胶卷信息 */
-rolls.put('/:id', authRequired(), async (c) => {
+rolls.put('/:id', authRequired(), requireLevel('lv2'), async (c) => {
   const rollId = c.req.param('id');
   const userId = c.get('userId');
 
@@ -274,7 +294,7 @@ rolls.put('/:id', authRequired(), async (c) => {
 });
 
 /** DELETE /api/rolls/:id - 删除胶卷 */
-rolls.delete('/:id', authRequired(), async (c) => {
+rolls.delete('/:id', authRequired(), requireLevel('lv2'), async (c) => {
   const rollId = c.req.param('id');
   const userId = c.get('userId');
 
@@ -320,8 +340,8 @@ rolls.delete('/:id', authRequired(), async (c) => {
   return c.json({ success: true });
 });
 
-/** POST /api/rolls/:id/frames - 往胶卷中添加帧 */
-rolls.post('/:id/frames', authRequired(), async (c) => {
+/** POST /api/rolls/:id/frames - 添加新底片（不需要上传图片，只添加记录） */
+rolls.post('/:id/frames', authRequired(), requireLevel('lv2'), async (c) => {
   const rollId = c.req.param('id');
   const userId = c.get('userId');
 
@@ -373,8 +393,8 @@ rolls.post('/:id/frames', authRequired(), async (c) => {
   return c.json({ success: true }, 201);
 });
 
-/** DELETE /api/rolls/:id/frames/:frameId - 删除帧 */
-rolls.delete('/:id/frames/:frameId', authRequired(), async (c) => {
+/** DELETE /api/rolls/:rollId/frames/:frameId - 删除单张底片 */
+rolls.delete('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async (c) => {
   const rollId = c.req.param('id');
   const frameId = c.req.param('frameId');
   const userId = c.get('userId');
@@ -494,8 +514,8 @@ rolls.put('/:id/frames/reorder', authRequired(), async (c) => {
   }
 });
 
-/** PUT /api/rolls/:id/frames/:frameId - 更新帧信息 */
-rolls.put('/:id/frames/:frameId', authRequired(), async (c) => {
+/** PUT /api/rolls/:rollId/frames/:frameId - 更新单张底片信息 */
+rolls.put('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async (c) => {
   const rollId = c.req.param('id');
   const frameId = c.req.param('frameId');
   const userId = c.get('userId');

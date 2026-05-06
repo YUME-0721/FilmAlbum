@@ -9,9 +9,11 @@ import Notification from '../components/Notification.tsx';
 import { sendCode } from '../src/api/auth.ts';
 import { Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '../src/hooks/useTranslation';
+import { useSettings } from '../src/context/SettingsContext';
 
 export default function Login() {
   const { t } = useTranslation();
+  const { openRegistration } = useSettings();
   const location = useLocation();
   const [isRegister, setIsRegister] = useState(location.state?.isRegister || false);
   const [email, setEmail] = useState('');
@@ -175,20 +177,28 @@ export default function Login() {
         </div>
 
         {/* 登录/注册切换 */}
-        <div className="flex mb-8 border-b border-outline-variant/15">
-          <button
-            onClick={() => { setIsRegister(false); setError(''); }}
-            className={`flex-1 pb-3 text-sm font-bold tracking-widest uppercase transition-colors ${!isRegister ? 'border-b-2 border-primary text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-          >
-            {t('login.login')}
-          </button>
-          <button
-            onClick={() => { setIsRegister(true); setError(''); }}
-            className={`flex-1 pb-3 text-sm font-bold tracking-widest uppercase transition-colors ${isRegister ? 'border-b-2 border-primary text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-          >
-            {t('login.register')}
-          </button>
-        </div>
+        {openRegistration ? (
+          <div className="flex mb-8 border-b border-outline-variant/15">
+            <button
+              onClick={() => { setIsRegister(false); setError(''); }}
+              className={`flex-1 pb-3 text-sm font-bold tracking-widest uppercase transition-colors ${!isRegister ? 'border-b-2 border-primary text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+            >
+              {t('login.login')}
+            </button>
+            <button
+              onClick={() => { setIsRegister(true); setError(''); }}
+              className={`flex-1 pb-3 text-sm font-bold tracking-widest uppercase transition-colors ${isRegister ? 'border-b-2 border-primary text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+            >
+              {t('login.register')}
+            </button>
+          </div>
+        ) : (
+          <div className="flex mb-8 border-b border-outline-variant/15">
+            <div className="flex-1 pb-3 text-center text-sm font-bold tracking-widest uppercase border-b-2 border-primary text-primary">
+              {t('login.login')}
+            </div>
+          </div>
+        )}
 
         {/* 表单 */}
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -200,7 +210,7 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
+              placeholder={t('login.emailPlaceholder')}
               className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
               required
             />
@@ -215,7 +225,7 @@ export default function Login() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                placeholder={t('login.passwordPlaceholder')}
                 minLength={6}
                 className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
                 required
@@ -297,7 +307,7 @@ export default function Login() {
                     disabled={isSendingCode || countdown > 0}
                     className="bg-surface-container-low border border-outline-variant px-4 py-3 text-sm font-body hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSendingCode ? t('common.uploading') : countdown > 0 ? `${countdown}s` : t('login.sendCode')}
+                    {isSendingCode ? t('common.sending') : countdown > 0 ? `${countdown}s` : t('login.sendCode')}
                   </button>
                 </div>
               </div>

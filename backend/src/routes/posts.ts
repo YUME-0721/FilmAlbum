@@ -4,7 +4,7 @@
  */
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { authRequired, authOptional, generateId } from '../middleware/auth';
+import { authRequired, authOptional, generateId, requireLevel } from '../middleware/auth';
 
 const posts = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
@@ -156,8 +156,8 @@ posts.get('/:id', authOptional(), async (c) => {
   });
 });
 
-/** POST /api/posts - 创建新帖子 */
-posts.post('/', authRequired(), async (c) => {
+/** POST /api/posts - 创建帖子 */
+posts.post('/', authRequired(), requireLevel('lv2'), async (c) => {
   const userId = c.get('userId');
   const body = await c.req.json<{
     title: string;
@@ -198,8 +198,8 @@ posts.post('/', authRequired(), async (c) => {
   return c.json({ success: true, data: { id: postId } }, 201);
 });
 
-/** PUT /api/posts/:id - 更新帖子 */
-posts.put('/:id', authRequired(), async (c) => {
+/** PUT /api/posts/:id - 更新帖子信息 */
+posts.put('/:id', authRequired(), requireLevel('lv2'), async (c) => {
   const postId = c.req.param('id');
   const userId = c.get('userId');
   const body = await c.req.json<{
@@ -254,7 +254,7 @@ posts.put('/:id', authRequired(), async (c) => {
 });
 
 /** DELETE /api/posts/:id - 删除帖子 */
-posts.delete('/:id', authRequired(), async (c) => {
+posts.delete('/:id', authRequired(), requireLevel('lv2'), async (c) => {
   const postId = c.req.param('id');
   const userId = c.get('userId');
 
@@ -272,8 +272,8 @@ posts.delete('/:id', authRequired(), async (c) => {
   return c.json({ success: true });
 });
 
-/** POST /api/posts/:id/like - 点赞 */
-posts.post('/:id/like', authRequired(), async (c) => {
+/** POST /api/posts/:id/like - 点赞/取消点赞 */
+posts.post('/:id/like', authRequired(), requireLevel('lv2'), async (c) => {
   const postId = c.req.param('id');
   const userId = c.get('userId');
 
@@ -372,7 +372,7 @@ posts.get('/:id/comments', async (c) => {
 });
 
 /** POST /api/posts/:id/comments - 发表评论 */
-posts.post('/:id/comments', authRequired(), async (c) => {
+posts.post('/:id/comments', authRequired(), requireLevel('lv2'), async (c) => {
   const postId = c.req.param('id');
   const userId = c.get('userId');
   const body = await c.req.json<{ content: string; parentId?: string; replyToUserId?: string | number }>();

@@ -171,7 +171,7 @@ export default function ResetPassword() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
+              placeholder={t('login.emailPlaceholder')}
               className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
               required
             />
@@ -244,7 +244,7 @@ export default function ResetPassword() {
                 disabled={isSendingCode || countdown > 0}
                 className="bg-surface-container-low border border-outline-variant px-4 py-3 text-sm font-body hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSendingCode ? t('common.uploading') : countdown > 0 ? `${countdown}s` : t('login.sendCode')}
+                {isSendingCode ? t('common.sending') : countdown > 0 ? `${countdown}s` : t('login.sendCode')}
               </button>
             </div>
           </div>

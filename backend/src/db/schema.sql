@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   nickname TEXT NOT NULL,
   avatar_url TEXT DEFAULT '',
   bio TEXT DEFAULT '',
+  level TEXT DEFAULT 'lv1',
   created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
@@ -186,6 +187,18 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   created_at TEXT DEFAULT (datetime('now')),
   expires_at TEXT NOT NULL
 );
+
+-- 系统设置表
+CREATE TABLE IF NOT EXISTS system_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+-- 插入默认系统设置
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('open_registration', 'true');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('default_language', 'zh-CN');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('lv2_roll_limit', '10');
 
 -- 索引优化
 CREATE INDEX IF NOT EXISTS idx_rolls_user_id ON rolls(user_id);

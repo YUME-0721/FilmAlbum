@@ -5,6 +5,14 @@ const search = new Hono<{ Bindings: Env }>();
 
 /** GET /api/search - 全局搜索 (用户 & 帖子) */
 search.get('/', async (c) => {
+  return await handleSearch(c);
+});
+
+search.get('', async (c) => {
+  return await handleSearch(c);
+});
+
+async function handleSearch(c: any) {
   const q = c.req.query('q');
   if (!q || q.trim().length === 0) {
     return c.json({ 
@@ -55,6 +63,6 @@ search.get('/', async (c) => {
       })) ?? []
     }
   });
-});
+}
 
 export default search;

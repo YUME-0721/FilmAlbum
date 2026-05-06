@@ -4,7 +4,7 @@
  */
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { authRequired, generateId } from '../middleware/auth';
+import { authRequired, generateId, requireLevel } from '../middleware/auth';
 
 const gear = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
@@ -100,7 +100,7 @@ gear.get('/', authRequired(), async (c) => {
 });
 
 /** POST /api/gear - 创建设备 */
-gear.post('/', authRequired(), async (c) => {
+gear.post('/', authRequired(), requireLevel('lv2'), async (c) => {
   const formData = await c.req.formData();
   const file: any = formData.get('file');
   const cameraModel = formData.get('cameraModel') as string;
@@ -162,7 +162,7 @@ gear.post('/', authRequired(), async (c) => {
 });
 
 /** PUT /api/gear/:id - 更新设备 */
-gear.put('/:id', authRequired(), async (c) => {
+gear.put('/:id', authRequired(), requireLevel('lv2'), async (c) => {
   const id = c.req.param('id');
   const formData = await c.req.formData();
   const file: any = formData.get('file');
@@ -260,7 +260,7 @@ gear.put('/:id', authRequired(), async (c) => {
 });
 
 /** DELETE /api/gear/:id - 删除设备 */
-gear.delete('/:id', authRequired(), async (c) => {
+gear.delete('/:id', authRequired(), requireLevel('lv2'), async (c) => {
   const id = c.req.param('id');
   const userId = c.get('userId');
 

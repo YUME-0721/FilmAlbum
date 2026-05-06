@@ -9,6 +9,7 @@ import { useAuth } from '../src/context/AuthContext';
 import { getRolls, type RollListItem } from '../src/api/rolls';
 import { getFilmStocks, type FilmStock } from '../src/api/film-stocks.ts';
 import { useTranslation } from '../src/hooks/useTranslation';
+import { useSettings } from '../src/context/SettingsContext';
 import { createGear, getGear, updateGear, deleteGear, type Gear } from '../src/api/gear.ts';
 import { get, post as apiPost, put, del } from '../src/api/client.ts';
 import { getPosts, type PostListItem } from '../src/api/posts.ts';
@@ -55,6 +56,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   const { id: paramId } = useParams();
   const navigate = useNavigate();
   const { user: currentUser, isLoggedIn } = useAuth();
+  const { lv2RollLimit } = useSettings();
 
   const [activeTab, setActiveTab] = useState('album');
   const [profile, setProfile] = useState<UserProfileData | null>(null);
@@ -197,7 +199,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         setProfile(result.data);
         // 如果不是本人，且当前在相册页，则自动切换到动态页
         if (!result.data.isOwner && activeTab === 'album') {
-          setActiveTab('activity');
+          setActiveTab('post');
         }
       }
     } catch (err) {
@@ -438,7 +440,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
 
   // 当切换到动态页时加载动态数据
   React.useEffect(() => {
-    if (activeTab === 'activity') {
+    if (activeTab === 'post') {
       setPostsPage(1);
       fetchUserPosts(1);
     }
@@ -706,12 +708,12 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             </button>
           )}
           <button 
-            onClick={() => setActiveTab('activity')}
-            className={`pb-4 text-sm font-bold tracking-[0.2em] uppercase flex items-center gap-2 transition-all relative ${activeTab === 'activity' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+            onClick={() => setActiveTab('post')}
+            className={`pb-4 text-sm font-bold tracking-[0.2em] uppercase flex items-center gap-2 transition-all relative ${activeTab === 'post' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
           >
             <History size={18} />
             <span>{t('profile.tabs.post')}</span>
-            {activeTab === 'activity' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary animate-in fade-in slide-in-from-left-2 shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]" />}
+            {activeTab === 'post' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary animate-in fade-in slide-in-from-left-2 shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]" />}
           </button>
           {/* 只对自己显示设备标签 */}
           {profile?.isOwner && (
@@ -776,13 +778,21 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             </div>
           </div>
           
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="bg-primary text-on-primary px-6 py-2.5 text-xs font-bold hover:bg-primary-dim transition-all shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-[0.2em] rounded-sm active:scale-95"
-          >
-            <FolderPlus size={16} />
-            {t('roll.new')}
-          </button>
+          {currentUser?.level !== 'lv1' && (
+            <button 
+              onClick={() => {
+                if (currentUser?.level === 'lv2' && allRolls.length >= lv2RollLimit) {
+                  alert(t('profile.roll.limitReached', { limit: lv2RollLimit }) || `LV2 limit reached: ${lv2RollLimit} rolls`);
+                  return;
+                }
+                setShowCreateModal(true);
+              }}
+              className="bg-primary text-on-primary px-6 py-2.5 text-xs font-bold hover:bg-primary-dim transition-all shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-[0.2em] rounded-sm active:scale-95"
+            >
+              <FolderPlus size={16} />
+              {t('roll.new')}
+            </button>
+          )}
         </div>
       )}
 
@@ -897,13 +907,21 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             {profile?.isOwner ? (
                 <>
                   <p className="font-body text-sm mb-8 opacity-70">{t('profile.roll.noPhotoDesc')}</p>
-                <button 
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-primary text-on-primary px-8 py-3 text-sm font-bold hover:bg-primary-dim transition-colors flex items-center gap-2 uppercase tracking-widest"
-                >
-                  <PlusCircle size={16} />
-                  {t('profile.tabs.album')} #1
-                </button>
+                {currentUser?.level !== 'lv1' && (
+                  <button 
+                    onClick={() => {
+                      if (currentUser?.level === 'lv2' && allRolls.length >= lv2RollLimit) {
+                        alert(t('profile.roll.limitReached', { limit: lv2RollLimit }) || `LV2 limit reached: ${lv2RollLimit} rolls`);
+                        return;
+                      }
+                      setShowCreateModal(true);
+                    }}
+                    className="bg-primary text-on-primary px-8 py-3 text-sm font-bold hover:bg-primary-dim transition-colors flex items-center gap-2 uppercase tracking-widest"
+                  >
+                    <PlusCircle size={16} />
+                    {t('profile.tabs.album')} #1
+                  </button>
+                )}
               </>
             ) : (
               <p className="font-body text-sm opacity-70">{t('profile.gear.emptyDescOther')}</p>
@@ -913,7 +931,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       )}
 
       {/* Activity Tab */}
-      {activeTab === 'activity' && (
+      {activeTab === 'post' && (
         <section className="max-w-[1200px] mx-auto space-y-6 pt-4">
           {isLoadingPosts && postsPage === 1 ? (
             <div className="flex justify-center py-20 animate-pulse">
@@ -976,7 +994,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
               </div>
             </div>
             
-            {profile?.isOwner && (
+            {profile?.isOwner && currentUser?.level !== 'lv1' && (
               <button 
                 onClick={() => setShowAddGearModal(true)}
                 className="bg-primary text-on-primary px-6 py-2.5 text-xs font-bold hover:bg-primary-dim transition-all shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-[0.2em] rounded-sm active:scale-95"
