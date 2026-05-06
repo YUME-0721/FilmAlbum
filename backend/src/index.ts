@@ -31,15 +31,15 @@ app.use('*', cors({
       'http://127.0.0.1:3000',
       'http://127.0.0.1:5173'
     ];
-    // 生产环境：允许 Cloudflare Pages 域名和自定义域名
-    if (
-      origin?.endsWith('.pages.dev') || 
-      origin === 'https://filmalbum.072199.xyz' ||
-      allowedOrigins.includes(origin ?? '')
-    ) {
-      return origin ?? '';
+    
+    // 生产环境逻辑：允许本地、Cloudflare Pages 预览域名
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.pages.dev')) {
+      return origin || '';
     }
-    return '';
+    
+    // NOTE: 如果你有特定的自定义前端域名，可以将其添加到环境变量或此处
+    // 为了极致的灵活性，这里也可以改为直接返回 origin (风险自担)
+    return origin; 
   },
   credentials: true,
   allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],

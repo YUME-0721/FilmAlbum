@@ -21,21 +21,14 @@ const adminAuthRequired = () => {
 
     const token = authHeader.split(' ')[1];
     try {
-      // NOTE: 管理员 Token 使用与用户 Token 相同的密钥，但 payload 结构不同（含 role 字段）
       const secret = await getJwtSecret(c.env);
-      const parts = token.split('.');
-      if (parts.length !== 3) throw new Error('invalid token');
-      const payload: AdminPayload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-      // 验证签名
-      const verified = await verifyJwt(token, secret);
-      if (!verified && !payload.role) throw new Error('invalid');
-      if (payload.role !== 'admin') {
-        return c.json({ success: false, error: '权限不足' }, 403);
+      // 1. 验证签名并解析 payload
+      const payload = await verifyJwt(token, secret) as (AdminPayload & { role: string }) | null;
+      
+      if (!payload || payload.role !== 'admin') {
+        return c.json({ success: false, error: '权限不足或令牌无效' }, 403);
       }
-      // 检查过期
-      if (payload.exp < Math.floor(Date.now() / 1000)) {
-        return c.json({ success: false, error: '令牌已过期' }, 401);
-      }
+      
       c.set('isAdmin', true);
       await next();
     } catch (e) {
@@ -100,6 +93,8 @@ admin.get('/settings', adminAuthRequired(), async (c) => {
   if (!settingsMap['open_registration']) settingsMap['open_registration'] = 'true';
   if (!settingsMap['default_language']) settingsMap['default_language'] = 'zh-CN';
   if (!settingsMap['lv2_roll_limit']) settingsMap['lv2_roll_limit'] = '10';
+  if (!settingsMap['img_bed_path']) settingsMap['img_bed_path'] = '/FilmAlbum/';
+  if (!settingsMap['api_base_url']) settingsMap['api_base_url'] = '';
 
   return c.json({
     success: true,

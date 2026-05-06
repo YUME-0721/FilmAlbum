@@ -222,7 +222,7 @@ gear.put('/:id', authRequired(), requireLevel('lv2'), async (c) => {
           
           const deleteUrl = `${imgBedUrl}/api/manage/delete/${path}`;
           const response = await fetch(deleteUrl, {
-            method: 'GET',
+            method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${imgBedToken}`
             }

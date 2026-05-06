@@ -2,17 +2,17 @@ name = "film-album-api"
 main = "src/index.ts"
 compatibility_date = "2024-04-03"
 
-routes = [
-  { pattern = "filmsapi.072199.xyz", custom_domain = true }
-]
+
+# 路由配置：建议在 Cloudflare Dashboard 的 Triggers -> Custom Domains 中手动添加，以保护隐私
+# routes = [ { pattern = "your-api.com", custom_domain = true } ]
 
 [vars]
 # 图床配置
-# NOTE: 密钥类变量请通过 npx wrangler secret put 指令设置，不要存在此处
+# NOTE: 密钥类变量请通过 npx wrangler secret put 指令设置，不存在此处
 # 必须设置的 Secret: ADMIN_PASSWORD
 # 可选的 Secret: JWT_SECRET（不设置时自动由 ADMIN_PASSWORD 派生），IMG_BED_URL, IMG_BED_TOKEN, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM（建议通过 /admin 后台配置）
 
 [[d1_databases]]
 binding = "DB"
 database_name = "film-album-db"
-database_id = "33c398e7-a2e8-4e0d-8d1c-f57183b020e9"
+database_id = "xxxx-xxxx-xxxxx-xxxxxx"

@@ -110,9 +110,11 @@
 
 ### 3. 关键：解决 Cookie 登录失效 (域名绑定)
 
-> **⚠️ 注意**：如果前端和后端域名不属于同级（例如一个是 `.pages.dev`，一个是 `.workers.dev`），由于浏览器限制，登录会失效。
+> **⚠️ 注意**：如果前端和后端域名不属于同级（例如一个是 `.pages.dev`，一个是 `.workers.dev`），由于浏览器 Cookie 跨域限制，登录会失效。
 > 
-> **解决方案**：在 Cloudflare 中为后端 Worker 绑定一个 **Custom Domain**（例如 `api.yourdomain.com`），并将前端的 `VITE_API_BASE_URL` 指向它。
+> **解决方案**：在 Cloudflare 中为后端 Worker 绑定一个 **Custom Domain**（例如 `api.yourdomain.com`）。
+> 
+> **隐私建议**：为了避免在 GitHub 代码库中暴露你的域名，建议在 Cloudflare 控制台的 `Workers -> Triggers -> Custom Domains` 手动添加，而不是写在 `wrangler.toml` 中。
 
 ---
 
@@ -122,7 +124,8 @@
 
 | 配置项 | 说明 |
 |--------|------|
-| 🖼️ **图床配置** | 填写图床地址和 API Token |
+| 🖼️ **图床配置** | 填写图床地址、API Token，以及**自定义存储路径**（例如 `/MyAlbum/`） |
+| 🌐 **API 域名** | 填写后端绑定的自定义域名，确保前端能正确连接（支持动态切换） |
 | 📧 **邮件配置** | 填写 Resend API Key 和发件人地址，可发测试邮件验证 |
 | 👥 **开放注册** | 控制是否允许新用户公开注册 |
 | 🌐 **默认语言** | 设置网站全局默认语言（中文 / English） |

@@ -205,6 +205,9 @@ INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_token', '');
 -- Resend 邮件服务配置（初始为空，通过管理员后台配置）
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_from', '');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_password', '');
+-- 更多配置
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_path', '/FilmAlbum/');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('api_base_url', '');
 
 -- 索引优化
 CREATE INDEX IF NOT EXISTS idx_rolls_user_id ON rolls(user_id);

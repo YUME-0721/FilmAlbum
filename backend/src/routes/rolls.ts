@@ -395,7 +395,7 @@ rolls.post('/:id/frames', authRequired(), requireLevel('lv2'), async (c) => {
 
 /** DELETE /api/rolls/:rollId/frames/:frameId - 删除单张底片 */
 rolls.delete('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async (c) => {
-  const rollId = c.req.param('id');
+  const rollId = c.req.param('rollId');
   const frameId = c.req.param('frameId');
   const userId = c.get('userId');
 
@@ -516,7 +516,7 @@ rolls.put('/:id/frames/reorder', authRequired(), async (c) => {
 
 /** PUT /api/rolls/:rollId/frames/:frameId - 更新单张底片信息 */
 rolls.put('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async (c) => {
-  const rollId = c.req.param('id');
+  const rollId = c.req.param('rollId');
   const frameId = c.req.param('frameId');
   const userId = c.get('userId');
 

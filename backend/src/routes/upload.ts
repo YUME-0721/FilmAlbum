@@ -92,11 +92,12 @@ upload.post('/', authRequired(), async (c) => {
 
   // NOTE: 优先从 system_settings 数据库读取图床配置，env 变量作为兜底
   const imgBedSettings = await c.env.DB.prepare(
-    "SELECT key, value FROM system_settings WHERE key IN ('img_bed_url','img_bed_token')"
+    "SELECT key, value FROM system_settings WHERE key IN ('img_bed_url','img_bed_token','img_bed_path')"
   ).all<{ key: string; value: string }>();
   const ibMap = imgBedSettings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
   const imgBedUrl   = ibMap['img_bed_url']   || c.env.IMG_BED_URL;
   const imgBedToken = ibMap['img_bed_token'] || c.env.IMG_BED_TOKEN;
+  const imgBedPath  = ibMap['img_bed_path']  || '/FilmAlbum/';
 
   try {
     const rollId = c.req.query('rollId');
@@ -108,14 +109,15 @@ upload.post('/', authRequired(), async (c) => {
     const isAvatarUpload = !rollId && type !== 'filmStock';
     
     // 根据类型决定上传路径
-    // type=filmStock: 胶卷型号照片 -> /FilmAlbum/Films/
-    // 有rollId: 胶卷底片照片 -> /FilmAlbum/{userId}/{rollId}/
-    // 无rollId且不是胶卷型号照片: 头像 -> /FilmAlbum/{userId}/
+    // type=filmStock: 胶卷型号照片 -> {imgBedPath}Films/
+    // 有rollId: 胶卷底片照片 -> {imgBedPath}{userId}/{rollId}/
+    // 无rollId且不是胶卷型号照片: 头像 -> {imgBedPath}{userId}/
+    const basePath = imgBedPath.endsWith('/') ? imgBedPath : `${imgBedPath}/`;
     const folderPath = type === 'filmStock' 
-      ? `/FilmAlbum/Films/`
+      ? `${basePath}Films/`
       : rollId 
-        ? `/FilmAlbum/${displayUserId}/${rollId}/`
-        : `/FilmAlbum/${displayUserId}/`;
+        ? `${basePath}${displayUserId}/${rollId}/`
+        : `${basePath}${displayUserId}/`;
 
     // 上传图片：头像使用压缩模式，其他使用原图模式
     const uploadUrl = await uploadToImgBed(file, imgBedUrl, imgBedToken, folderPath, false);

@@ -4,8 +4,7 @@
  */
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { authRequired } from '../middleware/auth';
-import { v4 as uuidv4 } from 'uuid';
+import { authRequired, generateId } from '../middleware/auth';
 
 const messages = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
@@ -102,7 +101,7 @@ messages.post('/:userId', authRequired(), async (c) => {
     return c.json({ success: false, error: '内容不能为空' }, 400);
   }
 
-  const messageId = uuidv4();
+  const messageId = generateId();
   await c.env.DB.prepare(`
     INSERT INTO messages (id, sender_id, receiver_id, content, created_at)
     VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
