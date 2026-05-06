@@ -1,65 +1,9 @@
-/**
- * 设备管理路由
- * 设备 CRUD、图片上传、状态管理
- */
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { authRequired, generateId, requireLevel } from '../middleware/auth';
+import { uploadToImgBed } from '../utils/upload-helper';
 
 const gear = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
-
-/**
- * 上传图片到图床
- * @param file 文件
- * @param imgBedUrl 图床 URL
- * @param imgBedToken 图床 Token
- * @param folderPath 上传目录
- * @param isPreview 是否为预览图
- */
-async function uploadToImgBed(
-  file: File,
-  imgBedUrl: string,
-  imgBedToken: string,
-  folderPath: string,
-  isPreview: boolean
-) {
-  const uploadFormData = new FormData();
-  uploadFormData.append('file', file);
-
-  // 构建查询参数
-  const urlParams = new URLSearchParams({
-    uploadChannel: 'huggingface',
-    uploadNameType: 'index',
-    serverCompress: 'true',
-    serverWebp: 'true',
-    uploadFolder: isPreview ? `${folderPath}preview/` : folderPath
-  });
-
-  const targetUrl = `${imgBedUrl}/upload?${urlParams.toString()}`;
-
-  const response = await fetch(targetUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${imgBedToken}`
-    },
-    body: uploadFormData
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`图床上传失败: ${errorText}`);
-  }
-
-  // 图床响应格式: [{ "src": "/file/abc123_image.jpg" }]
-  const result = await response.json() as Array<{ src: string }>;
-
-  if (!result?.[0]?.src) {
-    throw new Error('图床返回数据格式异常');
-  }
-
-  // 拼接完整 URL
-  return `${imgBedUrl}${result[0].src}`;
-}
 
 /** GET /api/gear - 获取用户设备列表 */
 gear.get('/', authRequired(), async (c) => {
@@ -141,7 +85,7 @@ gear.post('/', authRequired(), requireLevel('lv2'), async (c) => {
     const folderPath = `/FilmAlbum/${displayUserId}/Cameras/`;
     
     try {
-      imageUrl = await uploadToImgBed(file, imgBedUrl, imgBedToken, folderPath, false);
+      imageUrl = await uploadToImgBed(c, { file, type: 'gear', userId });
     } catch (error) {
       return c.json({ success: false, error: `图片上传失败: ${String(error)}` }, 500);
     }
@@ -238,7 +182,7 @@ gear.put('/:id', authRequired(), requireLevel('lv2'), async (c) => {
       }
       
       // 上传新图片
-      imageUrl = await uploadToImgBed(file, imgBedUrl, imgBedToken, folderPath, false);
+      imageUrl = await uploadToImgBed(c, { file, type: 'gear', userId });
     } catch (error) {
       return c.json({ success: false, error: `图片上传失败: ${String(error)}` }, 500);
     }

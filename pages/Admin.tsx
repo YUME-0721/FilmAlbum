@@ -75,9 +75,18 @@ const i18n = {
     saved: '保存成功',
     saving: '保存中...',
     smtpNote: '目前仅支持 Resend。只需填入 Resend API Key 和发件人即可。',
-    imgBedChannel: '上传渠道',
+    imgBedChannel: '全局渠道',
     imgBedNameType: '命名方式',
-    imgBedPathDesc: '当前分级：路径/用户ID/胶卷ID/文件名',
+    imgBedPathDesc: '支持占位符：{userId}, {rollId}',
+    strategyAvatar: '用户头像',
+    strategyRoll: '影集原图',
+    strategyPreview: '影集预览',
+    strategyGear: '设备图像',
+    strategyFilmStock: '胶卷型号',
+    strategyPath: '路径模板',
+    strategyCompress: '压缩',
+    strategyChannel: '独立渠道',
+    useGlobal: '跟随全局',
   },
   'en-US': {
     title: 'Super Admin',
@@ -139,9 +148,18 @@ const i18n = {
     saved: 'Saved!',
     saving: 'Saving...',
     smtpNote: 'Only Resend is supported. Fill in the API Key and sender address.',
-    imgBedChannel: 'Upload Channel',
+    imgBedChannel: 'Global Channel',
     imgBedNameType: 'Naming Type',
-    imgBedPathDesc: 'Hierarchy: Path/UserID/RollID/FileName',
+    imgBedPathDesc: 'Placeholders: {userId}, {rollId}',
+    strategyAvatar: 'Avatar',
+    strategyRoll: 'Roll Photo',
+    strategyPreview: 'Preview',
+    strategyGear: 'Gear',
+    strategyFilmStock: 'Film Stock',
+    strategyPath: 'Path Template',
+    strategyCompress: 'Compress',
+    strategyChannel: 'Channel',
+    useGlobal: 'Global',
   }
 };
 
@@ -181,7 +199,13 @@ export default function Admin() {
     img_bed_token: '', 
     img_bed_path: '/FilmAlbum/',
     img_bed_channel: 'huggingface',
-    img_bed_name_type: 'index'
+    img_bed_name_type: 'index',
+    // 显式初始化策略字段，防止 TS 报错
+    avatar_path: '', avatar_compress: 'true', avatar_channel: '',
+    roll_path: '', roll_compress: 'false', roll_channel: '',
+    preview_path: '', preview_compress: 'true', preview_channel: '',
+    gear_path: '', gear_compress: 'true', gear_channel: '',
+    film_stock_path: '', film_stock_compress: 'true', film_stock_channel: '',
   });
   const [imgBedSaveStatus, setImgBedSaveStatus] = useState({ type: '', message: '' });
   const [showImgToken, setShowImgToken] = useState(false);
@@ -257,6 +281,22 @@ export default function Admin() {
           img_bed_path:      s['img_bed_path']      || '/FilmAlbum/',
           img_bed_channel:   s['img_bed_channel']   || 'huggingface',
           img_bed_name_type: s['img_bed_name_type'] || 'index',
+          // 回填各类型策略
+          avatar_path:     s['avatar_path']     || '{userId}/',
+          avatar_compress: s['avatar_compress'] || 'true',
+          avatar_channel:  s['avatar_channel']  || '',
+          roll_path:       s['roll_path']       || '{userId}/{rollId}/',
+          roll_compress:   s['roll_compress']   || 'false',
+          roll_channel:    s['roll_channel']    || '',
+          preview_path:    s['preview_path']    || '{userId}/{rollId}/preview/',
+          preview_compress:s['preview_compress']|| 'true',
+          preview_channel: s['preview_channel'] || '',
+          gear_path:       s['gear_path']       || '{userId}/Gear/',
+          gear_compress:   s['gear_compress']   || 'true',
+          gear_channel:    s['gear_channel']    || '',
+          film_stock_path: s['film_stock_path'] || 'Films/',
+          film_stock_compress: s['film_stock_compress'] || 'true',
+          film_stock_channel: s['film_stock_channel'] || '',
         });
         setSmtp({
           smtp_from:     s['smtp_from']     || '',
@@ -320,6 +360,14 @@ export default function Admin() {
     if (img_bed_path) payload['img_bed_path'] = img_bed_path;
     if (img_bed_channel) payload['img_bed_channel'] = img_bed_channel;
     if (img_bed_name_type) payload['img_bed_name_type'] = img_bed_name_type;
+    
+    // 包含所有策略字段
+    ['avatar', 'roll', 'preview', 'gear', 'film_stock'].forEach(type => {
+      payload[`${type}_path`] = (imgBed as any)[`${type}_path`];
+      payload[`${type}_compress`] = String((imgBed as any)[`${type}_compress`]);
+      payload[`${type}_channel`] = (imgBed as any)[`${type}_channel`];
+    });
+
     if (imgBed.img_bed_token && imgBed.img_bed_token !== '••••••••') {
       payload['img_bed_token'] = imgBed.img_bed_token;
     }
@@ -601,7 +649,7 @@ export default function Admin() {
                     {at('imgBedSettings')}
                   </h2>
                 </div>
-                <div className="p-5 space-y-3">
+                <div className="p-5 space-y-6">
                   {imgBedSaveStatus.message && (
                     <div className={`px-3 py-2 rounded-lg text-xs ${
                       imgBedSaveStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
@@ -609,7 +657,9 @@ export default function Admin() {
                         : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
                     }`}>{imgBedSaveStatus.message}</div>
                   )}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  
+                  {/* 基础配置 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
                       <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedUrl')}</label>
                       <input
@@ -620,7 +670,7 @@ export default function Admin() {
                         className={inputCls}
                       />
                     </div>
-                    <div className="sm:col-span-2">
+                    <div>
                       <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedToken')}</label>
                       <div className="relative">
                         <input
@@ -650,31 +700,67 @@ export default function Admin() {
                         <option value="github">GitHub</option>
                       </select>
                     </div>
-                    <div>
-                      <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedNameType')}</label>
-                      <select
-                        value={imgBed.img_bed_name_type}
-                        onChange={(e) => setImgBed(p => ({ ...p, img_bed_name_type: e.target.value }))}
-                        className={inputCls}
-                      >
-                        <option value="index">Index (序号)</option>
-                        <option value="original">Original (原始名)</option>
-                        <option value="random">Random (随机)</option>
-                        <option value="timestamp">Timestamp (时间戳)</option>
-                      </select>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedPath')}</label>
-                      <input
-                        type="text"
-                        placeholder={at('imgBedPathPlaceholder')}
-                        value={imgBed.img_bed_path}
-                        onChange={(e) => setImgBed(p => ({ ...p, img_bed_path: e.target.value }))}
-                        className={inputCls}
-                      />
-                      <p className={`mt-1 text-[10px] ${mutedText}`}>{at('imgBedPathDesc')}</p>
-                    </div>
                   </div>
+
+                  {/* 分类型策略配置 */}
+                  <div className="pt-4 border-t border-white/5 space-y-4">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-amber-500/80">上传策略 (Upload Strategies)</h3>
+                    <div className="overflow-x-auto -mx-5 px-5">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className={mutedText}>
+                            <th className="pb-2 pr-4 font-semibold">{at('user')}</th>
+                            <th className="pb-2 pr-4 font-semibold">{at('strategyPath')}</th>
+                            <th className="pb-2 pr-4 font-semibold">{at('strategyChannel')}</th>
+                            <th className="pb-2 font-semibold text-center">{at('strategyCompress')}</th>
+                          </tr>
+                        </thead>
+                        <tbody className={dividerCls + ' divide-y'}>
+                          {[
+                            { key: 'avatar', label: at('strategyAvatar') },
+                            { key: 'roll', label: at('strategyRoll') },
+                            { key: 'preview', label: at('strategyPreview') },
+                            { key: 'gear', label: at('strategyGear') },
+                            { key: 'film_stock', label: at('strategyFilmStock') },
+                          ].map((item) => (
+                            <tr key={item.key}>
+                              <td className="py-3 pr-4 font-medium">{item.label}</td>
+                              <td className="py-3 pr-4">
+                                <input
+                                  type="text"
+                                  value={(imgBed as any)[`${item.key}_path`]}
+                                  onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_path`]: e.target.value }))}
+                                  className={`${inputCls} py-1 text-[10px]`}
+                                />
+                              </td>
+                              <td className="py-3 pr-4">
+                                <select
+                                  value={(imgBed as any)[`${item.key}_channel`]}
+                                  onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_channel`]: e.target.value }))}
+                                  className={`${inputCls} py-1 text-[10px]`}
+                                >
+                                  <option value="">{at('useGlobal')}</option>
+                                  <option value="huggingface">HuggingFace</option>
+                                  <option value="cloudflare">Cloudflare</option>
+                                  <option value="r2">R2</option>
+                                </select>
+                              </td>
+                              <td className="py-3 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={(imgBed as any)[`${item.key}_compress`] === 'true' || (imgBed as any)[`${item.key}_compress`] === true}
+                                  onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_compress`]: String(e.target.checked) }))}
+                                  className="rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className={`text-[10px] ${mutedText}`}>{at('imgBedPathDesc')}</p>
+                  </div>
+
                   <button
                     onClick={handleSaveImgBed}
                     disabled={imgBedSaveStatus.type === 'loading'}
