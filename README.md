@@ -24,37 +24,39 @@
 
 ### 第一步：准备 Cloudflare 凭据
 1.  **Account ID**：登录 [Cloudflare](https://dash.cloudflare.com/)，在首页右侧复制 `Account ID`。
-2.  **API Token**：
-    - 前往 **My Profile** -> **API Tokens** -> **Create Token**。
-    - 选择 **Edit Cloudflare Workers** 模板。
-    - **重要**：在权限中点击“添加更多”，增加 `账户 -> D1 -> 编辑` 权限。
-    - 复制并保存生成的令牌。
+2.  **API Token**：前往 **My Profile** -> **API Tokens** -> **Create Token**，选择 **Edit Cloudflare Workers** 模板，并在权限中额外增加 `账户 -> D1 -> 编辑` 权限。复制生成的令牌。
 
-### 第二步：配置 GitHub Secrets
-在你的 GitHub 仓库中，进入 **Settings** -> **Secrets and variables** -> **Actions**，点击 **New repository secret** 添加以下三个密钥：
+### 第二步：配置 GitHub Secrets & Variables
+在你的 GitHub 仓库中，进入 **Settings** -> **Secrets and variables** -> **Actions**：
 
+#### 1. 添加 Secrets (加密密钥)
 | 密钥名称 | 说明 |
 | :--- | :--- |
 | `CLOUDFLARE_API_TOKEN` | 刚才创建的 API 令牌 |
 | `CLOUDFLARE_ACCOUNT_ID` | 你的 Cloudflare 账户 ID |
 | `ADMIN_PASSWORD` | **自定义管理员密码**（用于登录 /admin） |
 
+#### 2. 添加 Variables (环境变量)
+点击 **Variables** 标签页，添加以下变量：
+| 变量名称 | 说明 |
+| :--- | :--- |
+| `VITE_API_BASE_URL` | **你的后端 API 域名**。例如 `https://api.yourdomain.com`（必须以 https:// 开头） |
+
 ### 第三步：触发自动化部署
-1.  在 GitHub 仓库页面点击顶部的 **Actions** 标签。
-2.  在左侧选择 **Deploy to Cloudflare**。
-3.  点击右侧的 **Run workflow** -> **Run workflow**。
-4.  **Action 会自动帮你完成：** 创建 D1 数据库 -> 初始化表结构 -> 设置管理员密码 -> 发布前后端。
+1.  在 GitHub 仓库页面点击顶部的 **Actions** -> **Deploy to Cloudflare**。
+2.  点击 **Run workflow**。
+3.  **Action 会自动帮你完成：** 创建 D1 数据库 -> 初始化表结构 -> 设置密码 -> 创建前端项目 -> 发布全栈应用。
 
 ---
 
-## ⚠️ 部署后必做：绑定自定义域名 (解决登录失效)
+## ⚠️ 部署后必做：绑定自定义域名
 
-由于浏览器对 `.workers.dev` 和 `.pages.dev` 之间的 Cookie 跨域限制，**默认域名无法登录管理员后台**。
+由于浏览器对 `.workers.dev` 和 `.pages.dev` 之间的 Cookie 跨域限制，**你必须使用自定义域名才能正常登录**。
 
-**解决方案：**
-1.  在 Cloudflare 中为后端 Worker 绑定一个 **Custom Domain**（例如 `api.yourdomain.com`）。
-    - 路径：`Workers -> film-album-api -> Triggers -> Custom Domains -> Add Custom Domain`。
-2.  访问 `https://your-site.com/admin`，填入刚才设置的 `ADMIN_PASSWORD` 即可开始配置图床。
+1.  **后端绑定**：在 Cloudflare 中为 `film-album-api` 绑定你在 `VITE_API_BASE_URL` 中填写的域名。
+    - 路径：`Workers -> film-album-api -> Triggers -> Custom Domains -> Add`。
+2.  **前端绑定**：同理，为 `film-album-web` 绑定你的前端主域名（如 `yourdomain.com`）。
+3.  **完成**：访问你的前端域名，进入 `/admin` 登录即可。
 
 ---
 
