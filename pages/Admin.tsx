@@ -69,7 +69,7 @@ const i18n = {
     smtpPasswordPlaceholder: 're_xxxxxxxx',
     saveSmtp: '保存邮件配置',
     testEmail: '发送测试邮件',
-    testEmailTo: '收件邮筱',
+    testEmailTo: '收件邮箱',
     sendTest: '发送测试',
     sending: '发送中...',
     saved: '保存成功',
@@ -87,6 +87,9 @@ const i18n = {
     strategyCompress: '压缩',
     strategyChannel: '独立渠道',
     useGlobal: '跟随全局',
+    tabSystem: '系统设置',
+    tabUsers: '用户管理',
+    tabImgBed: '图床配置',
   },
   'en-US': {
     title: 'Super Admin',
@@ -160,6 +163,9 @@ const i18n = {
     strategyCompress: 'Compress',
     strategyChannel: 'Channel',
     useGlobal: 'Global',
+    tabSystem: 'System',
+    tabUsers: 'Users',
+    tabImgBed: 'ImageBed',
   }
 };
 
@@ -217,6 +223,9 @@ export default function Admin() {
   const [showSmtpKey, setShowSmtpKey] = useState(false);
   const [testEmailTo, setTestEmailTo] = useState('');
   const [testEmailStatus, setTestEmailStatus] = useState({ type: '', message: '' });
+
+  // 选项卡状态
+  const [activeTab, setActiveTab] = useState<'system' | 'users' | 'imgbed'>('system');
 
   useEffect(() => {
     if (token) fetchDashboardData();
@@ -428,9 +437,32 @@ export default function Admin() {
     <header className={`fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-6 border-b backdrop-blur-md ${
       isDarkMode ? 'bg-[#0d0d0d]/90 border-white/8' : 'bg-white/90 border-gray-200'
     }`}>
-      <div className="flex items-center gap-3">
-        <ShieldAlert size={20} className="text-blue-500" />
-        <span className="font-bold tracking-wider text-sm uppercase">{at('title')}</span>
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 mr-4">
+          <ShieldAlert size={20} className="text-blue-500" />
+          <span className="font-bold tracking-wider text-sm uppercase hidden sm:inline">{at('title')}</span>
+        </div>
+
+        <nav className="flex items-center gap-1">
+          {[
+            { id: 'system', icon: Settings2, label: at('tabSystem') },
+            { id: 'users', icon: Users, label: at('tabUsers') },
+            { id: 'imgbed', icon: ImageUp, label: at('tabImgBed') },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === tab.id
+                  ? (isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600')
+                  : (isDarkMode ? 'text-white/50 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100')
+              }`}
+            >
+              <tab.icon size={14} />
+              <span className="hidden md:inline">{tab.label}</span>
+            </button>
+          ))}
+        </nav>
       </div>
 
       <div className="flex items-center gap-2">
@@ -538,440 +570,240 @@ export default function Admin() {
     <div className={`min-h-screen ${bg} ${text} transition-colors duration-300`}>
       <Topbar />
 
-      <main className="pt-14">
+      <main className="pt-14 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-          {/* 页面标题 */}
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Settings2 size={22} className="text-blue-500" />
-              {at('dashboard')}
-            </h1>
-            <button
-              onClick={fetchDashboardData}
-              disabled={isLoading}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all hover:scale-105 active:scale-95 ${
-                isDarkMode ? 'border-white/10 bg-white/5 hover:bg-white/10' : 'border-gray-200 hover:bg-gray-100'
-              }`}
-            >
-              <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-              {at('refresh')}
-            </button>
-          </div>
-
-          {/* 统计卡片 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-            <div className={`flex items-center gap-4 p-5 rounded-2xl border ${cardBg}`}>
-              <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-blue-500/15' : 'bg-blue-50'}`}>
-                <Users size={24} className="text-blue-500" />
+          {/* 顶部统计卡片 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className={`p-4 rounded-2xl border ${cardBg} flex items-center gap-3`}>
+              <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/15' : 'bg-blue-50'}`}>
+                <Users size={18} className="text-blue-500" />
               </div>
               <div>
-                <p className={`text-xs font-medium uppercase tracking-wider ${mutedText}`}>{at('totalUsers')}</p>
-                <p className="text-3xl font-bold mt-0.5">{stats.users}</p>
+                <p className={`text-[10px] font-bold uppercase tracking-wider ${mutedText}`}>{at('totalUsers')}</p>
+                <p className="text-xl font-bold">{stats.users}</p>
               </div>
             </div>
-            <div className={`flex items-center gap-4 p-5 rounded-2xl border ${cardBg}`}>
-              <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-emerald-500/15' : 'bg-emerald-50'}`}>
-                <Film size={24} className="text-emerald-500" />
+            <div className={`p-4 rounded-2xl border ${cardBg} flex items-center gap-3`}>
+              <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-emerald-500/15' : 'bg-emerald-50'}`}>
+                <Film size={18} className="text-emerald-500" />
               </div>
               <div>
-                <p className={`text-xs font-medium uppercase tracking-wider ${mutedText}`}>{at('totalRolls')}</p>
-                <p className="text-3xl font-bold mt-0.5">{stats.rolls}</p>
+                <p className={`text-[10px] font-bold uppercase tracking-wider ${mutedText}`}>{at('totalRolls')}</p>
+                <p className="text-xl font-bold">{stats.rolls}</p>
               </div>
+            </div>
+            <div className="hidden md:flex md:col-span-2 items-center justify-end">
+              <button
+                onClick={fetchDashboardData}
+                disabled={isLoading}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all hover:scale-105 active:scale-95 ${
+                  isDarkMode ? 'border-white/10 bg-white/5 hover:bg-white/10' : 'border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+                {at('refresh')}
+              </button>
             </div>
           </div>
 
-          {/* 内容区：左右布局 */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* ── 左侧 ── */}
-            <div className="space-y-6">
-
-              {/* 系统设置 */}
-              <div className={`rounded-2xl border ${cardBg}`}>
-                <div className="px-5 py-4 border-b border-inherit">
-                  <h2 className="font-bold text-sm uppercase tracking-widest">{at('systemSettings')}</h2>
-                </div>
-                <div className="p-5 space-y-5">
-
-                  {/* 开放注册 */}
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm">{at('openRegistration')}</p>
-                      <p className={`text-xs mt-0.5 ${mutedText}`}>{at('openRegistrationDesc')}</p>
-                    </div>
-                    <button
-                      onClick={() => handleUpdateSetting('open_registration', settings.open_registration === 'true' ? 'false' : 'true')}
-                      className={`relative flex-shrink-0 inline-flex h-6 w-11 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                        settings.open_registration === 'true' ? 'bg-blue-500' : isDarkMode ? 'bg-white/15' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${
-                        settings.open_registration === 'true' ? 'translate-x-5' : 'translate-x-0'
-                      }`} />
-                    </button>
+          {/* 系统设置 TAB */}
+          {activeTab === 'system' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className={`rounded-2xl border ${cardBg}`}>
+                  <div className="px-5 py-4 border-b border-inherit flex items-center gap-2">
+                    <Settings2 size={16} className="text-blue-500" />
+                    <h2 className="font-bold text-sm uppercase tracking-widest">{at('systemSettings')}</h2>
                   </div>
-
-                  {/* 默认语言 */}
-                  <div>
-                    <p className="font-medium text-sm mb-1.5">{at('defaultLanguage')}</p>
-                    <select
-                      value={settings.default_language}
-                      onChange={(e) => handleUpdateSetting('default_language', e.target.value)}
-                      className={inputCls}
-                    >
-                      <option value="zh-CN">简体中文</option>
-                      <option value="en-US">English</option>
-                    </select>
-                  </div>
-
-                  {/* LV2 影集上限 */}
-                  <div>
-                    <p className="font-medium text-sm mb-0.5">{at('lv2RollLimit')}</p>
-                    <p className={`text-xs mb-1.5 ${mutedText}`}>{at('lv2RollLimitDesc')}</p>
-                    <input
-                      type="number"
-                      min={1}
-                      value={settings.lv2_roll_limit}
-                      onChange={(e) => setSystemSettings(prev => ({ ...prev, lv2_roll_limit: e.target.value }))}
-                      onBlur={(e) => handleUpdateSetting('lv2_roll_limit', e.target.value)}
-                      className={inputCls}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 图床配置 */}
-              <div className={`rounded-2xl border ${cardBg}`}>
-                <div className="px-5 py-4 border-b border-inherit">
-                  <h2 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                    <ImageUp size={16} className="text-amber-500" />
-                    {at('imgBedSettings')}
-                  </h2>
-                </div>
-                <div className="p-5 space-y-6">
-                  {imgBedSaveStatus.message && (
-                    <div className={`px-3 py-2 rounded-lg text-xs ${
-                      imgBedSaveStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                        : imgBedSaveStatus.type === 'error' ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                        : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-                    }`}>{imgBedSaveStatus.message}</div>
-                  )}
-                  
-                  {/* 基础配置 */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="sm:col-span-2">
-                      <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedUrl')}</label>
-                      <input
-                        type="url"
-                        placeholder={at('imgBedUrlPlaceholder')}
-                        value={imgBed.img_bed_url}
-                        onChange={(e) => setImgBed(p => ({ ...p, img_bed_url: e.target.value }))}
-                        className={inputCls}
-                      />
+                  <div className="p-5 space-y-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-sm">{at('openRegistration')}</p>
+                        <p className={`text-xs mt-0.5 ${mutedText}`}>{at('openRegistrationDesc')}</p>
+                      </div>
+                      <button
+                        onClick={() => handleUpdateSetting('open_registration', settings.open_registration === 'true' ? 'false' : 'true')}
+                        className={`relative inline-flex h-6 w-11 rounded-full transition-colors ${
+                          settings.open_registration === 'true' ? 'bg-blue-500' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 mt-1 ml-1 ${
+                          settings.open_registration === 'true' ? 'translate-x-5' : 'translate-x-0'
+                        }`} />
+                      </button>
                     </div>
                     <div>
-                      <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedToken')}</label>
-                      <div className="relative">
-                        <input
-                          type={showImgToken ? 'text' : 'password'}
-                          placeholder={at('imgBedTokenPlaceholder')}
-                          value={imgBed.img_bed_token}
-                          onFocus={() => { if (imgBed.img_bed_token === '••••••••') setImgBed(p => ({ ...p, img_bed_token: '' })); }}
-                          onChange={(e) => setImgBed(p => ({ ...p, img_bed_token: e.target.value }))}
-                          className={`${inputCls} pr-10`}
-                        />
-                        <button type="button" onClick={() => setShowImgToken(v => !v)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${mutedText} hover:text-current`}>
-                          {showImgToken ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
+                      <p className="font-medium text-sm mb-1.5">{at('defaultLanguage')}</p>
+                      <select value={settings.default_language} onChange={(e) => handleUpdateSetting('default_language', e.target.value)} className={inputCls}>
+                        <option value="zh-CN">简体中文</option>
+                        <option value="en-US">English</option>
+                      </select>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm mb-1.5">{at('lv2RollLimit')}</p>
+                      <input type="number" value={settings.lv2_roll_limit} onBlur={(e) => handleUpdateSetting('lv2_roll_limit', e.target.value)} className={inputCls} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`rounded-2xl border ${cardBg}`}>
+                  <div className="px-5 py-4 border-b border-inherit flex items-center gap-2">
+                    <Mail size={16} className="text-violet-500" />
+                    <h2 className="font-bold text-sm uppercase tracking-widest">{at('smtpSettings')}</h2>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    <input type="text" placeholder={at('smtpFrom')} value={smtp.smtp_from} onChange={(e) => setSmtp(p => ({ ...p, smtp_from: e.target.value }))} className={inputCls} />
+                    <input type="password" placeholder={at('smtpPassword')} value={smtp.smtp_password} onChange={(e) => setSmtp(p => ({ ...p, smtp_password: e.target.value }))} className={inputCls} />
+                    <button onClick={handleSaveSmtp} className="w-full py-2 bg-violet-600 text-white rounded-lg text-sm font-bold">保存 SMTP</button>
+                    <div className="pt-4 border-t border-white/5">
+                      <div className="flex gap-2">
+                        <input type="email" placeholder="测试邮箱" value={testEmailTo} onChange={(e) => setTestEmailTo(e.target.value)} className={inputCls} />
+                        <button onClick={handleTestEmail} className="px-4 bg-white/5 border border-white/10 rounded-lg text-xs font-bold">测试</button>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 用户管理 TAB */}
+          {activeTab === 'users' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-1">
+                  <div className={`rounded-2xl border ${cardBg} p-5 space-y-4`}>
+                    <h2 className="font-bold text-xs uppercase tracking-widest text-blue-500">{at('createUser')}</h2>
+                    <form onSubmit={handleCreateUser} className="space-y-3">
+                      <input type="email" required placeholder={at('email')} value={newUser.email} onChange={(e) => setNewUser({...newUser, email: e.target.value})} className={inputCls} />
+                      <input type="password" required placeholder={at('password')} value={newUser.password} onChange={(e) => setNewUser({...newUser, password: e.target.value})} className={inputCls} />
+                      <input type="text" required placeholder={at('nickname')} value={newUser.nickname} onChange={(e) => setNewUser({...newUser, nickname: e.target.value})} className={inputCls} />
+                      <select value={newUser.level} onChange={(e) => setNewUser({...newUser, level: e.target.value})} className={inputCls}>
+                        <option value="lv1">LV1</option>
+                        <option value="lv2">LV2</option>
+                        <option value="lv3">LV3</option>
+                      </select>
+                      <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{at('create')}</button>
+                    </form>
+                  </div>
+                </div>
+                <div className="lg:col-span-3">
+                  <div className={`rounded-2xl border ${cardBg} overflow-hidden`}>
+                    <table className="w-full text-left text-sm">
+                      <thead className={isDarkMode ? 'bg-white/2' : 'bg-gray-50'}>
+                        <tr className={mutedText}>
+                          <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('id')}</th>
+                          <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('user')}</th>
+                          <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('level')}</th>
+                          <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('joined')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {users.map(user => (
+                          <tr key={user.id}>
+                            <td className="px-6 py-4 font-mono text-xs opacity-50">#{String(user.id).padStart(4, '0')}</td>
+                            <td className="px-6 py-4">
+                              <div className="font-bold">{user.nickname}</div>
+                              <div className="text-xs opacity-50">{user.email}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <select value={user.level} onChange={(e) => handleUpdateUserLevel(String(user.id), e.target.value)} className="bg-transparent border-none text-xs font-bold text-blue-500">
+                                <option value="lv1">LV1</option>
+                                <option value="lv2">LV2</option>
+                                <option value="lv3">LV3</option>
+                              </select>
+                            </td>
+                            <td className="px-6 py-4 text-xs opacity-50">{new Date(user.createdAt).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 图床配置 TAB */}
+          {activeTab === 'imgbed' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
+              <div className={`rounded-2xl border ${cardBg} p-6 space-y-8`}>
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500 mb-4 flex items-center gap-2">
+                    <ImageUp size={16} />
+                    基础配置
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-[10px] font-bold uppercase mb-1 opacity-50">{at('imgBedUrl')}</label>
+                      <input type="url" value={imgBed.img_bed_url} onChange={(e) => setImgBed(p => ({ ...p, img_bed_url: e.target.value }))} className={inputCls} placeholder="https://img.example.com" />
+                    </div>
                     <div>
-                      <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('imgBedChannel')}</label>
-                      <select
-                        value={imgBed.img_bed_channel}
-                        onChange={(e) => setImgBed(p => ({ ...p, img_bed_channel: e.target.value }))}
-                        className={inputCls}
-                      >
+                      <label className="block text-[10px] font-bold uppercase mb-1 opacity-50">{at('imgBedToken')}</label>
+                      <input type="password" value={imgBed.img_bed_token} onChange={(e) => setImgBed(p => ({ ...p, img_bed_token: e.target.value }))} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase mb-1 opacity-50">{at('imgBedChannel')}</label>
+                      <select value={imgBed.img_bed_channel} onChange={(e) => setImgBed(p => ({ ...p, img_bed_channel: e.target.value }))} className={inputCls}>
                         <option value="huggingface">HuggingFace</option>
                         <option value="cloudflare">Cloudflare</option>
                         <option value="r2">Cloudflare R2</option>
-                        <option value="backblaze">Backblaze B2</option>
-                        <option value="github">GitHub</option>
                       </select>
                     </div>
                   </div>
+                </div>
 
-                  {/* 分类型策略配置 */}
-                  <div className="pt-4 border-t border-white/5 space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-amber-500/80">上传策略 (Upload Strategies)</h3>
-                    <div className="overflow-x-auto -mx-5 px-5">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className={mutedText}>
-                            <th className="pb-2 pr-4 font-semibold">{at('user')}</th>
-                            <th className="pb-2 pr-4 font-semibold">{at('strategyPath')}</th>
-                            <th className="pb-2 pr-4 font-semibold">{at('strategyChannel')}</th>
-                            <th className="pb-2 font-semibold text-center">{at('strategyCompress')}</th>
+                <div className="pt-6 border-t border-white/5">
+                  <h3 className="text-xs font-bold text-amber-500 mb-4 uppercase tracking-widest">上传策略 (Upload Strategies)</h3>
+                  <div className="overflow-x-auto border border-white/5 rounded-xl">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className={isDarkMode ? 'bg-white/5' : 'bg-gray-50'}>
+                        <tr className="opacity-50">
+                          <th className="px-4 py-3 font-bold uppercase text-[9px]">{at('user')}</th>
+                          <th className="px-4 py-3 font-bold uppercase text-[9px]">路径模板 (Path)</th>
+                          <th className="px-4 py-3 font-bold uppercase text-[9px]">渠道 (Channel)</th>
+                          <th className="px-4 py-3 font-bold uppercase text-[9px] text-center">压缩</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {[
+                          { key: 'avatar', label: '用户头像' },
+                          { key: 'roll', label: '影集原图' },
+                          { key: 'preview', label: '影集预览' },
+                          { key: 'gear', label: '设备图像' },
+                          { key: 'film_stock', label: '胶卷型号' },
+                        ].map((item) => (
+                          <tr key={item.key} className={isDarkMode ? 'hover:bg-white/2' : 'hover:bg-gray-50'}>
+                            <td className="px-4 py-3 font-bold">{item.label}</td>
+                            <td className="px-4 py-3">
+                              <input type="text" value={(imgBed as any)[`${item.key}_path`]} onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_path`]: e.target.value }))} className="w-full bg-transparent border-none p-0 text-[11px] focus:ring-0" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <select value={(imgBed as any)[`${item.key}_channel`]} onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_channel`]: e.target.value }))} className="bg-transparent border-none p-0 text-[11px] focus:ring-0">
+                                <option value="">默认全局</option>
+                                <option value="huggingface">HF</option>
+                                <option value="cloudflare">CF</option>
+                                <option value="r2">R2</option>
+                              </select>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <input type="checkbox" checked={(imgBed as any)[`${item.key}_compress`] === 'true'} onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_compress`]: String(e.target.checked) }))} className="rounded bg-transparent border-white/20 text-amber-500 focus:ring-0" />
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody className={dividerCls + ' divide-y'}>
-                          {[
-                            { key: 'avatar', label: at('strategyAvatar') },
-                            { key: 'roll', label: at('strategyRoll') },
-                            { key: 'preview', label: at('strategyPreview') },
-                            { key: 'gear', label: at('strategyGear') },
-                            { key: 'film_stock', label: at('strategyFilmStock') },
-                          ].map((item) => (
-                            <tr key={item.key}>
-                              <td className="py-3 pr-4 font-medium">{item.label}</td>
-                              <td className="py-3 pr-4">
-                                <input
-                                  type="text"
-                                  value={(imgBed as any)[`${item.key}_path`]}
-                                  onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_path`]: e.target.value }))}
-                                  className={`${inputCls} py-1 text-[10px]`}
-                                />
-                              </td>
-                              <td className="py-3 pr-4">
-                                <select
-                                  value={(imgBed as any)[`${item.key}_channel`]}
-                                  onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_channel`]: e.target.value }))}
-                                  className={`${inputCls} py-1 text-[10px]`}
-                                >
-                                  <option value="">{at('useGlobal')}</option>
-                                  <option value="huggingface">HuggingFace</option>
-                                  <option value="cloudflare">Cloudflare</option>
-                                  <option value="r2">R2</option>
-                                </select>
-                              </td>
-                              <td className="py-3 text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={(imgBed as any)[`${item.key}_compress`] === 'true' || (imgBed as any)[`${item.key}_compress`] === true}
-                                  onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_compress`]: String(e.target.checked) }))}
-                                  className="rounded border-gray-300 text-amber-500 focus:ring-amber-500"
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <p className={`text-[10px] ${mutedText}`}>{at('imgBedPathDesc')}</p>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
+                  <p className={`mt-3 text-[10px] italic ${mutedText}`}>{at('imgBedPathDesc')}</p>
+                </div>
 
-                  <button
-                    onClick={handleSaveImgBed}
-                    disabled={imgBedSaveStatus.type === 'loading'}
-                    className="w-full py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-60"
-                  >
-                    {imgBedSaveStatus.type === 'loading' ? at('saving') : at('saveImgBed')}
-                  </button>
-                </div>
-              </div>
-
-              {/* SMTP / Resend 配置 */}
-              <div className={`rounded-2xl border ${cardBg}`}>
-                <div className="px-5 py-4 border-b border-inherit">
-                  <h2 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                    <Mail size={16} className="text-violet-500" />
-                    {at('smtpSettings')}
-                  </h2>
-                </div>
-                <div className="p-5 space-y-3">
-                  <p className={`text-xs ${mutedText}`}>{at('smtpNote')}</p>
-                  {smtpSaveStatus.message && (
-                    <div className={`px-3 py-2 rounded-lg text-xs ${
-                      smtpSaveStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                        : smtpSaveStatus.type === 'error' ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                        : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-                    }`}>{smtpSaveStatus.message}</div>
-                  )}
-                  <div>
-                    <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('smtpFrom')}</label>
-                    <input
-                      type="text"
-                      placeholder={at('smtpFromPlaceholder')}
-                      value={smtp.smtp_from}
-                      onChange={(e) => setSmtp(p => ({ ...p, smtp_from: e.target.value }))}
-                      className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className={`block text-xs font-semibold mb-1 ${mutedText}`}>{at('smtpPassword')}</label>
-                    <div className="relative">
-                      <input
-                        type={showSmtpKey ? 'text' : 'password'}
-                        placeholder={at('smtpPasswordPlaceholder')}
-                        value={smtp.smtp_password}
-                        onFocus={() => { if (smtp.smtp_password === '••••••••') setSmtp(p => ({ ...p, smtp_password: '' })); }}
-                        onChange={(e) => setSmtp(p => ({ ...p, smtp_password: e.target.value }))}
-                        className={`${inputCls} pr-10`}
-                      />
-                      <button type="button" onClick={() => setShowSmtpKey(v => !v)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${mutedText} hover:text-current`}>
-                        {showSmtpKey ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleSaveSmtp}
-                    disabled={smtpSaveStatus.type === 'loading'}
-                    className="w-full py-2 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-60"
-                  >
-                    {smtpSaveStatus.type === 'loading' ? at('saving') : at('saveSmtp')}
-                  </button>
-
-                  {/* 发送测试邮件 */}
-                  <div className={`mt-1 pt-3 border-t ${isDarkMode ? 'border-white/8' : 'border-gray-100'}`}>
-                    <p className="text-xs font-semibold mb-2">{at('testEmail')}</p>
-                    {testEmailStatus.message && (
-                      <div className={`mb-2 px-3 py-2 rounded-lg text-xs ${
-                        testEmailStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                          : testEmailStatus.type === 'error' ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                          : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-                      }`}>{testEmailStatus.message}</div>
-                    )}
-                    <div className="flex gap-2">
-                      <input
-                        type="email"
-                        placeholder={at('testEmailTo')}
-                        value={testEmailTo}
-                        onChange={(e) => setTestEmailTo(e.target.value)}
-                        className={`${inputCls} flex-1`}
-                      />
-                      <button
-                        onClick={handleTestEmail}
-                        disabled={!testEmailTo || testEmailStatus.type === 'loading'}
-                        className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg transition-all disabled:opacity-40 flex items-center gap-1.5 shrink-0"
-                      >
-                        <Send size={14} />
-                        {testEmailStatus.type === 'loading' ? '...' : at('sendTest')}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 创建用户 */}
-              <div className={`rounded-2xl border ${cardBg}`}>
-                <div className="px-5 py-4 border-b border-inherit">
-                  <h2 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                    <Plus size={16} />
-                    {at('createUser')}
-                  </h2>
-                </div>
-                <div className="p-5">
-                  {createStatus.message && (
-                    <div className={`mb-4 px-3 py-2.5 rounded-lg text-xs ${
-                      createStatus.type === 'error'
-                        ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                        : createStatus.type === 'success'
-                        ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                        : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-                    }`}>
-                      {createStatus.message}
-                    </div>
-                  )}
-                  <form onSubmit={handleCreateUser} className="space-y-3">
-                    <input
-                      type="email" required placeholder={at('email')}
-                      value={newUser.email}
-                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                      className={inputCls}
-                    />
-                    <input
-                      type="password" required placeholder={at('password')}
-                      value={newUser.password}
-                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                      className={inputCls}
-                    />
-                    <input
-                      type="text" required placeholder={at('nickname')}
-                      value={newUser.nickname}
-                      onChange={(e) => setNewUser({ ...newUser, nickname: e.target.value })}
-                      className={inputCls}
-                    />
-                    <select
-                      value={newUser.level}
-                      onChange={(e) => setNewUser({ ...newUser, level: e.target.value })}
-                      className={inputCls}
-                    >
-                      <option value="lv1">LV1 — {at('lv1Desc')}</option>
-                      <option value="lv2">LV2 — {at('lv2Desc')}</option>
-                      <option value="lv3">LV3 — {at('lv3Desc')}</option>
-                    </select>
-                    <button
-                      type="submit"
-                      disabled={createStatus.type === 'loading'}
-                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-60"
-                    >
-                      {createStatus.type === 'loading' ? at('creating') : at('create')}
-                    </button>
-                  </form>
-                </div>
+                <button onClick={handleSaveImgBed} className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98]">
+                  保存并应用图床策略
+                </button>
               </div>
             </div>
-
-            {/* ── 右侧：用户列表 ── */}
-            <div className={`lg:col-span-2 rounded-2xl border ${cardBg}`}>
-              <div className="px-5 py-4 border-b border-inherit flex items-center justify-between">
-                <h2 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                  <Users size={16} />
-                  {at('userManagement')}
-                </h2>
-                <span className={`text-xs ${mutedText}`}>{users.length} {at('totalUsers').toLowerCase()}</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className={`min-w-full divide-y ${dividerCls}`}>
-                  <thead>
-                    <tr>
-                      {[at('id'), at('user'), at('level'), at('joined')].map(h => (
-                        <th key={h} className={`px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ${mutedText}`}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className={`divide-y ${dividerCls}`}>
-                    {users.map((user) => (
-                      <tr key={user.id} className={`transition-colors ${isDarkMode ? 'hover:bg-white/3' : 'hover:bg-gray-50'}`}>
-                        <td className={`px-5 py-3.5 text-xs font-mono ${mutedText}`}>#{String(user.id).padStart(4, '0')}</td>
-                        <td className="px-5 py-3.5">
-                          <p className="text-sm font-medium">{user.nickname}</p>
-                          <p className={`text-xs ${mutedText}`}>{user.email}</p>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <select
-                            value={user.level}
-                            onChange={(e) => handleUpdateUserLevel(String(user.id), e.target.value)}
-                            className={`text-xs font-bold rounded-md px-2 py-1 border outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-colors ${
-                              isDarkMode ? 'bg-[#242424] border-white/10' : 'bg-white border-gray-200'
-                            } ${
-                              user.level === 'lv3' ? 'text-purple-500' :
-                              user.level === 'lv2' ? 'text-blue-500' : mutedText
-                            }`}
-                          >
-                            <option value="lv1">LV1</option>
-                            <option value="lv2">LV2</option>
-                            <option value="lv3">LV3</option>
-                          </select>
-                        </td>
-                        <td className={`px-5 py-3.5 text-xs ${mutedText}`}>
-                          {new Date(user.created_at).toLocaleDateString(adminLang === 'zh-CN' ? 'zh-CN' : 'en-US')}
-                        </td>
-                      </tr>
-                    ))}
-                    {users.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className={`px-5 py-10 text-center text-sm ${mutedText}`}>
-                          {isLoading ? <RefreshCw className="animate-spin mx-auto" size={20} /> : '—'}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </main>
     </div>
