@@ -14,4 +14,4 @@ routes = [
 [[d1_databases]]
 binding = "DB"
 database_name = "film-album-db"
-database_id = "7bbb2117-9bc6-4d84-865e-6df3633453d5"
+database_id = "ccf6c6f6-2e4d-4170-9730-91a8f3c2a371"
