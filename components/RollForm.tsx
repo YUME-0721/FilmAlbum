@@ -10,8 +10,6 @@ interface RollFormProps {
   onCancel: () => void;
   filmStocks: any[];
   isLoadingFilmStocks: boolean;
-  showFilmStockManagement: boolean;
-  setShowFilmStockManagement: (value: boolean) => void;
   isSubmitting: boolean;
   tagInput: string;
   setTagInput: (value: string) => void;
@@ -41,22 +39,6 @@ interface RollFormProps {
   }>>;
   filmStockSearch: string;
   setFilmStockSearch: (value: string) => void;
-  addFilmStockForm: {
-    brand: string;
-    model: string;
-    iso: number;
-    format: string;
-    filmType: string;
-    process: string;
-  };
-  setAddFilmStockForm: React.Dispatch<React.SetStateAction<{
-    brand: string;
-    model: string;
-    iso: number;
-    format: string;
-    filmType: string;
-    process: string;
-  }>>;
   gearList: any[];
   isLoadingGear: boolean;
 }
@@ -68,8 +50,6 @@ export default function RollForm({
   onCancel,
   filmStocks,
   isLoadingFilmStocks,
-  showFilmStockManagement,
-  setShowFilmStockManagement,
   isSubmitting,
   tagInput,
   setTagInput,
@@ -77,8 +57,6 @@ export default function RollForm({
   setRollForm,
   filmStockSearch,
   setFilmStockSearch,
-  addFilmStockForm,
-  setAddFilmStockForm,
   gearList,
   isLoadingGear
 }: RollFormProps) {
@@ -128,7 +106,7 @@ export default function RollForm({
               type="text" 
               autoFocus={!isEditing}
               required
-              placeholder="e.g.: City Solitude / 2024 Lunar New Year"
+              placeholder={t('roll.form.placeholders.title')}
               value={formData.title}
               onChange={e => setFormData({...formData, title: e.target.value})}
               onFocus={() => {
@@ -140,21 +118,12 @@ export default function RollForm({
           </div>
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <label htmlFor={isEditing ? "edit-film-stock" : "new-roll-film-stock"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.stock')}</label>
-                <button 
-                  type="button"
-                  onClick={() => setShowFilmStockManagement(true)}
-                  className="text-xs font-bold text-primary hover:underline"
-                >
-                  {t('roll.form.management')}
-                </button>
-              </div>
+              <label htmlFor={isEditing ? "edit-film-stock" : "new-roll-film-stock"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.stock')}</label>
               <div className="relative">
                 <input
                   id={isEditing ? "edit-film-stock" : "new-roll-film-stock"}
                   type="text"
-                  placeholder="e.g.: Lucky C200"
+                  placeholder={t('roll.form.placeholders.stock')}
                   value={formData.filmStock}
                   onChange={e => {
                     setFormData({...formData, filmStock: e.target.value});
@@ -196,7 +165,7 @@ export default function RollForm({
               <input 
                 id={isEditing ? "edit-location" : "new-roll-location"}
                 type="text" 
-                placeholder="e.g.: Xi'an, Shaanxi"
+                placeholder={t('roll.form.placeholders.location')}
                 value={formData.location}
                 onChange={e => setFormData({...formData, location: e.target.value})}
                 onFocus={() => {
@@ -215,7 +184,7 @@ export default function RollForm({
                 <input 
                   id={isEditing ? "edit-camera" : "new-roll-camera"}
                   type="text" 
-                  placeholder="e.g.: Nikon F3"
+                  placeholder={t('roll.form.placeholders.camera')}
                   value={formData.camera}
                   onChange={e => {
                     setFormData({...formData, camera: e.target.value});
@@ -262,15 +231,15 @@ export default function RollForm({
                                 >
                                   {gear.cameraModel}
                                   {gear.status === 'using' && (
-                                    <span className="ml-2 text-xs text-primary">使用中</span>
-                                  )}
-                                </div>
-                              ))}
-                              {remainingCount > 0 && (
-                                <div className="px-4 py-2 text-sm text-on-surface-variant italic">
-                                  还有 {remainingCount} 个设备...
-                                </div>
-                              )}
+                                      <span className="ml-2 text-xs text-primary">{t('gear.status.using')}</span>
+                                    )}
+                                  </div>
+                                ))}
+                                {remainingCount > 0 && (
+                                  <div className="px-4 py-2 text-sm text-on-surface-variant italic">
+                                    {t('gear.moreDevices', { count: remainingCount })}
+                                  </div>
+                                )}
                             </>
                           );
                         })()}
@@ -286,7 +255,7 @@ export default function RollForm({
                 <input 
                   id={isEditing ? "edit-lens" : "new-roll-lens"}
                   type="text" 
-                  placeholder="e.g.: NIKKOR 50mm f1.8D"
+                  placeholder={t('roll.form.placeholders.lens')}
                   value={formData.lens}
                   onChange={e => {
                     setFormData({...formData, lens: e.target.value});
@@ -349,7 +318,7 @@ export default function RollForm({
                               })}
                               {remainingCount > 0 && (
                                 <div className="px-4 py-2 text-sm text-on-surface-variant italic">
-                                  还有 {remainingCount} 个设备...
+                                  {t('gear.moreDevices', { count: remainingCount })}
                                 </div>
                               )}
                             </>
@@ -445,10 +414,10 @@ export default function RollForm({
                 }}
                 className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-4 py-3 text-sm text-on-surface outline-none transition-colors"
               >
-                <option value="COLOR_NEGATIVE">Color Negative</option>
-                <option value="BW_NEGATIVE">B&W</option>
-                <option value="COLOR_POSITIVE">Color Positive (Slide)</option>
-                <option value="BW_POSITIVE">B&W Positive</option>
+                <option value="COLOR_NEGATIVE">{t('roll.filmTypes.colorNegative')}</option>
+                <option value="BW_NEGATIVE">{t('roll.filmTypes.bwNegative')}</option>
+                <option value="COLOR_POSITIVE">{t('roll.filmTypes.colorPositive')}</option>
+                <option value="BW_POSITIVE">{t('roll.filmTypes.bwPositive')}</option>
               </select>
             </div>
           </div>

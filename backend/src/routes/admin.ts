@@ -260,4 +260,137 @@ admin.post('/test-email', adminAuthRequired(), async (c) => {
   }
 });
 
+/**
+ * GET /api/admin/film-stocks - 管理员获取胶卷型号列表（支持筛选）
+ */
+admin.get('/film-stocks', adminAuthRequired(), async (c) => {
+  const search   = c.req.query('search')   || '';
+  const format   = c.req.query('format')   || '';
+  const filmType = c.req.query('filmType') || '';
+
+  let where = 'WHERE 1=1';
+  const params: (string | number)[] = [];
+
+  if (search) {
+    where += ' AND (brand LIKE ? OR model LIKE ?)';
+    params.push(`%${search}%`, `%${search}%`);
+  }
+  if (format) {
+    where += ' AND format = ?';
+    params.push(format);
+  }
+  if (filmType) {
+    where += ' AND film_type = ?';
+    params.push(filmType);
+  }
+
+  const result = await c.env.DB.prepare(
+    `SELECT * FROM film_stocks ${where} ORDER BY brand, model, iso`
+  ).bind(...params).all();
+
+  const data = result.results?.map((row: any) => ({
+    id:        row.id,
+    brand:     row.brand,
+    model:     row.model,
+    iso:       row.iso,
+    format:    row.format,
+    filmType:  row.film_type,
+    process:   row.process,
+    createdAt: row.created_at,
+  })) ?? [];
+
+  return c.json({ success: true, data });
+});
+
+/**
+ * POST /api/admin/film-stocks - 管理员新建胶卷型号
+ */
+admin.post('/film-stocks', adminAuthRequired(), async (c) => {
+  const body = await c.req.json<{
+    brand: string; model: string; iso: number;
+    format: string; filmType: string; process: string;
+  }>();
+
+  if (!body.brand || !body.model || !body.iso || !body.format || !body.filmType || !body.process) {
+    return c.json({ success: false, error: '所有字段为必填项' }, 400);
+  }
+
+  // 防重复
+  const existing = await c.env.DB.prepare(
+    'SELECT id FROM film_stocks WHERE brand = ? AND model = ? AND iso = ?'
+  ).bind(body.brand, body.model, body.iso).first();
+  if (existing) return c.json({ success: false, error: '该胶卷型号已存在' }, 409);
+
+  const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+
+  await c.env.DB.prepare(
+    `INSERT INTO film_stocks (id, brand, model, iso, format, film_type, process)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, body.brand, body.model, body.iso, body.format, body.filmType, body.process).run();
+
+  return c.json({ success: true, data: { id, ...body } }, 201);
+});
+
+/**
+ * PUT /api/admin/film-stocks/:id - 管理员更新胶卷型号
+ */
+admin.put('/film-stocks/:id', adminAuthRequired(), async (c) => {
+  const id = c.req.param('id');
+
+  const existing = await c.env.DB.prepare('SELECT id FROM film_stocks WHERE id = ?').bind(id).first();
+  if (!existing) return c.json({ success: false, error: '胶卷型号不存在' }, 404);
+
+  const body = await c.req.json<{
+    brand?: string; model?: string; iso?: number;
+    format?: string; filmType?: string; process?: string;
+  }>();
+
+  const fieldMap: Record<string, string> = {
+    brand: 'brand', model: 'model', iso: 'iso',
+    format: 'format', filmType: 'film_type', process: 'process',
+  };
+
+  const updates: string[] = [];
+  const values: (string | number)[] = [];
+
+  for (const [key, col] of Object.entries(fieldMap)) {
+    const val = (body as any)[key];
+    if (val !== undefined) {
+      updates.push(`${col} = ?`);
+      values.push(val);
+    }
+  }
+
+  if (updates.length === 0) return c.json({ success: false, error: '没有需要更新的字段' }, 400);
+
+  updates.push("updated_at = datetime('now')");
+  values.push(id);
+
+  await c.env.DB.prepare(
+    `UPDATE film_stocks SET ${updates.join(', ')} WHERE id = ?`
+  ).bind(...values).run();
+
+  const updated = await c.env.DB.prepare('SELECT * FROM film_stocks WHERE id = ?').bind(id).first<any>();
+  return c.json({
+    success: true,
+    data: {
+      id: updated.id, brand: updated.brand, model: updated.model,
+      iso: updated.iso, format: updated.format,
+      filmType: updated.film_type, process: updated.process,
+    }
+  });
+});
+
+/**
+ * DELETE /api/admin/film-stocks/:id - 管理员删除胶卷型号
+ */
+admin.delete('/film-stocks/:id', adminAuthRequired(), async (c) => {
+  const id = c.req.param('id');
+  const existing = await c.env.DB.prepare('SELECT id FROM film_stocks WHERE id = ?').bind(id).first();
+  if (!existing) return c.json({ success: false, error: '胶卷型号不存在' }, 404);
+
+  await c.env.DB.prepare('DELETE FROM film_stocks WHERE id = ?').bind(id).run();
+  return c.json({ success: true });
+});
+
 export default admin;

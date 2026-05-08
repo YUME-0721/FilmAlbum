@@ -144,6 +144,13 @@ export const translations = {
           medium66: '6x6 (120)',
           medium67: '6x7 (120)',
           medium69: '6x9 (120)',
+        },
+        placeholders: {
+          title: '例如：城市孤独 / 2024 农历新年',
+          stock: '例如：Lucky C200',
+          location: '例如：中国 陕西 西安',
+          camera: '例如：Nikon F3',
+          lens: '例如：NIKKOR 50mm f1.8D',
         }
       },
       filmTypes: {
@@ -427,6 +434,13 @@ export const translations = {
           medium66: '6x6 (120)',
           medium67: '6x7 (120)',
           medium69: '6x9 (120)',
+        },
+        placeholders: {
+          title: 'e.g.: City Solitude / 2024 Lunar New Year',
+          stock: 'e.g.: Lucky C200',
+          location: 'e.g.: Xi\'an, Shaanxi',
+          camera: 'e.g.: Nikon F3',
+          lens: 'e.g.: NIKKOR 50mm f1.8D',
         }
       },
       filmTypes: {

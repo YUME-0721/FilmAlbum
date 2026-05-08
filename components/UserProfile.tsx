@@ -1308,12 +1308,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
           isSubmitting={isSubmitting}
           filmStocks={filmStocks}
           isLoadingFilmStocks={isLoadingFilmStocks}
-          showFilmStockManagement={showFilmStockManagement}
-          setShowFilmStockManagement={setShowFilmStockManagement}
           filmStockSearch={filmStockSearch}
           setFilmStockSearch={setFilmStockSearch}
-          addFilmStockForm={addFilmStockForm}
-          setAddFilmStockForm={setAddFilmStockForm}
           gearList={gear}
           isLoadingGear={isLoadingGear}
         />
@@ -1349,12 +1345,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
           isSubmitting={isSubmitting}
           filmStocks={filmStocks}
           isLoadingFilmStocks={isLoadingFilmStocks}
-          showFilmStockManagement={showFilmStockManagement}
-          setShowFilmStockManagement={setShowFilmStockManagement}
           filmStockSearch={filmStockSearch}
           setFilmStockSearch={setFilmStockSearch}
-          addFilmStockForm={addFilmStockForm}
-          setAddFilmStockForm={setAddFilmStockForm}
           gearList={gear}
           isLoadingGear={isLoadingGear}
         />

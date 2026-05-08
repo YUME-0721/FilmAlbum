@@ -6,11 +6,12 @@
 import { useState, useEffect } from 'react';
 import { useSettings } from '../src/context/SettingsContext';
 import { useTranslation } from '../src/hooks/useTranslation';
-import { get, post, put } from '../src/api/client';
+import { get, post, put, del } from '../src/api/client';
 import {
   ShieldAlert, Users, Film, RefreshCw, Plus,
   Sun, Moon, Languages, LogOut, Settings2,
-  ImageUp, Mail, Eye, EyeOff, Send
+  ImageUp, Mail, Eye, EyeOff, Send,
+  Pencil, Trash2, Search, X
 } from 'lucide-react';
 
 /** 管理员后台专属语言文本 */
@@ -90,6 +91,24 @@ const i18n = {
     tabSystem: '系统设置',
     tabUsers: '用户管理',
     tabImgBed: '图床配置',
+    tabFilmStocks: '胶卷',
+    filmStockManagement: '胶卷管理',
+    addFilmStock: '新增胶卷',
+    editFilmStock: '编辑胶卷',
+    deleteFilmStock: '删除胶卷',
+    confirmDelete: '确认删除此胶卷型号？',
+    filmBrand: '品牌',
+    filmModel: '型号',
+    filmIso: '感光度 (ISO)',
+    filmFormat: '胶卷规格',
+    filmType: '底片类型',
+    filmProcess: '冲洗工艺',
+    filterSearch: '搜索品牌或型号...',
+    filterAll: '全部',
+    filterFormat: '规格筛选',
+    filterType: '类型筛选',
+    resetFilter: '重置',
+    noFilmStocks: '暂无胶卷型号，点击右上角新增',
   },
   'en-US': {
     title: 'Super Admin',
@@ -166,7 +185,37 @@ const i18n = {
     tabSystem: 'System',
     tabUsers: 'Users',
     tabImgBed: 'ImageBed',
+    tabFilmStocks: 'Film Stocks',
+    filmStockManagement: 'Film Stock Management',
+    addFilmStock: 'Add Film Stock',
+    editFilmStock: 'Edit Film Stock',
+    deleteFilmStock: 'Delete Film Stock',
+    confirmDelete: 'Delete this film stock?',
+    filmBrand: 'Brand',
+    filmModel: 'Model',
+    filmIso: 'ISO',
+    filmFormat: 'Format',
+    filmType: 'Film Type',
+    filmProcess: 'Process',
+    filterSearch: 'Search brand or model...',
+    filterAll: 'All',
+    filterFormat: 'Format',
+    filterType: 'Type',
+    resetFilter: 'Reset',
+    noFilmStocks: 'No film stocks yet. Click Add to create one.',
   }
+};
+
+/** 胶卷底片类型标签（中英文） */
+const FILM_TYPE_LABELS: Record<'zh-CN' | 'en-US', Record<string, string>> = {
+  'zh-CN': { COLOR_NEGATIVE: '彩色负片', BW_NEGATIVE: '黑白负片', COLOR_POSITIVE: '彩色正片 (反转片)', BW_POSITIVE: '黑白正片' },
+  'en-US': { COLOR_NEGATIVE: 'Color Negative', BW_NEGATIVE: 'B&W Negative', COLOR_POSITIVE: 'Color Positive (Slide)', BW_POSITIVE: 'B&W Positive' },
+};
+
+/** 胶卷规格标签（中英文） */
+const FILM_FORMAT_LABELS: Record<'zh-CN' | 'en-US', Record<string, string>> = {
+  'zh-CN': { '135': '35mm (135)', '120': '中画幅 (120)', '135_half': '半格 (135)' },
+  'en-US': { '135': '35mm (135)', '120': 'Medium (120)', '135_half': 'Half Frame (135)' },
 };
 
 export default function Admin() {
@@ -179,7 +228,7 @@ export default function Admin() {
   const [adminLang, setAdminLang] = useState<'zh-CN' | 'en-US'>(
     (language as 'zh-CN' | 'en-US') || 'zh-CN'
   );
-  const at = (key: keyof typeof i18n['zh-CN']) => i18n[adminLang][key];
+  const at = (key: keyof typeof i18n['zh-CN']): string => i18n[adminLang][key] as string;
 
   const [token, setToken] = useState(localStorage.getItem('adminToken') || '');
   const [password, setPassword] = useState('');
@@ -225,16 +274,91 @@ export default function Admin() {
   const [testEmailStatus, setTestEmailStatus] = useState({ type: '', message: '' });
 
   // 选项卡状态
-  const [activeTab, setActiveTab] = useState<'system' | 'users' | 'imgbed'>('system');
+  const [activeTab, setActiveTab] = useState<'system' | 'users' | 'imgbed' | 'filmstocks'>('system');
+
+  // 胶卷模块状态
+  const [filmStocks, setFilmStocks] = useState<any[]>([]);
+  const [filmStocksLoading, setFilmStocksLoading] = useState(false);
+  const [filmFilter, setFilmFilter] = useState({ search: '', format: '', filmType: '' });
+  const [showFilmModal, setShowFilmModal] = useState(false);
+  const [editingFilm, setEditingFilm] = useState<any | null>(null);
+  const [filmForm, setFilmForm] = useState({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41' });
+  const [filmSaveStatus, setFilmSaveStatus] = useState({ type: '', message: '' });
 
   useEffect(() => {
     if (token) fetchDashboardData();
   }, [token]);
 
+  // NOTE: 当切换到胶卷 Tab 时懒加载胶卷数据
+  useEffect(() => {
+    if (token && activeTab === 'filmstocks' && filmStocks.length === 0) {
+      fetchFilmStocks();
+    }
+  }, [token, activeTab]);
+
   // 同步管理后台语言到全局 language 变动
   useEffect(() => {
     setAdminLang((language as 'zh-CN' | 'en-US') || 'zh-CN');
   }, [language]);
+
+  const fetchFilmStocks = async (filter = filmFilter) => {
+    setFilmStocksLoading(true);
+    try {
+      const params: Record<string, string> = {};
+      if (filter.search)   params['search']   = filter.search;
+      if (filter.format)   params['format']   = filter.format;
+      if (filter.filmType) params['filmType'] = filter.filmType;
+      const res = await get<any[]>('/admin/film-stocks', params, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.success && res.data) setFilmStocks(res.data);
+    } catch (e) {
+      console.error('Failed to fetch film stocks', e);
+    } finally {
+      setFilmStocksLoading(false);
+    }
+  };
+
+  const handleFilmFilter = (next: typeof filmFilter) => {
+    setFilmFilter(next);
+    fetchFilmStocks(next);
+  };
+
+  const handleSaveFilmStock = async () => {
+    if (!filmForm.brand.trim() || !filmForm.model.trim() || !filmForm.iso) {
+      alert(adminLang === 'zh-CN' ? '品牌、型号、感光度为必填项' : 'Brand, model and ISO are required');
+      return;
+    }
+    setFilmSaveStatus({ type: 'loading', message: at('saving') });
+    try {
+      const payload = { ...filmForm, iso: Number(filmForm.iso) };
+      let res: any;
+      if (editingFilm) {
+        res = await put(`/admin/film-stocks/${editingFilm.id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+      } else {
+        res = await post('/admin/film-stocks', payload, { headers: { Authorization: `Bearer ${token}` } });
+      }
+      if (res.success) {
+        setFilmSaveStatus({ type: 'success', message: at('saved') });
+        setShowFilmModal(false);
+        setEditingFilm(null);
+        setFilmForm({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41' });
+        fetchFilmStocks();
+      } else {
+        setFilmSaveStatus({ type: 'error', message: res.error || at('updateFailed') });
+      }
+    } catch (err: any) {
+      setFilmSaveStatus({ type: 'error', message: err.message || at('updateFailed') });
+    }
+  };
+
+  const handleDeleteFilmStock = async (id: string) => {
+    if (!window.confirm(at('confirmDelete'))) return;
+    try {
+      const res = await del(`/admin/film-stocks/${id}`, undefined, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.success) fetchFilmStocks();
+    } catch (e) {
+      console.error('delete film stock failed', e);
+    }
+  };
 
   const toggleLanguage = () => {
     const next = adminLang === 'zh-CN' ? 'en-US' : 'zh-CN';
@@ -445,9 +569,10 @@ export default function Admin() {
 
         <nav className="flex items-center gap-1">
           {[
-            { id: 'system', icon: Settings2, label: at('tabSystem') },
-            { id: 'users', icon: Users, label: at('tabUsers') },
-            { id: 'imgbed', icon: ImageUp, label: at('tabImgBed') },
+            { id: 'system',     icon: Settings2, label: at('tabSystem') },
+            { id: 'users',      icon: Users,     label: at('tabUsers') },
+            { id: 'filmstocks', icon: Film,       label: at('tabFilmStocks') },
+            { id: 'imgbed',     icon: ImageUp,    label: at('tabImgBed') },
           ].map(tab => (
             <button
               key={tab.id}
@@ -733,6 +858,276 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* 胶卷管理 TAB */}
+          {activeTab === 'filmstocks' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
+              {/* 筛选栏 + 操作按钮 */}
+              <div className={`rounded-2xl border ${cardBg} p-4`}>
+                <div className="flex flex-col md:flex-row gap-3 items-center">
+                  <div className={`flex items-center gap-2 flex-1 px-3 py-2 rounded-xl border ${isDarkMode ? 'bg-[#242424] border-white/10' : 'bg-white border-gray-200'}`}>
+                    <Search size={14} className={mutedText} />
+                    <input
+                      type="text"
+                      placeholder={at('filterSearch')}
+                      value={filmFilter.search}
+                      onChange={e => handleFilmFilter({ ...filmFilter, search: e.target.value })}
+                      className="flex-1 bg-transparent outline-none text-sm"
+                    />
+                    {filmFilter.search && (
+                      <button onClick={() => handleFilmFilter({ ...filmFilter, search: '' })} className="opacity-40 hover:opacity-100">
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                  <select
+                    value={filmFilter.format}
+                    onChange={e => handleFilmFilter({ ...filmFilter, format: e.target.value })}
+                    className={`${inputCls} w-auto min-w-[120px]`}
+                  >
+                    <option value="">{at('filterAll')} {at('filmFormat')}</option>
+                    <option value="135">35mm (135)</option>
+                    <option value="135_half">{adminLang === 'zh-CN' ? '半格 (135)' : 'Half (135)'}</option>
+                    <option value="120">{adminLang === 'zh-CN' ? '中画幅 (120)' : 'Medium (120)'}</option>
+                  </select>
+                  <select
+                    value={filmFilter.filmType}
+                    onChange={e => handleFilmFilter({ ...filmFilter, filmType: e.target.value })}
+                    className={`${inputCls} w-auto min-w-[140px]`}
+                  >
+                    <option value="">{at('filterAll')} {at('filmType')}</option>
+                    <option value="COLOR_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_NEGATIVE']}</option>
+                    <option value="BW_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['BW_NEGATIVE']}</option>
+                    <option value="COLOR_POSITIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_POSITIVE']}</option>
+                    <option value="BW_POSITIVE">{FILM_TYPE_LABELS[adminLang]['BW_POSITIVE']}</option>
+                  </select>
+                  {(filmFilter.search || filmFilter.format || filmFilter.filmType) && (
+                    <button
+                      onClick={() => handleFilmFilter({ search: '', format: '', filmType: '' })}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-100'}`}
+                    >
+                      {at('resetFilter')}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setEditingFilm(null);
+                      setFilmForm({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41' });
+                      setFilmSaveStatus({ type: '', message: '' });
+                      setShowFilmModal(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-xl transition-all whitespace-nowrap shadow-lg shadow-violet-500/20"
+                  >
+                    <Plus size={14} />
+                    {at('addFilmStock')}
+                  </button>
+                </div>
+              </div>
+
+              {/* 胶卷卡片列表 */}
+              {filmStocksLoading ? (
+                <div className="flex justify-center items-center py-24">
+                  <RefreshCw size={24} className="animate-spin opacity-40" />
+                </div>
+              ) : filmStocks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-32 gap-4">
+                  <Film size={64} className="opacity-15" />
+                  <p className={`text-sm ${mutedText}`}>{at('noFilmStocks')}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filmStocks.map(stock => {
+                    const typeLabel = FILM_TYPE_LABELS[adminLang][stock.filmType] || stock.filmType;
+                    const typeColor: Record<string, string> = {
+                      COLOR_NEGATIVE: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
+                      BW_NEGATIVE:    'text-gray-400 bg-gray-400/10 border-gray-400/20',
+                      COLOR_POSITIVE: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
+                      BW_POSITIVE:    'text-blue-400 bg-blue-400/10 border-blue-400/20',
+                    };
+                    const chipColor = typeColor[stock.filmType] || 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+                    // 查找品牌logo
+                    const knownBrands: Record<string, string> = {
+                      'FUJIFILM': 'https://img.072199.xyz/file/FilmAlbum/Films/1774608830532.webp',
+                      'Kodak':    'https://img.072199.xyz/file/FilmAlbum/Films/1774609038242.webp',
+                      'Lucky':    'https://img.072199.xyz/file/FilmAlbum/Films/1774605924805.webp',
+                      'Agfa':     'https://img.072199.xyz/file/FilmAlbum/Films/1774609367814.webp',
+                      'LOMOGRAPHY': 'https://img.072199.xyz/file/FilmAlbum/Films/1774610093361.webp',
+                      'Leica':    'https://img.072199.xyz/file/FilmAlbum/Films/1774609923703.webp',
+                    };
+                    const logoUrl = knownBrands[stock.brand];
+
+                    return (
+                      <div
+                        key={stock.id}
+                        className={`group rounded-2xl border ${cardBg} p-5 flex flex-col gap-3 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5`}
+                      >
+                        {/* 品牌区域 */}
+                        <div className="flex items-center gap-3">
+                          {logoUrl ? (
+                            <img src={logoUrl} alt={stock.brand} className="w-9 h-9 object-contain rounded-lg bg-white/5 p-1" />
+                          ) : (
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-black ${isDarkMode ? 'bg-violet-500/20 text-violet-400' : 'bg-violet-50 text-violet-600'}`}>
+                              {stock.brand.slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 truncate">{stock.brand}</p>
+                            <p className="font-bold text-sm leading-tight truncate">{stock.model}</p>
+                          </div>
+                        </div>
+
+                        {/* 信息 chips */}
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${chipColor}`}>
+                            {typeLabel}
+                          </span>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${isDarkMode ? 'border-white/10 text-white/60' : 'border-gray-200 text-gray-500'}`}>
+                            ISO {stock.iso}
+                          </span>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${isDarkMode ? 'border-white/10 text-white/60' : 'border-gray-200 text-gray-500'}`}>
+                            {stock.format}
+                          </span>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${isDarkMode ? 'border-white/10 text-white/60' : 'border-gray-200 text-gray-500'}`}>
+                            {stock.process}
+                          </span>
+                        </div>
+
+                        {/* 操作按钮 */}
+                        <div className="flex gap-2 mt-auto pt-2 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <button
+                            onClick={() => {
+                              setEditingFilm(stock);
+                              setFilmForm({
+                                brand: stock.brand, model: stock.model,
+                                iso: String(stock.iso), format: stock.format,
+                                filmType: stock.filmType, process: stock.process
+                              });
+                              setFilmSaveStatus({ type: '', message: '' });
+                              setShowFilmModal(true);
+                            }}
+                            className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg font-bold transition-colors ${isDarkMode ? 'hover:bg-white/8 text-white/60 hover:text-white' : 'hover:bg-gray-100 text-gray-500 hover:text-gray-900'}`}
+                          >
+                            <Pencil size={12} />
+                            {at('editFilmStock')}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteFilmStock(stock.id)}
+                            className="flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg font-bold transition-colors text-red-400 hover:bg-red-500/10"
+                          >
+                            <Trash2 size={12} />
+                            {at('deleteFilmStock')}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 新增/编辑 Modal */}
+              {showFilmModal && (
+                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowFilmModal(false)}>
+                  <div className={`rounded-2xl border ${cardBg} p-6 w-full max-w-md shadow-2xl`} onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="font-bold text-base">{editingFilm ? at('editFilmStock') : at('addFilmStock')}</h2>
+                      <button onClick={() => setShowFilmModal(false)} className="opacity-50 hover:opacity-100 transition-opacity">
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmBrand')}</label>
+                          <input
+                            type="text"
+                            value={filmForm.brand}
+                            onChange={e => setFilmForm(p => ({ ...p, brand: e.target.value }))}
+                            className={inputCls}
+                            placeholder="e.g.: Kodak"
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmModel')}</label>
+                          <input
+                            type="text"
+                            value={filmForm.model}
+                            onChange={e => setFilmForm(p => ({ ...p, model: e.target.value }))}
+                            className={inputCls}
+                            placeholder="e.g.: Portra 400"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmIso')}</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={filmForm.iso}
+                            onChange={e => setFilmForm(p => ({ ...p, iso: e.target.value }))}
+                            className={inputCls}
+                            placeholder="400"
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmFormat')}</label>
+                          <select value={filmForm.format} onChange={e => setFilmForm(p => ({ ...p, format: e.target.value }))} className={inputCls}>
+                            <option value="135">35mm (135)</option>
+                            <option value="135_half">{adminLang === 'zh-CN' ? '半格 (135)' : 'Half (135)'}</option>
+                            <option value="120">{adminLang === 'zh-CN' ? '中画幅 (120)' : 'Medium (120)'}</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmType')}</label>
+                          <select value={filmForm.filmType} onChange={e => setFilmForm(p => ({ ...p, filmType: e.target.value }))} className={inputCls}>
+                            <option value="COLOR_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_NEGATIVE']}</option>
+                            <option value="BW_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['BW_NEGATIVE']}</option>
+                            <option value="COLOR_POSITIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_POSITIVE']}</option>
+                            <option value="BW_POSITIVE">{FILM_TYPE_LABELS[adminLang]['BW_POSITIVE']}</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmProcess')}</label>
+                          <select value={filmForm.process} onChange={e => setFilmForm(p => ({ ...p, process: e.target.value }))} className={inputCls}>
+                            <option value="C-41">C-41</option>
+                            <option value="E-6">E-6</option>
+                            <option value="ECN-2">ECN-2</option>
+                            <option value="D-76">D-76</option>
+                            <option value="D-67">D-67</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {filmSaveStatus.message && (
+                        <p className={`text-xs font-bold ${filmSaveStatus.type === 'error' ? 'text-red-400' : filmSaveStatus.type === 'success' ? 'text-green-400' : 'opacity-50'}`}>
+                          {filmSaveStatus.message}
+                        </p>
+                      )}
+
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          onClick={() => setShowFilmModal(false)}
+                          className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-100'}`}
+                        >
+                          {adminLang === 'zh-CN' ? '取消' : 'Cancel'}
+                        </button>
+                        <button
+                          onClick={handleSaveFilmStock}
+                          disabled={filmSaveStatus.type === 'loading'}
+                          className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold transition-all"
+                        >
+                          {filmSaveStatus.type === 'loading' ? at('saving') : (editingFilm ? (adminLang === 'zh-CN' ? '保存修改' : 'Save') : (adminLang === 'zh-CN' ? '添加' : 'Add'))}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
