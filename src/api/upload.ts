@@ -26,15 +26,16 @@ export async function uploadImage(
   const formData = new FormData();
   
   // 导入图片压缩工具
-  const { smartCompress } = await import('../utils/image-compress.ts');
+  const { smartCompress, compressForUpload } = await import('../utils/image-compress.ts');
   
   // 根据上传类型处理文件
   if (type === 'filmStock') {
     // 胶卷型号照片：直接上传原图
     formData.append('file', file);
   } else if (rollId) {
-    // 相册照片：上传原图，生成 webp 预览图
-    formData.append('file', file);
+    // 相册照片：优化主图（如果过大），生成 webp 预览图
+    const optimizedFile = await compressForUpload(file);
+    formData.append('file', optimizedFile);
     
     // 生成预览图
     if (generatePreview && !previewFile) {

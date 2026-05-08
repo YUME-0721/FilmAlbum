@@ -29,6 +29,11 @@ export const translations = {
       update: '提交更新',
       create: '提交创建',
       uploading: '上传中...',
+      uploadStatus: {
+        desc: '正在归档您的底片，请稍候...',
+        uploading: '正在上传 {current}',
+        autoClose: '完成后窗口将自动关闭'
+      },
       confirm_delete: '确定要删除吗？此操作不可恢复。',
       sending: '发送中...',
     },
@@ -319,6 +324,11 @@ export const translations = {
       update: 'Update',
       create: 'Create',
       uploading: 'Uploading...',
+      uploadStatus: {
+        desc: 'Your photos are being archived, please wait.',
+        uploading: 'Uploading {current}',
+        autoClose: 'Window will close automatically after completion'
+      },
       confirm_delete: 'Are you sure you want to delete? This action cannot be undone.',
       sending: 'Sending...',
     },

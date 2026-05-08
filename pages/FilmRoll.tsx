@@ -223,51 +223,62 @@ export default function FilmRoll() {
     setIsUploading(true);
     setUploadStatus({ current: 0, total: files.length });
 
+    let successCount = 0;
+    let failCount = 0;
+
     try {
-      const uploadedFrames: FrameItem[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         setUploadStatus({ current: i + 1, total: files.length });
         
-        const uploadResult = await uploadImage(file, id, 'frame');
-        const imageUrl = uploadResult.url;
-        const previewUrl = uploadResult.previewUrl;
-        uploadedFrames.push({
-          id: `temp-${Date.now()}-${i}`,
-          imageUrl,
-          previewUrl,
-          frameNumber: String(frames.length + i + 1).padStart(2, '0') + 'A',
-          aperture: '',
-          shutterSpeed: '',
-          iso: '',
-          description: '',
-          sortOrder: frames.length + i,
-          fileSize: file.size,
-          fileFormat: file.type
-        });
+        try {
+          const uploadResult = await uploadImage(file, id, 'frame');
+          const imageUrl = uploadResult.url;
+          const previewUrl = uploadResult.previewUrl;
+          
+          const newFrame: FrameItem = {
+            id: `temp-${Date.now()}-${i}`,
+            imageUrl,
+            previewUrl,
+            frameNumber: String(frames.length + successCount + 1).padStart(2, '0') + 'A',
+            aperture: '',
+            shutterSpeed: '',
+            iso: '',
+            description: '',
+            sortOrder: frames.length + successCount,
+            fileSize: file.size,
+            fileFormat: file.type
+          };
+
+          // 立即同步到服务器，防止后续失败导致已上传图片丢失
+          const addResponse = await addFrames(id, [newFrame]);
+          if (addResponse.success) {
+            const addedFrame = (addResponse.data?.[0] as FrameItem) || newFrame;
+            setFrames(prev => [...prev, addedFrame]);
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (err) {
+          console.error(`第 ${i + 1} 张图片上传失败:`, err);
+          failCount++;
+        }
       }
 
-      // 批量添加帧到服务器
-      const addResponse = await addFrames(id, uploadedFrames);
-      if (addResponse.success) {
-        // 重新获取胶卷详情，确保获取到最新的帧列表
+      if (successCount > 0) {
+        // 最终同步一次完整的胶卷信息，确保状态一致
         const rollResponse = await getRoll(id);
         if (rollResponse.success && rollResponse.data) {
           setRoll(rollResponse.data);
           setFrames(rollResponse.data.frames || []);
-          showToast(`成功添加 ${files.length} 张照片`);
-        } else {
-          // 如果获取详情失败，尝试使用返回的新帧数据
-          const newFrames = (addResponse.data || []) as FrameItem[];
-          setFrames(prevFrames => [...prevFrames, ...newFrames]);
-          showToast(`成功添加 ${files.length} 张照片`);
         }
-      } else {
-        showToast('上传照片失败', 'error');
+        showToast(`成功添加 ${successCount} 张照片${failCount > 0 ? `，${failCount} 张失败` : ''}`);
+      } else if (failCount > 0) {
+        showToast('所有照片上传失败', 'error');
       }
     } catch (error) {
-      console.error('上传照片失败:', error);
-      showToast(error instanceof Error ? error.message : '上传照片失败', 'error');
+      console.error('上传流程异常:', error);
+      showToast(error instanceof Error ? error.message : '上传流程异常', 'error');
     } finally {
       setIsUploading(false);
       setUploadStatus(null);
@@ -1424,12 +1435,8 @@ export default function FilmRoll() {
           isSubmitting={isSubmitting}
           filmStocks={filmStocks}
           isLoadingFilmStocks={isLoadingFilmStocks}
-          showFilmStockManagement={showFilmStockManagement}
-          setShowFilmStockManagement={setShowFilmStockManagement}
           filmStockSearch={filmStockSearch}
           setFilmStockSearch={setFilmStockSearch}
-          addFilmStockForm={addFilmStockForm}
-          setAddFilmStockForm={setAddFilmStockForm}
           gearList={gearList}
           isLoadingGear={isLoadingGear}
         />
@@ -1547,7 +1554,7 @@ export default function FilmRoll() {
                 <CloudUpload size={48} className="text-primary" />
               </div>
               <h3 className="text-lg font-bold text-on-surface mb-2">{t('common.uploading')}</h3>
-              <p className="text-sm text-on-surface-variant">Your photos are being archived, please wait.</p>
+              <p className="text-sm text-on-surface-variant">{t('common.uploadStatus.desc')}</p>
             </div>
             <div className="space-y-4">
               <div className="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
@@ -1557,11 +1564,11 @@ export default function FilmRoll() {
                 ></div>
               </div>
               <div className="flex items-center justify-between text-xs text-on-surface-variant">
-                <span>Uploading {uploadStatus.current}</span>
+                <span>{t('common.uploadStatus.uploading', { current: uploadStatus.current })}</span>
                 <span>{uploadStatus.current} / {uploadStatus.total}</span>
               </div>
               <div className="text-xs text-on-surface-variant text-center">
-                Window will close automatically after completion
+                {t('common.uploadStatus.autoClose')}
               </div>
             </div>
           </div>

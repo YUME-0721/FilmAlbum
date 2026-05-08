@@ -115,48 +115,60 @@ export function getImageDimensions(file: File): Promise<{ width: number; height:
 }
 
 /**
- * 智能压缩图片
- * 根据原图大小自动调整压缩参数
- * @param file 原始图片文件
- * @returns 压缩后的文件
+ * 智能预览压缩
+ * 压缩到 1200px 左右，用于列表展示
  */
 export async function smartCompress(file: File): Promise<File> {
-  // 如果文件小于 500KB，不压缩
-  if (file.size < 500 * 1024) {
-    return file;
-  }
-
-  // 根据文件大小调整压缩参数
+  if (file.size < 500 * 1024) return file;
   let maxWidth = 1200;
   let quality = 0.8;
+  if (file.size > 10 * 1024 * 1024) { maxWidth = 800; quality = 0.6; }
+  else if (file.size > 5 * 1024 * 1024) { maxWidth = 1000; quality = 0.7; }
+  try {
+    const compressedBlob = await compressToWebP(file, { maxWidth, quality, maxHeight: maxWidth });
+    const originalName = file.name.replace(/\.[^/.]+$/, '');
+    const compressedFile = blobToFile(compressedBlob, `${originalName}_preview.webp`);
+    console.log(`[预览压缩] ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024).toFixed(2)}KB`);
+    return compressedFile;
+  } catch (error) {
+    console.error('预览压缩失败:', error);
+    return file;
+  }
+}
 
-  if (file.size > 10 * 1024 * 1024) {
-    // 大于 10MB
-    maxWidth = 800;
-    quality = 0.6;
-  } else if (file.size > 5 * 1024 * 1024) {
-    // 大于 5MB
-    maxWidth = 1000;
-    quality = 0.7;
+/**
+ * 针对上传主图的压缩
+ * 保持较高的分辨率和质量，但通过转换为 WebP 显著减小文件体积
+ * @param file 原始文件
+ * @returns 优化后的文件
+ */
+export async function compressForUpload(file: File): Promise<File> {
+  // 如果文件小于 5MB 且已经是 WebP，不处理
+  if (file.size < 5 * 1024 * 1024 && file.type === 'image/webp') {
+    return file;
+  }
+  
+  // 即使小于 5MB，如果不是 WebP，也建议转换为 WebP 以节省带宽和存储
+  // 但为了保留绝对原图，我们设置一个更高的阈值：8MB
+  if (file.size < 8 * 1024 * 1024) {
+    return file;
   }
 
   try {
     const compressedBlob = await compressToWebP(file, {
-      maxWidth,
-      quality,
-      maxHeight: maxWidth
+      maxWidth: 3000, // 保持足够高的分辨率用于大屏展示
+      maxHeight: 3000,
+      quality: 0.9    // 极高画质
     });
 
-    // 生成压缩后的文件名
     const originalName = file.name.replace(/\.[^/.]+$/, '');
-    const compressedFile = blobToFile(compressedBlob, `${originalName}_preview.webp`);
+    const compressedFile = blobToFile(compressedBlob, `${originalName}_optimized.webp`);
 
-    console.log(`[图片压缩] ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024).toFixed(2)}KB`);
+    console.log(`[主图优化] ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
 
     return compressedFile;
   } catch (error) {
-    console.error('图片压缩失败:', error);
-    // 压缩失败返回原文件
+    console.error('主图优化失败:', error);
     return file;
   }
 }
