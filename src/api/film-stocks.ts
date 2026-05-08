@@ -6,6 +6,7 @@ import { get, post, put, del, type ApiResponse } from './client';
 export interface FilmStock {
   id: string;
   brand: string;
+  brandZh?: string;
   model: string;
   iso: number;
   format: string;

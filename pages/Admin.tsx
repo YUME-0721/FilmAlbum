@@ -98,6 +98,7 @@ const i18n = {
     deleteFilmStock: '删除胶卷',
     confirmDelete: '确认删除此胶卷型号？',
     filmBrand: '品牌',
+    filmBrandZh: '品牌中文名',
     filmBrandLogo: '品牌 LOGO URL',
     filmModel: '型号',
     filmIso: '感光度 (ISO)',
@@ -193,6 +194,7 @@ const i18n = {
     deleteFilmStock: 'Delete Film Stock',
     confirmDelete: 'Delete this film stock?',
     filmBrand: 'Brand',
+    filmBrandZh: 'Chinese Brand Name',
     filmBrandLogo: 'Brand LOGO URL',
     filmModel: 'Model',
     filmIso: 'ISO',
@@ -284,7 +286,7 @@ export default function Admin() {
   const [filmFilter, setFilmFilter] = useState({ search: '', format: '', filmType: '' });
   const [showFilmModal, setShowFilmModal] = useState(false);
   const [editingFilm, setEditingFilm] = useState<any | null>(null);
-  const [filmForm, setFilmForm] = useState({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
+  const [filmForm, setFilmForm] = useState({ brand: '', brandZh: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
   const [filmSaveStatus, setFilmSaveStatus] = useState({ type: '', message: '' });
 
   useEffect(() => {
@@ -342,7 +344,7 @@ export default function Admin() {
         setFilmSaveStatus({ type: 'success', message: at('saved') });
         setShowFilmModal(false);
         setEditingFilm(null);
-        setFilmForm({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
+        setFilmForm({ brand: '', brandZh: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
         fetchFilmStocks();
       } else {
         setFilmSaveStatus({ type: 'error', message: res.error || at('updateFailed') });
@@ -965,7 +967,9 @@ export default function Admin() {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 truncate">{stock.brand}</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 truncate">
+                              {stock.brand} {stock.brandZh && <span className="ml-1 opacity-70">/ {stock.brandZh}</span>}
+                            </p>
                             <p className="font-bold text-sm leading-tight truncate">{stock.model}</p>
                           </div>
                         </div>
@@ -992,7 +996,7 @@ export default function Admin() {
                             onClick={() => {
                               setEditingFilm(stock);
                               setFilmForm({
-                                brand: stock.brand, model: stock.model,
+                                brand: stock.brand, brandZh: stock.brandZh || '', model: stock.model,
                                 iso: String(stock.iso), format: stock.format,
                                 filmType: stock.filmType, process: stock.process,
                                 brandLogo: stock.brandLogo || ''
@@ -1042,6 +1046,18 @@ export default function Admin() {
                             placeholder="e.g.: Kodak"
                           />
                         </div>
+                        <div>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmBrandZh')}</label>
+                          <input
+                            type="text"
+                            value={filmForm.brandZh}
+                            onChange={e => setFilmForm(p => ({ ...p, brandZh: e.target.value }))}
+                            className={inputCls}
+                            placeholder="e.g.: 柯达"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4">
                         <div>
                           <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmModel')}</label>
                           <input

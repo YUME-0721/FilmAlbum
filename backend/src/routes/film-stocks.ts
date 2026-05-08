@@ -19,8 +19,8 @@ filmStocks.get('/', async (c) => {
   const params: (string | number)[] = [];
 
   if (brand) {
-    whereClause += ' AND brand LIKE ?';
-    params.push(`%${brand}%`);
+    whereClause += ' AND (brand LIKE ? OR brand_zh LIKE ?)';
+    params.push(`%${brand}%`, `%${brand}%`);
   }
 
   if (iso) {
@@ -49,6 +49,7 @@ filmStocks.get('/', async (c) => {
   const data = result.results?.map((row: Record<string, unknown>) => ({
     id: row.id,
     brand: row.brand,
+    brandZh: row.brand_zh,
     model: row.model,
     iso: row.iso,
     format: row.format,
@@ -81,6 +82,7 @@ filmStocks.get('/:id', async (c) => {
     data: {
       id: filmStock.id,
       brand: filmStock.brand,
+      brandZh: filmStock.brand_zh,
       model: filmStock.model,
       iso: filmStock.iso,
       format: filmStock.format,

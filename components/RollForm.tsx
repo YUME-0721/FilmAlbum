@@ -158,7 +158,9 @@ export default function RollForm({
                                    {stock.brand.slice(0, 2).toUpperCase()}
                                  </div>
                                )}
-                               <span>{stock.brand} {stock.model}</span>
+                               <span>
+                                 {stock.brand} {stock.brandZh && <span className="text-on-surface-variant/60 ml-1 text-[10px]">({stock.brandZh})</span>} {stock.model}
+                               </span>
                              </div>
                           ))}
                       </>

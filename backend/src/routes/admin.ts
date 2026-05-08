@@ -272,8 +272,8 @@ admin.get('/film-stocks', adminAuthRequired(), async (c) => {
   const params: (string | number)[] = [];
 
   if (search) {
-    where += ' AND (brand LIKE ? OR model LIKE ?)';
-    params.push(`%${search}%`, `%${search}%`);
+    where += ' AND (brand LIKE ? OR brand_zh LIKE ? OR model LIKE ?)';
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
   }
   if (format) {
     where += ' AND format = ?';
@@ -291,6 +291,7 @@ admin.get('/film-stocks', adminAuthRequired(), async (c) => {
   const data = result.results?.map((row: any) => ({
     id:        row.id,
     brand:     row.brand,
+    brandZh:   row.brand_zh,
     model:     row.model,
     iso:       row.iso,
     format:    row.format,
@@ -310,7 +311,7 @@ admin.post('/film-stocks', adminAuthRequired(), async (c) => {
   const body = await c.req.json<{
     brand: string; model: string; iso: number;
     format: string; filmType: string; process: string;
-    brandLogo?: string;
+    brandLogo?: string; brandZh?: string;
   }>();
 
   if (!body.brand || !body.model || !body.iso || !body.format || !body.filmType || !body.process) {
@@ -326,9 +327,9 @@ admin.post('/film-stocks', adminAuthRequired(), async (c) => {
   const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
 
   await c.env.DB.prepare(
-    `INSERT INTO film_stocks (id, brand, model, iso, format, film_type, process, brand_logo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, body.brand, body.model, body.iso, body.format, body.filmType, body.process, body.brandLogo || '').run();
+    `INSERT INTO film_stocks (id, brand, brand_zh, model, iso, format, film_type, process, brand_logo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, body.brand, body.brandZh || '', body.model, body.iso, body.format, body.filmType, body.process, body.brandLogo || '').run();
 
   return c.json({ success: true, data: { id, ...body } }, 201);
 });
@@ -345,11 +346,11 @@ admin.put('/film-stocks/:id', adminAuthRequired(), async (c) => {
   const body = await c.req.json<{
     brand?: string; model?: string; iso?: number;
     format?: string; filmType?: string; process?: string;
-    brandLogo?: string;
+    brandLogo?: string; brandZh?: string;
   }>();
 
   const fieldMap: Record<string, string> = {
-    brand: 'brand', model: 'model', iso: 'iso',
+    brand: 'brand', brandZh: 'brand_zh', model: 'model', iso: 'iso',
     format: 'format', filmType: 'film_type', process: 'process',
     brandLogo: 'brand_logo',
   };
@@ -378,7 +379,7 @@ admin.put('/film-stocks/:id', adminAuthRequired(), async (c) => {
   return c.json({
     success: true,
     data: {
-      id: updated.id, brand: updated.brand, model: updated.model,
+      id: updated.id, brand: updated.brand, brandZh: updated.brand_zh, model: updated.model,
       iso: updated.iso, format: updated.format,
       filmType: updated.film_type, process: updated.process,
       brandLogo: updated.brand_logo,

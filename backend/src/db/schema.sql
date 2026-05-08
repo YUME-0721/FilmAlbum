@@ -140,6 +140,7 @@ CREATE TABLE IF NOT EXISTS gear (
 CREATE TABLE IF NOT EXISTS film_stocks (
   id TEXT PRIMARY KEY,
   brand TEXT NOT NULL,
+  brand_zh TEXT DEFAULT '',
   model TEXT NOT NULL,
   iso INTEGER NOT NULL,
   format TEXT NOT NULL, /* 135, 120, 4x5, etc. */

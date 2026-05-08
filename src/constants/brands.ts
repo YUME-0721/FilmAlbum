@@ -38,14 +38,18 @@ export const getBrandDisplayName = (brand: string): string => {
 };
 
 // 搜索胶卷型号时同时匹配中英文品牌名
-export const filterFilmStocks = <T extends { brand: string }>(stocks: T[], searchTerm: string): T[] => {
+export const filterFilmStocks = <T extends { brand: string; brandZh?: string; model: string }>(stocks: T[], searchTerm: string): T[] => {
   if (!searchTerm) return stocks;
   
   const searchLower = searchTerm.toLowerCase();
   return stocks.filter(stock => {
     // 匹配英文品牌名
     if (stock.brand.toLowerCase().includes(searchLower)) return true;
-    // 匹配中文品牌名
+    // 匹配数据库中的中文品牌名
+    if (stock.brandZh && stock.brandZh.toLowerCase().includes(searchLower)) return true;
+    // 匹配型号名
+    if (stock.model.toLowerCase().includes(searchLower)) return true;
+    // 匹配硬编码映射中的中文品牌名（兜底）
     const chineseBrand = brandMap[stock.brand];
     if (chineseBrand && chineseBrand.toLowerCase().includes(searchLower)) return true;
     return false;
