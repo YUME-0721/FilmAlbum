@@ -113,16 +113,27 @@ upload.post('/hf/init', authRequired(), async (c) => {
     
     body.channelName = strategy.channel;
     body.uploadNameType = strategy.globalNameType;
-    body.uploadFolder = strategy.finalPath;
+    // 去掉前后斜杠，HuggingFace 接口通常不接受带斜杠的 folder
+    body.uploadFolder = strategy.finalPath.replace(/^\/+|\/+$/g, '');
 
     const response = await fetch(targetUrl, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${strategy.imgBedToken}`, 'Content-Type': 'application/json' },
+      headers: { 
+        'Authorization': `Bearer ${strategy.imgBedToken}`, 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(body)
     });
 
-    if (!response.ok) throw new Error(await response.text());
-    return c.json(await response.json());
+    const resData = await response.json() as any;
+    if (!response.ok || resData.success === false) {
+      return c.json({ 
+        success: false, 
+        error: resData.message || resData.error || '图床初始化接口返回失败' 
+      }, (response.status === 200 ? 400 : response.status) as any);
+    }
+    return c.json(resData);
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500);
   }
@@ -150,17 +161,26 @@ upload.post('/hf/commit', authRequired(), async (c) => {
 
     const response = await fetch(targetUrl, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${strategy.imgBedToken}`, 'Content-Type': 'application/json' },
+      headers: { 
+        'Authorization': `Bearer ${strategy.imgBedToken}`, 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(body)
     });
 
-    if (!response.ok) throw new Error(await response.text());
-    
-    const result = await response.json() as any;
-    if (result.success && result.src) {
-        result.src = `${strategy.imgBedUrl.replace(/\/$/, '')}${result.src}`;
+    const resData = await response.json() as any;
+    if (!response.ok || resData.success === false) {
+      return c.json({ 
+        success: false, 
+        error: resData.message || resData.error || '图床提交接口返回失败' 
+      }, (response.status === 200 ? 400 : response.status) as any);
     }
-    return c.json(result);
+
+    if (resData.success && resData.src) {
+        resData.src = `${strategy.imgBedUrl.replace(/\/$/, '')}${resData.src}`;
+    }
+    return c.json(resData);
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500);
   }
