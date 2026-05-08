@@ -337,7 +337,7 @@ export default function Admin() {
     try {
       const res = await put(`/admin/users/${userId}/level`, { level }, { headers: { Authorization: `Bearer ${token}` } });
       if (res.success) {
-        setUsers(users.map(u => u.id === userId ? { ...u, level } : u));
+        setUsers(users.map(u => String(u.id) === String(userId) ? { ...u, level } : u));
       }
     } catch {
       alert(at('updateFailed'));
@@ -573,39 +573,6 @@ export default function Admin() {
       <main className="pt-14 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-          {/* 顶部统计卡片 */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className={`p-4 rounded-2xl border ${cardBg} flex items-center gap-3`}>
-              <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/15' : 'bg-blue-50'}`}>
-                <Users size={18} className="text-blue-500" />
-              </div>
-              <div>
-                <p className={`text-[10px] font-bold uppercase tracking-wider ${mutedText}`}>{at('totalUsers')}</p>
-                <p className="text-xl font-bold">{stats.users}</p>
-              </div>
-            </div>
-            <div className={`p-4 rounded-2xl border ${cardBg} flex items-center gap-3`}>
-              <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-emerald-500/15' : 'bg-emerald-50'}`}>
-                <Film size={18} className="text-emerald-500" />
-              </div>
-              <div>
-                <p className={`text-[10px] font-bold uppercase tracking-wider ${mutedText}`}>{at('totalRolls')}</p>
-                <p className="text-xl font-bold">{stats.rolls}</p>
-              </div>
-            </div>
-            <div className="hidden md:flex md:col-span-2 items-center justify-end">
-              <button
-                onClick={fetchDashboardData}
-                disabled={isLoading}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all hover:scale-105 active:scale-95 ${
-                  isDarkMode ? 'border-white/10 bg-white/5 hover:bg-white/10' : 'border-gray-200 hover:bg-gray-100'
-                }`}
-              >
-                <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-                {at('refresh')}
-              </button>
-            </div>
-          </div>
 
           {/* 系统设置 TAB */}
           {activeTab === 'system' && (
@@ -671,6 +638,50 @@ export default function Admin() {
           {/* 用户管理 TAB */}
           {activeTab === 'users' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
+              {/* 美化后的统计卡片 & 操作栏 */}
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className={`flex-1 p-5 rounded-3xl border ${isDarkMode ? 'bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20' : 'bg-gradient-to-br from-blue-50 to-white border-blue-100'} relative overflow-hidden group shadow-sm`}>
+                  <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-300/40'}`}></div>
+                  <div className="relative flex items-center gap-5">
+                    <div className={`p-4 rounded-2xl shadow-inner ${isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-white text-blue-600 shadow-blue-100/50'}`}>
+                      <Users size={28} />
+                    </div>
+                    <div>
+                      <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-blue-400/80' : 'text-blue-600/80'}`}>{at('totalUsers')}</p>
+                      <p className={`text-3xl font-black font-mono tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.users}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`flex-1 p-5 rounded-3xl border ${isDarkMode ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-100'} relative overflow-hidden group shadow-sm`}>
+                  <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-300/40'}`}></div>
+                  <div className="relative flex items-center gap-5">
+                    <div className={`p-4 rounded-2xl shadow-inner ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white text-emerald-600 shadow-emerald-100/50'}`}>
+                      <Film size={28} />
+                    </div>
+                    <div>
+                      <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>{at('totalRolls')}</p>
+                      <p className={`text-3xl font-black font-mono tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.rolls}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end md:w-32">
+                  <button
+                    onClick={fetchDashboardData}
+                    disabled={isLoading}
+                    className={`w-full h-full min-h-[96px] flex flex-col items-center justify-center gap-2 rounded-3xl border transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm group ${
+                      isDarkMode 
+                        ? 'border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white' 
+                        : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-900 hover:border-gray-300 hover:shadow-md'
+                    }`}
+                  >
+                    <RefreshCw size={22} className={`${isLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">{at('refresh')}</span>
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="lg:col-span-1">
                   <div className={`rounded-2xl border ${cardBg} p-5 space-y-4`}>

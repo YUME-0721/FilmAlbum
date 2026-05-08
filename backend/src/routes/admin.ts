@@ -127,14 +127,22 @@ admin.get('/users', adminAuthRequired(), async (c) => {
 
   const total = await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first<{ count: number }>();
   
-  const users = await c.env.DB.prepare(
+  const usersResult = await c.env.DB.prepare(
     'SELECT id, email, nickname, level, created_at FROM users ORDER BY id DESC LIMIT ? OFFSET ?'
   ).bind(limit, offset).all();
+
+  const mappedUsers = usersResult.results?.map((user: any) => ({
+    id: user.id,
+    email: user.email,
+    nickname: user.nickname,
+    level: user.level,
+    createdAt: user.created_at
+  })) || [];
 
   return c.json({
     success: true,
     data: {
-      users: users.results,
+      users: mappedUsers,
       total: total?.count || 0,
       page,
       limit
