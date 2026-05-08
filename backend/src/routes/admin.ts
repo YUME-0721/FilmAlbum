@@ -308,83 +308,93 @@ admin.get('/film-stocks', adminAuthRequired(), async (c) => {
  * POST /api/admin/film-stocks - 管理员新建胶卷型号
  */
 admin.post('/film-stocks', adminAuthRequired(), async (c) => {
-  const body = await c.req.json<{
-    brand: string; model: string; iso: number;
-    format: string; filmType: string; process: string;
-    brandLogo?: string; brandZh?: string;
-  }>();
+  try {
+    const body = await c.req.json<{
+      brand: string; model: string; iso: number;
+      format: string; filmType: string; process: string;
+      brandLogo?: string; brandZh?: string;
+    }>();
 
-  if (!body.brand || !body.model || !body.iso || !body.format || !body.filmType || !body.process) {
-    return c.json({ success: false, error: '所有字段为必填项' }, 400);
+    if (!body.brand || !body.model || !body.iso || !body.format || !body.filmType || !body.process) {
+      return c.json({ success: false, error: '所有字段为必填项' }, 400);
+    }
+
+    // 防重复
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM film_stocks WHERE brand = ? AND model = ? AND iso = ?'
+    ).bind(body.brand, body.model, body.iso).first();
+    if (existing) return c.json({ success: false, error: '该胶卷型号已存在' }, 409);
+
+    const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+
+    await c.env.DB.prepare(
+      `INSERT INTO film_stocks (id, brand, brand_zh, model, iso, format, film_type, process, brand_logo)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, body.brand, body.brandZh || '', body.model, body.iso, body.format, body.filmType, body.process, body.brandLogo || '').run();
+
+    return c.json({ success: true, data: { id, ...body } }, 201);
+  } catch (err: any) {
+    console.error('Admin POST film-stock error:', err);
+    return c.json({ success: false, error: err.message || 'Internal Server Error' }, 500);
   }
-
-  // 防重复
-  const existing = await c.env.DB.prepare(
-    'SELECT id FROM film_stocks WHERE brand = ? AND model = ? AND iso = ?'
-  ).bind(body.brand, body.model, body.iso).first();
-  if (existing) return c.json({ success: false, error: '该胶卷型号已存在' }, 409);
-
-  const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
-
-  await c.env.DB.prepare(
-    `INSERT INTO film_stocks (id, brand, brand_zh, model, iso, format, film_type, process, brand_logo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, body.brand, body.brandZh || '', body.model, body.iso, body.format, body.filmType, body.process, body.brandLogo || '').run();
-
-  return c.json({ success: true, data: { id, ...body } }, 201);
 });
 
 /**
  * PUT /api/admin/film-stocks/:id - 管理员更新胶卷型号
  */
 admin.put('/film-stocks/:id', adminAuthRequired(), async (c) => {
-  const id = c.req.param('id');
+  try {
+    const id = c.req.param('id');
 
-  const existing = await c.env.DB.prepare('SELECT id FROM film_stocks WHERE id = ?').bind(id).first();
-  if (!existing) return c.json({ success: false, error: '胶卷型号不存在' }, 404);
+    const existing = await c.env.DB.prepare('SELECT id FROM film_stocks WHERE id = ?').bind(id).first();
+    if (!existing) return c.json({ success: false, error: '胶卷型号不存在' }, 404);
 
-  const body = await c.req.json<{
-    brand?: string; model?: string; iso?: number;
-    format?: string; filmType?: string; process?: string;
-    brandLogo?: string; brandZh?: string;
-  }>();
+    const body = await c.req.json<{
+      brand?: string; model?: string; iso?: number;
+      format?: string; filmType?: string; process?: string;
+      brandLogo?: string; brandZh?: string;
+    }>();
 
-  const fieldMap: Record<string, string> = {
-    brand: 'brand', brandZh: 'brand_zh', model: 'model', iso: 'iso',
-    format: 'format', filmType: 'film_type', process: 'process',
-    brandLogo: 'brand_logo',
-  };
+    const fieldMap: Record<string, string> = {
+      brand: 'brand', brandZh: 'brand_zh', model: 'model', iso: 'iso',
+      format: 'format', filmType: 'film_type', process: 'process',
+      brandLogo: 'brand_logo',
+    };
 
-  const updates: string[] = [];
-  const values: (string | number)[] = [];
+    const updates: string[] = [];
+    const values: (string | number)[] = [];
 
-  for (const [key, col] of Object.entries(fieldMap)) {
-    const val = (body as any)[key];
-    if (val !== undefined) {
-      updates.push(`${col} = ?`);
-      values.push(val);
+    for (const [key, col] of Object.entries(fieldMap)) {
+      const val = (body as any)[key];
+      if (val !== undefined) {
+        updates.push(`${col} = ?`);
+        values.push(val);
+      }
     }
+
+    if (updates.length === 0) return c.json({ success: false, error: '没有需要更新的字段' }, 400);
+
+    updates.push("updated_at = datetime('now')");
+    values.push(id);
+
+    await c.env.DB.prepare(
+      `UPDATE film_stocks SET ${updates.join(', ')} WHERE id = ?`
+    ).bind(...values).run();
+
+    const updated = await c.env.DB.prepare('SELECT * FROM film_stocks WHERE id = ?').bind(id).first<any>();
+    return c.json({
+      success: true,
+      data: {
+        id: updated.id, brand: updated.brand, brandZh: updated.brand_zh, model: updated.model,
+        iso: updated.iso, format: updated.format,
+        filmType: updated.film_type, process: updated.process,
+        brandLogo: updated.brand_logo,
+      }
+    });
+  } catch (err: any) {
+    console.error('Admin PUT film-stock error:', err);
+    return c.json({ success: false, error: err.message || 'Internal Server Error' }, 500);
   }
-
-  if (updates.length === 0) return c.json({ success: false, error: '没有需要更新的字段' }, 400);
-
-  updates.push("updated_at = datetime('now')");
-  values.push(id);
-
-  await c.env.DB.prepare(
-    `UPDATE film_stocks SET ${updates.join(', ')} WHERE id = ?`
-  ).bind(...values).run();
-
-  const updated = await c.env.DB.prepare('SELECT * FROM film_stocks WHERE id = ?').bind(id).first<any>();
-  return c.json({
-    success: true,
-    data: {
-      id: updated.id, brand: updated.brand, brandZh: updated.brand_zh, model: updated.model,
-      iso: updated.iso, format: updated.format,
-      filmType: updated.film_type, process: updated.process,
-      brandLogo: updated.brand_logo,
-    }
-  });
 });
 
 /**

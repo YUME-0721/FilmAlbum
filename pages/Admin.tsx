@@ -350,6 +350,7 @@ export default function Admin() {
         setFilmSaveStatus({ type: 'error', message: res.error || at('updateFailed') });
       }
     } catch (err: any) {
+      console.error('Save film stock error:', err);
       setFilmSaveStatus({ type: 'error', message: err.message || at('updateFailed') });
     }
   };
@@ -917,7 +918,7 @@ export default function Admin() {
                   <button
                     onClick={() => {
                       setEditingFilm(null);
-                      setFilmForm({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
+                      setFilmForm({ brand: '', brandZh: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
                       setFilmSaveStatus({ type: '', message: '' });
                       setShowFilmModal(true);
                     }}
