@@ -85,7 +85,9 @@ export async function uploadImage(
       fileSample: await computeFileSample(mainFile)
     });
 
-    if (!initRes.success || !initRes.data) throw new Error('HF初始化失败');
+    if (!initRes.success || !initRes.data) {
+      throw new Error(initRes.error || 'HF初始化失败');
+    }
     const hfData = initRes.data;
     
     if (!hfData.alreadyExists) {
