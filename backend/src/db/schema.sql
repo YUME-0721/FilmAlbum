@@ -145,6 +145,7 @@ CREATE TABLE IF NOT EXISTS film_stocks (
   format TEXT NOT NULL, /* 135, 120, 4x5, etc. */
   film_type TEXT NOT NULL, /* COLOR_NEGATIVE, BW_NEGATIVE, COLOR_POSITIVE, BW_POSITIVE */
   process TEXT NOT NULL, /* C-41, E-6, D-76, etc. */
+  brand_logo TEXT DEFAULT '',
   created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   UNIQUE(brand, model, iso) /* 确保品牌、型号和感光度的组合唯一 */

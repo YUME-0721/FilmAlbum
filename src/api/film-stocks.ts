@@ -11,6 +11,7 @@ export interface FilmStock {
   format: string;
   filmType: string;
   process: string;
+  brandLogo?: string;
   createdAt?: string;
 }
 

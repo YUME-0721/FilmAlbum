@@ -54,6 +54,7 @@ filmStocks.get('/', async (c) => {
     format: row.format,
     filmType: row.film_type,
     process: row.process,
+    brandLogo: row.brand_logo,
     createdAt: row.created_at
   })) ?? [];
 
@@ -85,6 +86,7 @@ filmStocks.get('/:id', async (c) => {
       format: filmStock.format,
       filmType: filmStock.film_type,
       process: filmStock.process,
+      brandLogo: filmStock.brand_logo,
       createdAt: filmStock.created_at
     }
   });

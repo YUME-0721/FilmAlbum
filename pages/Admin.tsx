@@ -98,6 +98,7 @@ const i18n = {
     deleteFilmStock: '删除胶卷',
     confirmDelete: '确认删除此胶卷型号？',
     filmBrand: '品牌',
+    filmBrandLogo: '品牌 LOGO URL',
     filmModel: '型号',
     filmIso: '感光度 (ISO)',
     filmFormat: '胶卷规格',
@@ -192,6 +193,7 @@ const i18n = {
     deleteFilmStock: 'Delete Film Stock',
     confirmDelete: 'Delete this film stock?',
     filmBrand: 'Brand',
+    filmBrandLogo: 'Brand LOGO URL',
     filmModel: 'Model',
     filmIso: 'ISO',
     filmFormat: 'Format',
@@ -214,8 +216,8 @@ const FILM_TYPE_LABELS: Record<'zh-CN' | 'en-US', Record<string, string>> = {
 
 /** 胶卷规格标签（中英文） */
 const FILM_FORMAT_LABELS: Record<'zh-CN' | 'en-US', Record<string, string>> = {
-  'zh-CN': { '135': '35mm (135)', '120': '中画幅 (120)', '135_half': '半格 (135)' },
-  'en-US': { '135': '35mm (135)', '120': 'Medium (120)', '135_half': 'Half Frame (135)' },
+  'zh-CN': { '135': '35mm (135)', '120': '中画幅 (120)' },
+  'en-US': { '135': '35mm (135)', '120': 'Medium (120)' },
 };
 
 export default function Admin() {
@@ -282,7 +284,7 @@ export default function Admin() {
   const [filmFilter, setFilmFilter] = useState({ search: '', format: '', filmType: '' });
   const [showFilmModal, setShowFilmModal] = useState(false);
   const [editingFilm, setEditingFilm] = useState<any | null>(null);
-  const [filmForm, setFilmForm] = useState({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41' });
+  const [filmForm, setFilmForm] = useState({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
   const [filmSaveStatus, setFilmSaveStatus] = useState({ type: '', message: '' });
 
   useEffect(() => {
@@ -340,7 +342,7 @@ export default function Admin() {
         setFilmSaveStatus({ type: 'success', message: at('saved') });
         setShowFilmModal(false);
         setEditingFilm(null);
-        setFilmForm({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41' });
+        setFilmForm({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
         fetchFilmStocks();
       } else {
         setFilmSaveStatus({ type: 'error', message: res.error || at('updateFailed') });
@@ -889,7 +891,6 @@ export default function Admin() {
                   >
                     <option value="">{at('filterAll')} {at('filmFormat')}</option>
                     <option value="135">35mm (135)</option>
-                    <option value="135_half">{adminLang === 'zh-CN' ? '半格 (135)' : 'Half (135)'}</option>
                     <option value="120">{adminLang === 'zh-CN' ? '中画幅 (120)' : 'Medium (120)'}</option>
                   </select>
                   <select
@@ -914,7 +915,7 @@ export default function Admin() {
                   <button
                     onClick={() => {
                       setEditingFilm(null);
-                      setFilmForm({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41' });
+                      setFilmForm({ brand: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
                       setFilmSaveStatus({ type: '', message: '' });
                       setShowFilmModal(true);
                     }}
@@ -947,16 +948,7 @@ export default function Admin() {
                       BW_POSITIVE:    'text-blue-400 bg-blue-400/10 border-blue-400/20',
                     };
                     const chipColor = typeColor[stock.filmType] || 'text-gray-400 bg-gray-400/10 border-gray-400/20';
-                    // 查找品牌logo
-                    const knownBrands: Record<string, string> = {
-                      'FUJIFILM': 'https://img.072199.xyz/file/FilmAlbum/Films/1774608830532.webp',
-                      'Kodak':    'https://img.072199.xyz/file/FilmAlbum/Films/1774609038242.webp',
-                      'Lucky':    'https://img.072199.xyz/file/FilmAlbum/Films/1774605924805.webp',
-                      'Agfa':     'https://img.072199.xyz/file/FilmAlbum/Films/1774609367814.webp',
-                      'LOMOGRAPHY': 'https://img.072199.xyz/file/FilmAlbum/Films/1774610093361.webp',
-                      'Leica':    'https://img.072199.xyz/file/FilmAlbum/Films/1774609923703.webp',
-                    };
-                    const logoUrl = knownBrands[stock.brand];
+                    const logoUrl = stock.brandLogo;
 
                     return (
                       <div
@@ -1002,7 +994,8 @@ export default function Admin() {
                               setFilmForm({
                                 brand: stock.brand, model: stock.model,
                                 iso: String(stock.iso), format: stock.format,
-                                filmType: stock.filmType, process: stock.process
+                                filmType: stock.filmType, process: stock.process,
+                                brandLogo: stock.brandLogo || ''
                               });
                               setFilmSaveStatus({ type: '', message: '' });
                               setShowFilmModal(true);
@@ -1060,6 +1053,18 @@ export default function Admin() {
                           />
                         </div>
                       </div>
+
+                      <div>
+                        <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmBrandLogo')}</label>
+                        <input
+                          type="url"
+                          value={filmForm.brandLogo}
+                          onChange={e => setFilmForm(p => ({ ...p, brandLogo: e.target.value }))}
+                          className={inputCls}
+                          placeholder="https://example.com/logo.png"
+                        />
+                      </div>
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmIso')}</label>
@@ -1076,7 +1081,6 @@ export default function Admin() {
                           <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmFormat')}</label>
                           <select value={filmForm.format} onChange={e => setFilmForm(p => ({ ...p, format: e.target.value }))} className={inputCls}>
                             <option value="135">35mm (135)</option>
-                            <option value="135_half">{adminLang === 'zh-CN' ? '半格 (135)' : 'Half (135)'}</option>
                             <option value="120">{adminLang === 'zh-CN' ? '中画幅 (120)' : 'Medium (120)'}</option>
                           </select>
                         </div>

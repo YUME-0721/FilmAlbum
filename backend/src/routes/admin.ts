@@ -296,6 +296,7 @@ admin.get('/film-stocks', adminAuthRequired(), async (c) => {
     format:    row.format,
     filmType:  row.film_type,
     process:   row.process,
+    brandLogo: row.brand_logo,
     createdAt: row.created_at,
   })) ?? [];
 
@@ -309,6 +310,7 @@ admin.post('/film-stocks', adminAuthRequired(), async (c) => {
   const body = await c.req.json<{
     brand: string; model: string; iso: number;
     format: string; filmType: string; process: string;
+    brandLogo?: string;
   }>();
 
   if (!body.brand || !body.model || !body.iso || !body.format || !body.filmType || !body.process) {
@@ -324,9 +326,9 @@ admin.post('/film-stocks', adminAuthRequired(), async (c) => {
   const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
 
   await c.env.DB.prepare(
-    `INSERT INTO film_stocks (id, brand, model, iso, format, film_type, process)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, body.brand, body.model, body.iso, body.format, body.filmType, body.process).run();
+    `INSERT INTO film_stocks (id, brand, model, iso, format, film_type, process, brand_logo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, body.brand, body.model, body.iso, body.format, body.filmType, body.process, body.brandLogo || '').run();
 
   return c.json({ success: true, data: { id, ...body } }, 201);
 });
@@ -343,11 +345,13 @@ admin.put('/film-stocks/:id', adminAuthRequired(), async (c) => {
   const body = await c.req.json<{
     brand?: string; model?: string; iso?: number;
     format?: string; filmType?: string; process?: string;
+    brandLogo?: string;
   }>();
 
   const fieldMap: Record<string, string> = {
     brand: 'brand', model: 'model', iso: 'iso',
     format: 'format', filmType: 'film_type', process: 'process',
+    brandLogo: 'brand_logo',
   };
 
   const updates: string[] = [];
@@ -377,6 +381,7 @@ admin.put('/film-stocks/:id', adminAuthRequired(), async (c) => {
       id: updated.id, brand: updated.brand, model: updated.model,
       iso: updated.iso, format: updated.format,
       filmType: updated.film_type, process: updated.process,
+      brandLogo: updated.brand_logo,
     }
   });
 });

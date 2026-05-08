@@ -143,16 +143,23 @@ export default function RollForm({
                       <>
                         {filterFilmStocks(filmStocks, filmStockSearch)
                             .map(stock => (
-                            <div
-                              key={stock.id}
-                              className="px-4 py-2 text-sm text-on-surface hover:bg-surface-variant cursor-pointer"
-                              onClick={() => {
-                                setFormData({...formData, filmStock: `${stock.brand} ${stock.model}`});
-                                setFilmStockSearch('');
-                              }}
-                            >
-                              {stock.brand} {stock.model}
-                            </div>
+                             <div
+                               key={stock.id}
+                               className="px-4 py-2 text-sm text-on-surface hover:bg-surface-variant cursor-pointer flex items-center gap-3"
+                               onClick={() => {
+                                 setFormData({...formData, filmStock: `${stock.brand} ${stock.model}`});
+                                 setFilmStockSearch('');
+                               }}
+                             >
+                               {stock.brandLogo ? (
+                                 <img src={stock.brandLogo} alt={stock.brand} className="w-6 h-6 object-contain rounded-md bg-white/5" />
+                               ) : (
+                                 <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-[8px] font-bold text-primary">
+                                   {stock.brand.slice(0, 2).toUpperCase()}
+                                 </div>
+                               )}
+                               <span>{stock.brand} {stock.model}</span>
+                             </div>
                           ))}
                       </>
                     )}
@@ -386,7 +393,7 @@ export default function RollForm({
               <label htmlFor={isEditing ? "edit-format" : "new-roll-format"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.format')}</label>
               <select 
                 id={isEditing ? "edit-format" : "new-roll-format"}
-                value={formData.format === '135' ? '135' : formData.format}
+                value={formData.format}
                 onChange={e => setFormData({...formData, format: e.target.value})}
                 onFocus={() => {
                   setCameraSearch('');
