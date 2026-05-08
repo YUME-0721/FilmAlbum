@@ -133,7 +133,7 @@ upload.post('/hf/init', authRequired(), async (c) => {
         error: resData.message || resData.error || '图床初始化接口返回失败' 
       }, (response.status === 200 ? 400 : response.status) as any);
     }
-    return c.json(resData);
+    return c.json({ success: true, data: resData });
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500);
   }
@@ -180,7 +180,7 @@ upload.post('/hf/commit', authRequired(), async (c) => {
     if (resData.success && resData.src) {
         resData.src = `${strategy.imgBedUrl.replace(/\/$/, '')}${resData.src}`;
     }
-    return c.json(resData);
+    return c.json({ success: true, data: resData });
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500);
   }
@@ -224,7 +224,8 @@ upload.post('/chunk/init', authRequired(), async (c) => {
     });
 
     if (!response.ok) throw new Error(await response.text());
-    return c.json(await response.json());
+    const resData = await response.json();
+    return c.json({ success: true, data: resData });
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500);
   }
@@ -260,7 +261,8 @@ upload.post('/chunk/upload', authRequired(), async (c) => {
     });
 
     if (!response.ok) throw new Error(await response.text());
-    return c.json(await response.json());
+    const resData = await response.json();
+    return c.json({ success: true, data: resData });
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500);
   }
