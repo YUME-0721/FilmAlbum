@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { authRequired } from '../middleware/auth';
-import { uploadToImgBed, UploadType } from '../utils/upload-helper';
+import { uploadToImgBed, getUploadStrategy, UploadType } from '../utils/upload-helper';
 
 const upload = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
@@ -69,6 +69,227 @@ upload.post('/', authRequired(), async (c) => {
     });
   } catch (error: any) {
     return c.json({ success: false, error: error.message || '上传失败' }, 500);
+  }
+});
+
+/**
+ * GET /api/upload/strategy - 获取上传策略信息
+ */
+upload.get('/strategy', authRequired(), async (c) => {
+  try {
+    const typeQuery = c.req.query('type');
+    const rollId = c.req.query('rollId');
+    const userId = c.get('userId');
+    
+    let strategyType: UploadType = 'avatar';
+    if (typeQuery === 'filmStock') strategyType = 'film_stock';
+    else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (rollId) strategyType = 'roll';
+
+    const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
+    return c.json({ success: true, data: strategy });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * POST /api/upload/hf/init - HuggingFace 直传初始化
+ */
+upload.post('/hf/init', authRequired(), async (c) => {
+  try {
+    const body = await c.req.json();
+    const typeQuery = c.req.query('type');
+    const rollId = c.req.query('rollId');
+    const userId = c.get('userId');
+    
+    let strategyType: UploadType = 'avatar';
+    if (typeQuery === 'filmStock') strategyType = 'film_stock';
+    else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (rollId) strategyType = 'roll';
+
+    const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
+    const targetUrl = `${strategy.imgBedUrl.replace(/\/$/, '')}/upload/huggingface/getUploadUrl`;
+    
+    body.channelName = strategy.channel;
+    body.uploadNameType = strategy.globalNameType;
+    body.uploadFolder = strategy.finalPath;
+
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${strategy.imgBedToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+    return c.json(await response.json());
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * POST /api/upload/hf/commit - HuggingFace 直传提交
+ */
+upload.post('/hf/commit', authRequired(), async (c) => {
+  try {
+    const body = await c.req.json();
+    const typeQuery = c.req.query('type');
+    const rollId = c.req.query('rollId');
+    const userId = c.get('userId');
+    
+    let strategyType: UploadType = 'avatar';
+    if (typeQuery === 'filmStock') strategyType = 'film_stock';
+    else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (rollId) strategyType = 'roll';
+
+    const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
+    const targetUrl = `${strategy.imgBedUrl.replace(/\/$/, '')}/upload/huggingface/commitUpload`;
+    
+    body.channelName = strategy.channel;
+
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${strategy.imgBedToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+    
+    const result = await response.json() as any;
+    if (result.success && result.src) {
+        result.src = `${strategy.imgBedUrl.replace(/\/$/, '')}${result.src}`;
+    }
+    return c.json(result);
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * POST /api/upload/chunk/init - 分片上传初始化
+ */
+upload.post('/chunk/init', authRequired(), async (c) => {
+  try {
+    const body = await c.req.json();
+    const typeQuery = c.req.query('type');
+    const rollId = c.req.query('rollId');
+    const userId = c.get('userId');
+    
+    let strategyType: UploadType = 'avatar';
+    if (typeQuery === 'filmStock') strategyType = 'film_stock';
+    else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (rollId) strategyType = 'roll';
+
+    const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
+    
+    const urlParams = new URLSearchParams({
+      initChunked: 'true',
+      uploadChannel: strategy.channel,
+      serverCompress: strategy.compress,
+      uploadNameType: strategy.globalNameType,
+      uploadFolder: strategy.finalPath
+    });
+    const targetUrl = `${strategy.imgBedUrl.replace(/\/$/, '')}/upload?${urlParams.toString()}`;
+    
+    const formData = new FormData();
+    formData.append('originalFileName', body.originalFileName);
+    formData.append('originalFileType', body.originalFileType);
+    formData.append('totalChunks', body.totalChunks.toString());
+
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${strategy.imgBedToken}` },
+      body: formData
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+    return c.json(await response.json());
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * POST /api/upload/chunk/upload - 逐块上传
+ */
+upload.post('/chunk/upload', authRequired(), async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const typeQuery = c.req.query('type');
+    const rollId = c.req.query('rollId');
+    const userId = c.get('userId');
+    
+    let strategyType: UploadType = 'avatar';
+    if (typeQuery === 'filmStock') strategyType = 'film_stock';
+    else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (rollId) strategyType = 'roll';
+
+    const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
+    
+    const urlParams = new URLSearchParams({
+      chunked: 'true',
+      uploadChannel: strategy.channel
+    });
+    const targetUrl = `${strategy.imgBedUrl.replace(/\/$/, '')}/upload?${urlParams.toString()}`;
+    
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${strategy.imgBedToken}` },
+      body: formData
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+    return c.json(await response.json());
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * POST /api/upload/chunk/merge - 分片上传合并
+ */
+upload.post('/chunk/merge', authRequired(), async (c) => {
+  try {
+    const body = await c.req.json();
+    const typeQuery = c.req.query('type');
+    const rollId = c.req.query('rollId');
+    const userId = c.get('userId');
+    
+    let strategyType: UploadType = 'avatar';
+    if (typeQuery === 'filmStock') strategyType = 'film_stock';
+    else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (rollId) strategyType = 'roll';
+
+    const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
+    
+    const urlParams = new URLSearchParams({
+      chunked: 'true',
+      merge: 'true',
+      uploadChannel: strategy.channel
+    });
+    const targetUrl = `${strategy.imgBedUrl.replace(/\/$/, '')}/upload?${urlParams.toString()}`;
+    
+    const formData = new FormData();
+    formData.append('uploadId', body.uploadId);
+    formData.append('totalChunks', body.totalChunks.toString());
+    formData.append('originalFileName', body.originalFileName);
+    formData.append('originalFileType', body.originalFileType);
+
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${strategy.imgBedToken}` },
+      body: formData
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+    const result = await response.json() as any;
+    if (Array.isArray(result) && result[0]?.src) {
+        return c.json({ success: true, url: `${strategy.imgBedUrl.replace(/\/$/, '')}${result[0].src}` });
+    }
+    throw new Error('图床合并返回数据格式异常');
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
   }
 });
 

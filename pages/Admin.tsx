@@ -1173,9 +1173,11 @@ export default function Admin() {
                     <div>
                       <label className="block text-[10px] font-bold uppercase mb-1 opacity-50">{at('imgBedChannel')}</label>
                       <select value={imgBed.img_bed_channel} onChange={(e) => setImgBed(p => ({ ...p, img_bed_channel: e.target.value }))} className={inputCls}>
-                        <option value="huggingface">HuggingFace</option>
-                        <option value="cloudflare">Cloudflare</option>
-                        <option value="r2">Cloudflare R2</option>
+                        <option value="telegram">Telegram（大文件）</option>
+                        <option value="cfr2">CloudFlare R2（大文件，私密）</option>
+                        <option value="s3">S3（大文件，私密，收费）</option>
+                        <option value="discord">Discord（大文件分片存储）</option>
+                        <option value="huggingface">HuggingFace（大文件直传）</option>
                       </select>
                     </div>
                   </div>
@@ -1209,9 +1211,11 @@ export default function Admin() {
                             <td className="px-4 py-3">
                               <select value={(imgBed as any)[`${item.key}_channel`]} onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_channel`]: e.target.value }))} className="bg-transparent border-none p-0 text-[11px] focus:ring-0">
                                 <option value="">默认全局</option>
-                                <option value="huggingface">HF</option>
-                                <option value="cloudflare">CF</option>
-                                <option value="r2">R2</option>
+                                <option value="telegram">Telegram（大文件）</option>
+                                <option value="cfr2">CloudFlare R2（大文件，私密）</option>
+                                <option value="s3">S3（大文件，私密，收费）</option>
+                                <option value="discord">Discord（大文件分片存储）</option>
+                                <option value="huggingface">HuggingFace（大文件直传）</option>
                               </select>
                             </td>
                             <td className="px-4 py-3 text-center">

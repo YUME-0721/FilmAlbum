@@ -11,15 +11,13 @@ interface UploadOptions {
 }
 
 /**
- * 统一图床上传助手
- * 根据策略管理配置，自动决定路径、渠道和压缩逻辑
+ * 提取图床策略配置逻辑
  */
-export async function uploadToImgBed(c: any, options: UploadOptions) {
-  const { file, type, userId, rollId, isPreview = false } = options;
+export async function getUploadStrategy(c: any, options: Omit<UploadOptions, 'file'>) {
+  const { type, userId, rollId, isPreview = false } = options;
   const env = c.env as Env;
   const db = env.DB;
 
-  // 1. 获取所有相关的配置项
   const strategyKeys = [
     'img_bed_url', 'img_bed_token', 'img_bed_path', 'img_bed_channel', 'img_bed_name_type',
     `${type}_path`, `${type}_compress`, `${type}_channel`
@@ -34,25 +32,22 @@ export async function uploadToImgBed(c: any, options: UploadOptions) {
   const imgBedUrl      = config['img_bed_url']      || env.IMG_BED_URL;
   const imgBedToken    = config['img_bed_token']    || env.IMG_BED_TOKEN;
   const globalPath     = config['img_bed_path']     || '/FilmAlbum/';
-  const globalChannel  = config['img_bed_channel']  || 'huggingface';
+  const globalChannel  = config['img_bed_channel']  || 'telegram';
   const globalNameType = config['img_bed_name_type'] || 'index';
 
   if (!imgBedUrl || !imgBedToken) {
     throw new Error('图床配置不完整，请联系管理员');
   }
 
-  // 2. 确定具体策略
   const specificPath     = config[`${type}_path`];
-  const specificCompress = config[`${type}_compress`]; // "true" or "false"
+  const specificCompress = config[`${type}_compress`];
   const specificChannel  = config[`${type}_channel`];
 
   const channel  = specificChannel || globalChannel;
-  const compress = specificCompress !== undefined ? specificCompress : 'true'; // 默认开启压缩
+  const compress = specificCompress !== undefined ? specificCompress : 'true';
 
-  // 3. 处理路径模板
   let pathTemplate = specificPath || '';
   if (!pathTemplate) {
-    // 降级逻辑（兼容旧版默认行为）
     if (type === 'film_stock') pathTemplate = 'Films/';
     else if (rollId) pathTemplate = '{userId}/{rollId}/';
     else pathTemplate = '{userId}/';
@@ -63,10 +58,27 @@ export async function uploadToImgBed(c: any, options: UploadOptions) {
     .replace('{userId}', displayUserId)
     .replace('{rollId}', rollId || 'default');
 
-  // 确保 basePath 前缀
   const basePath = globalPath.endsWith('/') ? globalPath : `${globalPath}/`;
   finalPath = `${basePath}${finalPath}`;
   if (!finalPath.endsWith('/')) finalPath += '/';
+
+  return {
+    imgBedUrl,
+    imgBedToken,
+    channel,
+    compress,
+    globalNameType,
+    finalPath
+  };
+}
+
+/**
+ * 统一图床上传助手
+ * 根据策略管理配置，自动决定路径、渠道和压缩逻辑
+ */
+export async function uploadToImgBed(c: any, options: UploadOptions) {
+  const { file, type, userId, rollId, isPreview = false } = options;
+  const { imgBedUrl, imgBedToken, channel, compress, globalNameType, finalPath } = await getUploadStrategy(c, { type, userId, rollId, isPreview });
 
   // 4. 执行上传
   const uploadFormData = new FormData();
