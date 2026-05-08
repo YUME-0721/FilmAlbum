@@ -65,15 +65,15 @@ export default function GearForm({
     }
     
     if (gearForm.lensModels.length === 0) {
-      newErrors.lensModels = '请至少添加一个镜头型号';
+      newErrors.lensModels = t('gear.form.lensRequired');
     }
     
     if (!gearForm.lensType) {
-      newErrors.lensType = '请选择镜头类型';
+      newErrors.lensType = t('gear.form.lensTypeRequired');
     }
     
     if (!gearForm.status) {
-      newErrors.status = '请选择设备状态';
+      newErrors.status = t('gear.form.statusRequired');
     }
     
     setErrors(newErrors);
@@ -170,7 +170,7 @@ export default function GearForm({
             {/* 镜头类型和设备状态 */}
             <div className="space-y-4">
               <div className="space-y-1">
-                <label htmlFor="gear-lens-type" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">镜头类型 *</label>
+                <label htmlFor="gear-lens-type" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('gear.form.lensType')} *</label>
                 <select 
                   id="gear-lens-type"
                   required
@@ -183,8 +183,8 @@ export default function GearForm({
                   }}
                   className={`w-full bg-surface-container-low border ${errors.lensType ? 'border-error' : 'border-outline-variant/30'} focus:border-primary px-3 py-2 text-sm text-on-surface outline-none transition-colors`}
                 >
-                  <option value="interchangeable">Interchangeable</option>
-                  <option value="fixed">Fixed Lens</option>
+                  <option value="interchangeable">{t('gear.form.lensTypeInterchangeable')}</option>
+                  <option value="fixed">{t('gear.form.lensTypeFixed')}</option>
                 </select>
                 {errors.lensType && (
                   <p className="text-xs text-error">{errors.lensType}</p>
@@ -223,7 +223,7 @@ export default function GearForm({
                 id="gear-camera-model"
                 type="text" 
                 required
-                placeholder="e.g.: Leica M6"
+                placeholder={t('gear.form.cameraPlaceholder')}
                 value={gearForm.cameraModel}
                 onChange={e => {
                   setGearForm({...gearForm, cameraModel: e.target.value});
@@ -239,14 +239,14 @@ export default function GearForm({
             </div>
             <div className="space-y-1">
               <label htmlFor="gear-lens-model" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">
-                {t('gear.form.lens')} * {gearForm.lensType === 'interchangeable' && <span className="text-on-surface-variant/50 normal-case">(Enter to add)</span>}
+                {t('gear.form.lens')} * {gearForm.lensType === 'interchangeable' && <span className="text-on-surface-variant/50 normal-case">{t('gear.form.enterToAdd')}</span>}
               </label>
               <div className="space-y-2">
                 <input 
                   id="gear-lens-model"
                   type="text" 
                   required={gearForm.lensModels.length === 0}
-                  placeholder="e.g.: Summicron 35mm f/2"
+                  placeholder={t('gear.form.lensPlaceholder')}
                   value={currentLensInput}
                   onChange={e => setCurrentLensInput(e.target.value)}
                   onKeyDown={e => {
@@ -309,25 +309,32 @@ export default function GearForm({
             <div className="space-y-1">
               <label className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.format')}</label>
               <div className="flex flex-wrap gap-2">
-                {['半格', '135', '645', '6x6', '6x7', '6x9'].map(format => (
+                {[
+                  { value: '半格', label: t('gear.form.formats.half') },
+                  { value: '135', label: t('gear.form.formats.full') },
+                  { value: '645', label: t('gear.form.formats.m645') },
+                  { value: '6x6', label: t('gear.form.formats.m66') },
+                  { value: '6x7', label: t('gear.form.formats.m67') },
+                  { value: '6x9', label: t('gear.form.formats.m69') },
+                ].map(format => (
                   <button
-                    key={format}
+                    key={format.value}
                     type="button"
                     onClick={() => {
                       setGearForm({
                         ...gearForm,
-                        formats: gearForm.formats.includes(format)
-                          ? gearForm.formats.filter(f => f !== format)
-                          : [...gearForm.formats, format]
+                        formats: gearForm.formats.includes(format.value)
+                          ? gearForm.formats.filter(f => f !== format.value)
+                          : [...gearForm.formats, format.value]
                       });
                     }}
                     className={`px-2 py-1 text-xs font-label uppercase tracking-wider rounded-sm transition-colors ${
-                      gearForm.formats.includes(format)
+                      gearForm.formats.includes(format.value)
                         ? 'bg-primary text-on-primary'
                         : 'bg-surface-container-low text-on-surface hover:bg-surface-container'
                     }`}
                   >
-                    {format}
+                    {format.label}
                   </button>
                 ))}
               </div>
@@ -340,7 +347,7 @@ export default function GearForm({
                   <input 
                     type="number" 
                     min="0"
-                    placeholder="例如：36"
+                    placeholder={t('gear.form.shotCountPlaceholder')}
                     value={gearForm.shotCounts?.[format] || ''}
                     onChange={e => {
                       setGearForm({
@@ -356,7 +363,7 @@ export default function GearForm({
                 </div>
               ))}
               {gearForm.formats.length === 0 && (
-                <p className="text-xs text-on-surface-variant/50">Please select formats first</p>
+                <p className="text-xs text-on-surface-variant/50">{t('gear.form.selectFormatFirst')}</p>
               )}
             </div>
           </div>
@@ -401,7 +408,7 @@ export default function GearForm({
               id="gear-review"
               type="text" 
               maxLength={30}
-              placeholder="不超过30个字"
+              placeholder={t('gear.form.reviewPlaceholder')}
               value={gearForm.review}
               onChange={e => setGearForm({...gearForm, review: e.target.value})}
               className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-3 py-2 text-sm text-on-surface outline-none transition-colors"

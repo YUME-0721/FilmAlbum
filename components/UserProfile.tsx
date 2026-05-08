@@ -769,10 +769,10 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                   className="bg-transparent border-none text-[10px] font-label font-bold focus:ring-0 cursor-pointer pr-8 uppercase tracking-[0.1em] text-on-surface-variant outline-none"
                 >
                   <option value="">{t('roll.type')}: {t('common.all')}</option>
-                  <option value="COLOR_NEGATIVE">Color Negative</option>
-                  <option value="BW_NEGATIVE">B&W</option>
-                  <option value="COLOR_POSITIVE">Color Positive (Slide)</option>
-                  <option value="BW_POSITIVE">B&W Positive</option>
+                  <option value="COLOR_NEGATIVE">{t('roll.filmTypes.colorNegative')}</option>
+                  <option value="BW_NEGATIVE">{t('roll.filmTypes.bwNegative')}</option>
+                  <option value="COLOR_POSITIVE">{t('roll.filmTypes.colorPositive')}</option>
+                  <option value="BW_POSITIVE">{t('roll.filmTypes.bwPositive')}</option>
                 </select>
               </div>
             </div>
@@ -901,12 +901,27 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-32 text-on-surface-variant bg-surface-container-lowest border border-outline-variant/10 border-dashed">
-            <Library size={64} className="mb-6 opacity-30 mx-auto" />
-            <p className="font-headline font-bold text-xl mb-2 text-on-surface">{t('roll.empty')}</p>
+          <div 
+            className={`flex flex-col items-center justify-center py-32 text-on-surface-variant bg-surface-container-lowest border border-outline-variant/10 border-dashed rounded-sm transition-all duration-300 ${profile?.isOwner ? 'cursor-pointer hover:bg-surface-container-low hover:border-primary/30 group/empty' : ''}`}
+            onClick={() => {
+              if (!profile?.isOwner) return;
+              if (currentUser?.level === 'lv1') {
+                showToast('您的等级(LV1)暂无权限创建影集，请联系管理员升级', 'error');
+                return;
+              }
+              if (currentUser?.level === 'lv2' && allRolls.length >= lv2RollLimit) {
+                alert(t('profile.roll.limitReached', { limit: lv2RollLimit }));
+                return;
+              }
+              setShowCreateModal(true);
+            }}
+          >
+            <Library size={64} className="mb-6 opacity-30 mx-auto group-hover/empty:text-primary group-hover/empty:opacity-100 transition-all duration-500" />
+            <p className="font-headline font-bold text-xl mb-2 text-on-surface group-hover/empty:text-primary transition-colors">{t('roll.empty')}</p>
             {profile?.isOwner ? (
                 <>
-                  <p className="font-body text-sm mb-8 opacity-70">{t('profile.roll.noPhotoDesc')}</p>
+                  <p className="font-body text-sm mb-8 opacity-70 group-hover/empty:opacity-100 transition-opacity">{t('profile.roll.noPhotoDesc')}</p>
+
                 {currentUser?.level !== 'lv1' && (
                   <button 
                     onClick={() => {
@@ -1069,7 +1084,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                       {item.formats.length > 0 && (
                         <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
                           <Maximize size={14} />
-                          {item.formats.join(', ')}
+                          {item.formats.map((f: string) => f === '半格' ? t('gear.form.formats.half') : f).join(', ')}
                         </div>
                       )}
                       {item.mount && (

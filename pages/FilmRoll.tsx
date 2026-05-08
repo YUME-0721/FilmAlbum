@@ -563,9 +563,13 @@ export default function FilmRoll() {
 
         {/* 照片网格 */}
         {frames.length === 0 ? (
-          <div className="text-center py-12 text-on-surface-variant">
-            <Library size={64} className="mb-4 opacity-30 mx-auto" />
-            <p>{t('roll.empty')}</p>
+          <div 
+            className="text-center py-24 text-on-surface-variant border-2 border-dashed border-outline-variant/10 rounded-2xl cursor-pointer hover:bg-surface-container-low hover:border-primary/30 transition-all duration-300 group"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <CloudUpload size={64} className="mb-6 opacity-30 mx-auto group-hover:text-primary group-hover:opacity-100 transition-all duration-500" />
+            <p className="font-headline font-bold text-xl mb-2 text-on-surface group-hover:text-primary transition-colors">{t('profile.roll.noPhoto')}</p>
+            <p className="font-body text-sm opacity-70 group-hover:opacity-100 transition-opacity">{t('profile.roll.noPhotoDesc')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-6 min-h-[calc(100vh-300px)]">
