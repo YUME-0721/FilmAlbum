@@ -118,6 +118,8 @@ export default function FilmRoll() {
   const [editingField, setEditingField] = useState<{frameId: string, field: string} | null>(null); // 当前正在编辑的字段
   const [editValue, setEditValue] = useState(''); // 编辑字段的值
   const [slideDirection, setSlideDirection] = useState(0); // 1 = 下一张（向左），-1 = 上一张（向右）
+  const [filmStockData, setFilmStockData] = useState<FilmStock | null>(null);
+
 
   /** 切换帧，附带方向感知 */
   const goToFrame = useCallback((targetIndex: number) => {
@@ -166,6 +168,11 @@ export default function FilmRoll() {
             format: data.format || '',
             tags: data.tags || []
           });
+
+          // 加载详细胶卷型号信息
+          if (data.filmStock) {
+            fetchFilmStockDetail(data.filmStock);
+          }
         }
       } catch (error) {
         console.error('加载胶卷失败:', error);
@@ -178,6 +185,23 @@ export default function FilmRoll() {
     };
     fetchRoll();
   }, [id]);
+
+  const fetchFilmStockDetail = async (stockName: string) => {
+    try {
+      const response = await getFilmStocks();
+      if (response.success && response.data) {
+        // 先尝试通过型号完全匹配
+        let stock = response.data.find(s => s.model === stockName || `${s.brand} ${s.model}` === stockName);
+        if (!stock) {
+          // 模糊匹配
+          stock = response.data.find(s => stockName.toLowerCase().includes(s.model.toLowerCase()));
+        }
+        if (stock) setFilmStockData(stock);
+      }
+    } catch (error) {
+      console.error('加载胶卷详情失败:', error);
+    }
+  };
 
   // 加载胶卷型号列表
   useEffect(() => {
@@ -734,29 +758,33 @@ export default function FilmRoll() {
                               {borderOptions.showFilmStock && (
                                 <div className="flex items-center gap-4">
                                   {(() => {
-                                    const brandName = roll.filmStock.split(' ')[0];
-                                    const brand = commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
-                                    if (brand?.logoUrl) {
+                                    const logo = filmStockData?.brandLogo || (() => {
+                                      const brandName = roll.filmStock.split(' ')[0];
+                                      return commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase())?.logoUrl;
+                                    })();
+
+                                    if (logo) {
                                       return (
                                         <div className="w-10 h-10">
                                           <img 
-                                            src={brand.logoUrl} 
-                                            alt={brand.name} 
+                                            src={logo} 
+                                            alt={roll.filmStock} 
                                             className="w-full h-full object-contain" 
                                           />
                                         </div>
                                       );
                                     } else {
+                                      const brandName = filmStockData?.brand || roll.filmStock.split(' ')[0];
                                       return (
                                         <div className="w-10 h-10 bg-yellow-500 flex items-center justify-center">
-                                          <span className="text-black font-bold text-sm">{brandName.charAt(0)}</span>
+                                          <span className="text-black font-bold text-sm">{brandName.charAt(0).toUpperCase()}</span>
                                         </div>
                                       );
                                     }
                                   })()}
                                   <div>
-                                    <h5 className="font-bold font-lingxun">{roll.filmStock.split(' ')[0]}</h5>
-                                    <h6 className="font-bold font-lingxun">{roll.filmStock.split(' ').slice(1).join(' ')}</h6>
+                                    <h5 className="font-bold font-lingxun">{filmStockData?.brand || roll.filmStock.split(' ')[0]}</h5>
+                                    <h6 className="font-bold font-lingxun">{filmStockData?.model || roll.filmStock.split(' ').slice(1).join(' ')}</h6>
                                   </div>
                                 </div>
                               )}
@@ -833,33 +861,37 @@ export default function FilmRoll() {
                     {roll.filmStock ? (
                       <>
                         {/* 卡片上半部分 - LOGO和型号 */}
-                        <div className="flex items-center gap-6 mb-8">
+                         <div className="flex items-center gap-6 mb-8">
                           <div className="shrink-0">
                             {(() => {
-                              const brandName = roll.filmStock.split(' ')[0];
-                              const brand = commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
-                              if (brand?.logoUrl) {
+                              const logo = filmStockData?.brandLogo || (() => {
+                                const brandName = roll.filmStock.split(' ')[0];
+                                return commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase())?.logoUrl;
+                              })();
+
+                              if (logo) {
                                 return (
                                   <div className="w-[72px] h-[72px] rounded-[24px] overflow-hidden bg-transparent">
                                     <img 
-                                      src={brand.logoUrl} 
-                                      alt={brand.name} 
+                                      src={logo} 
+                                      alt={roll.filmStock} 
                                       className="w-full h-full object-cover" 
                                     />
                                   </div>
                                 );
                               } else {
+                                const brandName = filmStockData?.brand || roll.filmStock.split(' ')[0];
                                 return (
                                   <div className="w-[72px] h-[72px] bg-yellow-500 rounded-[24px] flex items-center justify-center">
-                                    <span className="text-black font-serif font-bold text-3xl">{brandName.charAt(0)}</span>
+                                    <span className="text-black font-serif font-bold text-3xl">{brandName.charAt(0).toUpperCase()}</span>
                                   </div>
                                 );
                               }
                             })()}
                           </div>
                           <div className="flex flex-col justify-center">
-                            <h5 className="text-[#f4f4f5] font-serif text-[28px] leading-[1.1] tracking-wide lining-nums">{roll.filmStock.split(' ')[0]}</h5>
-                            <h6 className="text-[#f4f4f5] font-serif text-[28px] leading-[1.1] tracking-wide lining-nums mt-1">{roll.filmStock.split(' ').slice(1).join(' ')}</h6>
+                            <h5 className="text-[#f4f4f5] font-serif text-[28px] leading-[1.1] tracking-wide lining-nums">{filmStockData?.brand || roll.filmStock.split(' ')[0]}</h5>
+                            <h6 className="text-[#f4f4f5] font-serif text-[28px] leading-[1.1] tracking-wide lining-nums mt-1">{filmStockData?.model || roll.filmStock.split(' ').slice(1).join(' ')}</h6>
                           </div>
                         </div>
                         {/* 卡片下半部分 - 类型和画幅 */}
@@ -867,10 +899,10 @@ export default function FilmRoll() {
                           <div>
                             <p className="text-[#a1a1aa] text-[13px] mb-2">{t('roll.type')}</p>
                             <p className="text-[#f4f4f5] text-base font-medium">
-                              {roll.filmType === 'COLOR_NEGATIVE' ? 'Color Negative' : 
-                               roll.filmType === 'BW_NEGATIVE' ? 'B&W Negative' : 
-                               roll.filmType === 'COLOR_POSITIVE' ? 'Color Positive' : 
-                               roll.filmType === 'BW_POSITIVE' ? 'B&W Positive' : 
+                              {roll.filmType === 'COLOR_NEGATIVE' ? t('roll.filmTypes.colorNegative') : 
+                               roll.filmType === 'BW_NEGATIVE' ? t('roll.filmTypes.bwNegative') : 
+                               roll.filmType === 'COLOR_POSITIVE' ? t('roll.filmTypes.colorPositive') : 
+                               roll.filmType === 'BW_POSITIVE' ? t('roll.filmTypes.bwPositive') : 
                                roll.filmType || '-'}
                             </p>
                           </div>

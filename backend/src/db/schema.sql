@@ -201,15 +201,19 @@ CREATE TABLE IF NOT EXISTS system_settings (
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('open_registration', 'true');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('default_language', 'zh-CN');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('lv2_roll_limit', '10');
-/* 图床配置（初始为空，通过管理员后台配置） */
+/* 图床配置 */
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_url', '');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_token', '');
-/* Resend 邮件服务配置（初始为空，通过管理员后台配置） */
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_path', '/FilmAlbum/');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_channel', 'huggingface');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_name_type', 'index');
+/* 邮件服务 */
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_from', '');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_password', '');
-/* 更多配置 */
-INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_path', '/FilmAlbum/');
+/* API 配置 */
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('api_base_url', '');
+/* 用户等级配置：JSON 数组，包含 label, value, description, roll_limit, gear_limit, can_post, can_comment 等权限 */
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('user_levels', '[{"value":"lv1","label":"LV1","description":"只读权限","roll_limit":0,"gear_limit":0,"can_post":false,"can_comment":false},{"value":"lv2","label":"LV2","description":"标准权限","roll_limit":10,"gear_limit":5,"can_post":true,"can_comment":true},{"value":"lv3","label":"LV3","description":"无限制","roll_limit":999,"gear_limit":999,"can_post":true,"can_comment":true}]');
 
 /* 索引优化 */
 CREATE INDEX IF NOT EXISTS idx_rolls_user_id ON rolls(user_id);

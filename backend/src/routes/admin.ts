@@ -97,6 +97,7 @@ admin.get('/settings', adminAuthRequired(), async (c) => {
   if (!settingsMap['img_bed_channel']) settingsMap['img_bed_channel'] = 'huggingface';
   if (!settingsMap['img_bed_name_type']) settingsMap['img_bed_name_type'] = 'index';
   if (!settingsMap['api_base_url']) settingsMap['api_base_url'] = '';
+  if (!settingsMap['user_levels']) settingsMap['user_levels'] = '[{"value":"lv1","label":"LV1","description":"只读权限","roll_limit":0,"gear_limit":0,"can_post":false,"can_comment":false},{"value":"lv2","label":"LV2","description":"标准权限","roll_limit":10,"gear_limit":5,"can_post":true,"can_comment":true},{"value":"lv3","label":"LV3","description":"无限制","roll_limit":999,"gear_limit":999,"can_post":true,"can_comment":true}]';
 
   return c.json({
     success: true,
@@ -128,7 +129,7 @@ admin.get('/users', adminAuthRequired(), async (c) => {
   const total = await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first<{ count: number }>();
   
   const usersResult = await c.env.DB.prepare(
-    'SELECT id, email, nickname, level, created_at FROM users ORDER BY id DESC LIMIT ? OFFSET ?'
+    'SELECT u.id, u.email, u.nickname, u.level, u.created_at, (SELECT COUNT(*) FROM rolls WHERE user_id = u.id) as roll_count FROM users u ORDER BY u.id DESC LIMIT ? OFFSET ?'
   ).bind(limit, offset).all();
 
   const mappedUsers = usersResult.results?.map((user: any) => ({
@@ -136,6 +137,7 @@ admin.get('/users', adminAuthRequired(), async (c) => {
     email: user.email,
     nickname: user.nickname,
     level: user.level,
+    rollCount: user.roll_count,
     createdAt: user.created_at
   })) || [];
 
@@ -155,7 +157,11 @@ admin.put('/users/:id/level', adminAuthRequired(), async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json<{ level: string }>();
 
-  if (!['lv1', 'lv2', 'lv3'].includes(body.level)) {
+  // 从设置中获取有效等级
+  const levelsSetting = await c.env.DB.prepare("SELECT value FROM system_settings WHERE key = 'user_levels'").first<{ value: string }>();
+  const validLevels = levelsSetting ? JSON.parse(levelsSetting.value).map((l: any) => l.value) : ['lv1', 'lv2', 'lv3'];
+
+  if (!validLevels.includes(body.level)) {
     return c.json({ success: false, error: '无效的用户等级' }, 400);
   }
 
@@ -172,7 +178,10 @@ admin.post('/users', adminAuthRequired(), async (c) => {
     return c.json({ success: false, error: '邮箱、密码和昵称是必填项' }, 400);
   }
 
-  const level = ['lv1', 'lv2', 'lv3'].includes(body.level) ? body.level : 'lv1';
+  // 从设置中获取有效等级
+  const levelsSetting = await c.env.DB.prepare("SELECT value FROM system_settings WHERE key = 'user_levels'").first<{ value: string }>();
+  const validLevels = levelsSetting ? JSON.parse(levelsSetting.value).map((l: any) => l.value) : ['lv1', 'lv2', 'lv3'];
+  const level = validLevels.includes(body.level) ? body.level : (validLevels[0] || 'lv1');
 
   // 检查邮箱是否存在
   const existing = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(body.email).first();

@@ -11,7 +11,7 @@ import {
   ShieldAlert, Users, Film, RefreshCw, Plus,
   Sun, Moon, Languages, LogOut, Settings2,
   ImageUp, Mail, Eye, EyeOff, Send,
-  Pencil, Trash2, Search, X
+  Pencil, Trash2, Search, X, ShieldCheck
 } from 'lucide-react';
 
 /** 管理员后台专属语言文本 */
@@ -96,7 +96,7 @@ const i18n = {
     addFilmStock: '新增胶卷',
     editFilmStock: '编辑胶卷',
     deleteFilmStock: '删除胶卷',
-    confirmDelete: '确认删除此胶卷型号？',
+    confirmDelete: '确认删除胶卷型号 {name}？',
     filmBrand: '品牌',
     filmBrandZh: '品牌中文名',
     filmBrandLogo: '品牌 LOGO URL',
@@ -113,6 +113,19 @@ const i18n = {
     noFilmStocks: '暂无胶卷型号，点击右上角新增',
     confirm: '确认',
     cancel: '取消',
+    albums: '影集数',
+    levelSettings: '等级与权限设置',
+    levelName: '等级名称',
+    levelValue: '等级标识',
+    levelDesc: '等级描述',
+    rollLimit: '影集数量限制',
+    gearLimit: '设备数量限制',
+    canPost: '允许发布帖子',
+    canComment: '允许评论',
+    addLevel: '添加等级',
+    editLevel: '编辑等级',
+    deleteLevel: '删除等级',
+    confirmDeleteLevel: '确认删除等级 {name}？',
   },
   'en-US': {
     title: 'Super Admin',
@@ -194,7 +207,7 @@ const i18n = {
     addFilmStock: 'Add Film Stock',
     editFilmStock: 'Edit Film Stock',
     deleteFilmStock: 'Delete Film Stock',
-    confirmDelete: 'Delete this film stock?',
+    confirmDelete: 'Delete film stock {name}?',
     filmBrand: 'Brand',
     filmBrandZh: 'Chinese Brand Name',
     filmBrandLogo: 'Brand LOGO URL',
@@ -211,6 +224,19 @@ const i18n = {
     noFilmStocks: 'No film stocks yet. Click Add to create one.',
     confirm: 'Confirm',
     cancel: 'Cancel',
+    albums: 'Albums',
+    levelSettings: 'Levels & Permissions',
+    levelName: 'Level Name',
+    levelValue: 'Value',
+    levelDesc: 'Description',
+    rollLimit: 'Album Limit',
+    gearLimit: 'Gear Limit',
+    canPost: 'Can Post',
+    canComment: 'Can Comment',
+    addLevel: 'Add Level',
+    editLevel: 'Edit Level',
+    deleteLevel: 'Delete Level',
+    confirmDeleteLevel: 'Delete level {name}?',
   }
 };
 
@@ -249,8 +275,10 @@ export default function Admin() {
     default_language: 'zh-CN',
     lv2_roll_limit: '10',
     api_base_url: '',
-    img_bed_path: '/FilmAlbum/'
+    img_bed_path: '/FilmAlbum/',
+    user_levels: '[]'
   });
+  const [userLevels, setUserLevels] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', nickname: '', level: 'lv1' });
@@ -360,11 +388,11 @@ export default function Admin() {
     }
   };
 
-  const handleDeleteFilmStock = (id: string) => {
+  const handleDeleteFilmStock = (id: string, name: string) => {
     setConfirmModal({
       show: true,
       title: at('deleteFilmStock'),
-      message: at('confirmDelete'),
+      message: at('confirmDelete').replace('{name}', name),
       onConfirm: async () => {
         try {
           const res = await del(`/admin/film-stocks/${id}`, undefined, { headers: { Authorization: `Bearer ${token}` } });
@@ -452,6 +480,13 @@ export default function Admin() {
           smtp_from:     s['smtp_from']     || '',
           smtp_password: s['smtp_password'] ? '••••••••' : '',
         });
+        if (s['user_levels']) {
+          try {
+            setUserLevels(JSON.parse(s['user_levels']));
+          } catch (e) {
+            console.error('Failed to parse user levels', e);
+          }
+        }
       }
       if (usersRes.success && usersRes.data) setUsers(usersRes.data.users);
     } catch (err: any) {
@@ -466,12 +501,17 @@ export default function Admin() {
       const res = await put('/admin/settings', { key, value }, { headers: { Authorization: `Bearer ${token}` } });
       if (res.success) {
         setSystemSettings(prev => ({ ...prev, [key]: value }));
+        if (key === 'user_levels') setUserLevels(JSON.parse(value));
       } else {
         alert(at('updateFailed'));
       }
     } catch {
       alert(at('updateFailed'));
     }
+  };
+
+  const handleSaveUserLevels = (levels: any[]) => {
+    handleUpdateSetting('user_levels', JSON.stringify(levels));
   };
 
   const handleUpdateUserLevel = async (userId: string, level: string) => {
@@ -824,6 +864,149 @@ export default function Admin() {
                 </div>
               </div>
 
+              {/* 等级设置区域 */}
+              <div className={`rounded-3xl border ${cardBg} p-6 mb-6`}>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500">
+                      <ShieldCheck size={20} />
+                    </div>
+                    <h2 className="font-bold text-sm uppercase tracking-widest">{at('levelSettings')}</h2>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const newLevel = { value: `lv${userLevels.length + 1}`, label: `LV${userLevels.length + 1}`, description: '', roll_limit: 10, gear_limit: 5, can_post: true, can_comment: true };
+                      handleSaveUserLevels([...userLevels, newLevel]);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+                  >
+                    <Plus size={14} />
+                    {at('addLevel')}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {userLevels.map((level, idx) => (
+                    <div key={level.value} className={`p-5 rounded-2xl border ${isDarkMode ? 'bg-white/2 border-white/5' : 'bg-gray-50 border-gray-100'} space-y-4 relative group`}>
+                      <button 
+                        onClick={() => {
+                          const next = [...userLevels];
+                          next.splice(idx, 1);
+                          handleSaveUserLevels(next);
+                        }}
+                        className="absolute top-4 right-4 p-1.5 rounded-lg bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20"
+                        title={at('deleteLevel')}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('levelName')}</label>
+                          <input 
+                            value={level.label} 
+                            onChange={(e) => {
+                              const next = [...userLevels];
+                              next[idx].label = e.target.value;
+                              setUserLevels(next);
+                            }}
+                            onBlur={() => handleSaveUserLevels(userLevels)}
+                            className={inputCls} 
+                          />
+                        </div>
+                        <div className="w-20">
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('levelValue')}</label>
+                          <input 
+                            value={level.value} 
+                            onChange={(e) => {
+                              const next = [...userLevels];
+                              next[idx].value = e.target.value;
+                              setUserLevels(next);
+                            }}
+                            onBlur={() => handleSaveUserLevels(userLevels)}
+                            className={inputCls} 
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('levelDesc')}</label>
+                        <input 
+                          value={level.description} 
+                          onChange={(e) => {
+                            const next = [...userLevels];
+                            next[idx].description = e.target.value;
+                            setUserLevels(next);
+                          }}
+                          onBlur={() => handleSaveUserLevels(userLevels)}
+                          className={inputCls} 
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('rollLimit')}</label>
+                          <input 
+                            type="number"
+                            value={level.roll_limit} 
+                            onChange={(e) => {
+                              const next = [...userLevels];
+                              next[idx].roll_limit = parseInt(e.target.value) || 0;
+                              setUserLevels(next);
+                            }}
+                            onBlur={() => handleSaveUserLevels(userLevels)}
+                            className={inputCls} 
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('gearLimit')}</label>
+                          <input 
+                            type="number"
+                            value={level.gear_limit} 
+                            onChange={(e) => {
+                              const next = [...userLevels];
+                              next[idx].gear_limit = parseInt(e.target.value) || 0;
+                              setUserLevels(next);
+                            }}
+                            onBlur={() => handleSaveUserLevels(userLevels)}
+                            className={inputCls} 
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 pt-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={level.can_post} 
+                            onChange={(e) => {
+                              const next = [...userLevels];
+                              next[idx].can_post = e.target.checked;
+                              handleSaveUserLevels(next);
+                            }}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-xs font-bold">{at('canPost')}</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={level.can_comment} 
+                            onChange={(e) => {
+                              const next = [...userLevels];
+                              next[idx].can_comment = e.target.checked;
+                              handleSaveUserLevels(next);
+                            }}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-xs font-bold">{at('canComment')}</span>
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="lg:col-span-1">
                   <div className={`rounded-2xl border ${cardBg} p-5 space-y-4`}>
@@ -833,9 +1016,7 @@ export default function Admin() {
                       <input type="password" required placeholder={at('password')} value={newUser.password} onChange={(e) => setNewUser({...newUser, password: e.target.value})} className={inputCls} />
                       <input type="text" required placeholder={at('nickname')} value={newUser.nickname} onChange={(e) => setNewUser({...newUser, nickname: e.target.value})} className={inputCls} />
                       <select value={newUser.level} onChange={(e) => setNewUser({...newUser, level: e.target.value})} className={inputCls}>
-                        <option value="lv1">LV1</option>
-                        <option value="lv2">LV2</option>
-                        <option value="lv3">LV3</option>
+                        {userLevels.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
                       </select>
                       <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{at('create')}</button>
                     </form>
@@ -849,6 +1030,7 @@ export default function Admin() {
                           <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('id')}</th>
                           <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('user')}</th>
                           <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('level')}</th>
+                          <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('albums')}</th>
                           <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('joined')}</th>
                         </tr>
                       </thead>
@@ -861,11 +1043,18 @@ export default function Admin() {
                               <div className="text-xs opacity-50">{user.email}</div>
                             </td>
                             <td className="px-6 py-4">
-                              <select value={user.level} onChange={(e) => handleUpdateUserLevel(String(user.id), e.target.value)} className="bg-transparent border-none text-xs font-bold text-blue-500">
-                                <option value="lv1">LV1</option>
-                                <option value="lv2">LV2</option>
-                                <option value="lv3">LV3</option>
+                              <select value={user.level} onChange={(e) => handleUpdateUserLevel(String(user.id), e.target.value)} className="bg-transparent border-none text-xs font-bold text-blue-500 outline-none cursor-pointer">
+                                {userLevels.map(l => <option key={l.value} value={l.value} className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>{l.label}</option>)}
                               </select>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                user.rollCount > 0 
+                                  ? (isDarkMode ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') 
+                                  : (isDarkMode ? 'bg-white/5 text-white/30' : 'bg-gray-100 text-gray-400')
+                              }`}>
+                                {user.rollCount || 0}
+                              </span>
                             </td>
                             <td className="px-6 py-4 text-xs opacity-50">{new Date(user.createdAt).toLocaleDateString()}</td>
                           </tr>
@@ -1045,7 +1234,7 @@ export default function Admin() {
                             {at('editFilmStock')}
                           </button>
                           <button
-                            onClick={() => handleDeleteFilmStock(stock.id)}
+                            onClick={() => handleDeleteFilmStock(stock.id, `${stock.brand} ${stock.model}`)}
                             className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl font-bold transition-all ${
                               isDarkMode
                                 ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20'
