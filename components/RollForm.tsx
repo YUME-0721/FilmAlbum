@@ -146,10 +146,17 @@ export default function RollForm({
                              <div
                                key={stock.id}
                                className="px-4 py-2 text-sm text-on-surface hover:bg-surface-variant cursor-pointer flex items-center gap-3"
-                               onClick={() => {
-                                 setFormData({...formData, filmStock: `${stock.brand} ${stock.model}`});
-                                 setFilmStockSearch('');
-                               }}
+                                onClick={() => {
+                                  const baseFormat = stock.format === '120' ? '120' : '135';
+                                  const defaultFormat = baseFormat === '120' ? '645' : '135';
+                                  setFormData({
+                                    ...formData, 
+                                    filmStock: `${stock.brand} ${stock.model}`,
+                                    format: defaultFormat,
+                                    filmType: stock.filmType || formData.filmType
+                                  });
+                                  setFilmStockSearch('');
+                                }}
                              >
                                {stock.brandLogo ? (
                                  <img src={stock.brandLogo} alt={stock.brand} className="w-6 h-6 object-contain rounded-md bg-white/5" />
@@ -403,12 +410,30 @@ export default function RollForm({
                 }}
                 className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-4 py-3 text-sm text-on-surface outline-none transition-colors"
               >
-                <option value="135_half">{t('roll.form.formats.half')}</option>
-                <option value="135">{t('roll.form.formats.full')}</option>
-                <option value="645">{t('roll.form.formats.medium645')}</option>
-                <option value="120">{t('roll.form.formats.medium66')}</option>
-                <option value="6x7">{t('roll.form.formats.medium67')}</option>
-                <option value="6x9">{t('roll.form.formats.medium69')}</option>
+                {(() => {
+                  const currentStock = filmStocks.find(s => `${s.brand} ${s.model}` === formData.filmStock);
+                  const baseFormat = currentStock?.format || '135';
+                  
+                  if (baseFormat === '120') {
+                    return (
+                      <>
+                        <option value="620">{t('roll.form.formats.medium620')}</option>
+                        <option value="630">{t('roll.form.formats.medium630')}</option>
+                        <option value="645">{t('roll.form.formats.medium645')}</option>
+                        <option value="66">{t('roll.form.formats.medium66')}</option>
+                        <option value="6x7">{t('roll.form.formats.medium67')}</option>
+                        <option value="6x9">{t('roll.form.formats.medium69')}</option>
+                      </>
+                    );
+                  } else {
+                    return (
+                      <>
+                        <option value="135">{t('roll.form.formats.full')}</option>
+                        <option value="135_half">{t('roll.form.formats.half')}</option>
+                      </>
+                    );
+                  }
+                })()}
               </select>
             </div>
             <div className="space-y-2">

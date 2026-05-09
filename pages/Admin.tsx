@@ -25,8 +25,6 @@ const i18n = {
     openRegistration: '开放注册',
     openRegistrationDesc: '允许新用户公开注册账号',
     defaultLanguage: '默认语言',
-    lv2RollLimit: 'LV2 影集上限',
-    lv2RollLimitDesc: 'LV2 用户最多可创建的影集数量',
     createUser: '创建用户',
     email: '邮箱',
     password: '密码',
@@ -136,8 +134,6 @@ const i18n = {
     openRegistration: 'Open Registration',
     openRegistrationDesc: 'Allow new users to register publicly',
     defaultLanguage: 'Default Language',
-    lv2RollLimit: 'LV2 Roll Limit',
-    lv2RollLimitDesc: 'Max rolls an LV2 user can create',
     createUser: 'Create User',
     email: 'Email',
     password: 'Password',
@@ -789,10 +785,6 @@ export default function Admin() {
                         <option value="en-US">English</option>
                       </select>
                     </div>
-                    <div>
-                      <p className="font-medium text-sm mb-1.5">{at('lv2RollLimit')}</p>
-                      <input type="number" value={settings.lv2_roll_limit} onBlur={(e) => handleUpdateSetting('lv2_roll_limit', e.target.value)} className={inputCls} />
-                    </div>
                   </div>
                 </div>
 
@@ -814,58 +806,8 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* 用户管理 TAB */}
-          {activeTab === 'users' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
-              {/* 美化后的统计卡片 & 操作栏 */}
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <div className={`flex-1 p-5 rounded-3xl border ${isDarkMode ? 'bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20' : 'bg-gradient-to-br from-blue-50 to-white border-blue-100'} relative overflow-hidden group shadow-sm`}>
-                  <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-300/40'}`}></div>
-                  <div className="relative flex items-center gap-5">
-                    <div className={`p-4 rounded-2xl shadow-inner ${isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-white text-blue-600 shadow-blue-100/50'}`}>
-                      <Users size={28} />
-                    </div>
-                    <div>
-                      <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-blue-400/80' : 'text-blue-600/80'}`}>{at('totalUsers')}</p>
-                      <p className={`text-3xl font-black font-mono tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.users}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`flex-1 p-5 rounded-3xl border ${isDarkMode ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-100'} relative overflow-hidden group shadow-sm`}>
-                  <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-300/40'}`}></div>
-                  <div className="relative flex items-center gap-5">
-                    <div className={`p-4 rounded-2xl shadow-inner ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white text-emerald-600 shadow-emerald-100/50'}`}>
-                      <Film size={28} />
-                    </div>
-                    <div>
-                      <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>{at('totalRolls')}</p>
-                      <p className={`text-3xl font-black font-mono tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.rolls}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end md:w-32">
-                  <button
-                    onClick={fetchDashboardData}
-                    disabled={isLoading}
-                    className={`w-full h-full min-h-[96px] flex flex-col items-center justify-center gap-2 rounded-3xl border transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm group ${
-                      isDarkMode 
-                        ? 'border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white' 
-                        : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-900 hover:border-gray-300 hover:shadow-md'
-                    }`}
-                  >
-                    <RefreshCw size={22} className={`${isLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">{at('refresh')}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* 等级设置区域 */}
-              <div className={`rounded-3xl border ${cardBg} p-6 mb-6`}>
+              {/* 等级设置区域 - 从用户管理移至此处 */}
+              <div className={`rounded-3xl border ${cardBg} p-6 shadow-sm`}>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500">
@@ -1004,6 +946,55 @@ export default function Admin() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 用户管理 TAB */}
+          {activeTab === 'users' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
+              {/* 美化后的统计卡片 & 操作栏 */}
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className={`flex-1 p-5 rounded-3xl border ${isDarkMode ? 'bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20' : 'bg-gradient-to-br from-blue-50 to-white border-blue-100'} relative overflow-hidden group shadow-sm`}>
+                  <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-300/40'}`}></div>
+                  <div className="relative flex items-center gap-5">
+                    <div className={`p-4 rounded-2xl shadow-inner ${isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-white text-blue-600 shadow-blue-100/50'}`}>
+                      <Users size={28} />
+                    </div>
+                    <div>
+                      <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-blue-400/80' : 'text-blue-600/80'}`}>{at('totalUsers')}</p>
+                      <p className={`text-3xl font-black font-mono tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.users}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`flex-1 p-5 rounded-3xl border ${isDarkMode ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-100'} relative overflow-hidden group shadow-sm`}>
+                  <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-300/40'}`}></div>
+                  <div className="relative flex items-center gap-5">
+                    <div className={`p-4 rounded-2xl shadow-inner ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white text-emerald-600 shadow-emerald-100/50'}`}>
+                      <Film size={28} />
+                    </div>
+                    <div>
+                      <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>{at('totalRolls')}</p>
+                      <p className={`text-3xl font-black font-mono tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.rolls}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end md:w-32">
+                  <button
+                    onClick={fetchDashboardData}
+                    disabled={isLoading}
+                    className={`w-full h-full min-h-[96px] flex flex-col items-center justify-center gap-2 rounded-3xl border transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm group ${
+                      isDarkMode 
+                        ? 'border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white' 
+                        : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-900 hover:border-gray-300 hover:shadow-md'
+                    }`}
+                  >
+                    <RefreshCw size={22} className={`${isLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">{at('refresh')}</span>
+                  </button>
                 </div>
               </div>
 
@@ -1169,14 +1160,26 @@ export default function Admin() {
                       COLOR_POSITIVE: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
                       BW_POSITIVE:    'text-blue-400 bg-blue-400/10 border-blue-400/20',
                     };
+                    const is120 = stock.format === '120';
                     const chipColor = typeColor[stock.filmType] || 'text-gray-400 bg-gray-400/10 border-gray-400/20';
                     const logoUrl = stock.brandLogo;
 
                     return (
                       <div
                         key={stock.id}
-                        className={`group rounded-2xl border ${cardBg} p-5 flex flex-col gap-3 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5`}
+                        className={`group relative rounded-2xl border ${cardBg} p-5 flex flex-col gap-3 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 ${
+                          is120 
+                            ? (isDarkMode ? 'border-amber-500/20 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/[0.02] to-transparent' : 'border-amber-200 hover:border-amber-300 bg-gradient-to-br from-amber-50/50 to-white')
+                            : (isDarkMode ? 'border-blue-500/20 hover:border-blue-500/50 bg-gradient-to-br from-blue-500/[0.02] to-transparent' : 'border-blue-200 hover:border-blue-300 bg-gradient-to-br from-blue-50/50 to-white')
+                        }`}
                       >
+                        {/* 规格角标 */}
+                        <div className={`absolute -right-1 -top-1 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm z-10 ${
+                          is120 ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'
+                        }`}>
+                          {stock.format}
+                        </div>
+
                         {/* 品牌区域 */}
                         <div className="flex items-center gap-3">
                           {logoUrl ? (
@@ -1202,7 +1205,9 @@ export default function Admin() {
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${isDarkMode ? 'border-white/10 text-white/60' : 'border-gray-200 text-gray-500'}`}>
                             ISO {stock.iso}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${isDarkMode ? 'border-white/10 text-white/60' : 'border-gray-200 text-gray-500'}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            is120 ? 'text-amber-500 bg-amber-500/10 border-amber-500/20' : 'text-blue-500 bg-blue-500/10 border-blue-500/20'
+                          }`}>
                             {stock.format}
                           </span>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${isDarkMode ? 'border-white/10 text-white/60' : 'border-gray-200 text-gray-500'}`}>

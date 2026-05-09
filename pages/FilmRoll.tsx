@@ -836,10 +836,10 @@ export default function FilmRoll() {
                 <div className="px-6 py-5 border-b border-white/5 flex justify-between items-center bg-transparent">
                   <h3 className="text-xl font-headline font-bold text-on-surface tracking-wide">{t('roll.info')}</h3>
                   <div className="flex gap-2">
-                    <button className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface" title="Share">
+                    <button className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface" title={t('common.share')}>
                       <Share2 size={18} />
                     </button>
-                    <button className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface" title="Download">
+                    <button className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-on-surface-variant hover:text-on-surface" title={t('common.download')}>
                       <Download size={18} />
                     </button>
                     <button
@@ -915,7 +915,7 @@ export default function FilmRoll() {
                     ) : (
                       <div className="py-6 text-center">
                         <p className="text-[#a1a1aa] text-sm">{t('roll.empty')}</p>
-                        <p className="text-[#a1a1aa]/60 text-xs mt-1">Can be added in album settings</p>
+                        <p className="text-[#a1a1aa]/60 text-xs mt-1">{t('roll.placeholders.emptyDesc')}</p>
                       </div>
                     )}
                   </div>
@@ -938,18 +938,18 @@ export default function FilmRoll() {
                               const response = await updateFrame(id, frames[currentFrame].id, { shotDate: editValue });
                               if (response.success) {
                                 setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, shotDate: editValue } : frame));
-                                showToast('拍摄日期已更新');
+                                showToast(t('roll.updateSuccess'));
                               }
                             } catch (error) {
                               console.error('更新失败:', error);
-                              showToast('更新失败，请重试', 'error');
+                              showToast(t('common.error'), 'error');
                             }
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                           className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
-                          placeholder={roll.shotDate || "选择日期"}
+                          placeholder={roll.shotDate || t('roll.selectDate')}
                         />
                       ) : (
                         <span 
@@ -977,18 +977,18 @@ export default function FilmRoll() {
                               const response = await updateFrame(id, frames[currentFrame].id, { location: editValue });
                               if (response.success) {
                                 setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, location: editValue } : frame));
-                                showToast('拍摄地点已更新');
+                                showToast(t('roll.updateSuccess'));
                               }
                             } catch (error) {
                               console.error('更新失败:', error);
-                              showToast('更新失败，请重试', 'error');
+                              showToast(t('common.error'), 'error');
                             }
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                           className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
-                          placeholder={roll.location || "输入拍摄地点"}
+                          placeholder={roll.location || t('roll.inputLocation')}
                         />
                       ) : (
                         <span 
@@ -1016,18 +1016,18 @@ export default function FilmRoll() {
                               const response = await updateFrame(id, frames[currentFrame].id, { camera: editValue });
                               if (response.success) {
                                 setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, camera: editValue } : frame));
-                                showToast('相机型号已更新');
+                                showToast(t('roll.updateSuccess'));
                               }
                             } catch (error) {
                               console.error('更新失败:', error);
-                              showToast('更新失败，请重试', 'error');
+                              showToast(t('common.error'), 'error');
                             }
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                           className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
-                          placeholder={roll.camera || "输入相机型号"}
+                          placeholder={roll.camera || t('roll.inputCamera')}
                         />
                       ) : (
                         <span 
@@ -1055,18 +1055,18 @@ export default function FilmRoll() {
                               const response = await updateFrame(id, frames[currentFrame].id, { lens: editValue });
                               if (response.success) {
                                 setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, lens: editValue } : frame));
-                                showToast('镜头型号已更新');
+                                showToast(t('roll.updateSuccess'));
                               }
                             } catch (error) {
                               console.error('更新失败:', error);
-                              showToast('更新失败，请重试', 'error');
+                              showToast(t('common.error'), 'error');
                             }
                             setEditingField(null);
                           }}
                           onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                           className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                           autoFocus
-                          placeholder={roll.lens || "输入镜头型号"}
+                          placeholder={roll.lens || t('roll.inputLens')}
                         />
                       ) : (
                         <span 
@@ -1103,18 +1103,18 @@ export default function FilmRoll() {
                                   const response = await updateFrame(id, frames[currentFrame].id, { aperture: editValue });
                                   if (response.success) {
                                     setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, aperture: editValue } : frame));
-                                    showToast('光圈已更新');
+                                    showToast(t('roll.updateSuccess'));
                                   }
                                 } catch (error) {
                                   console.error('更新失败:', error);
-                                  showToast('更新失败，请重试', 'error');
+                                  showToast(t('common.error'), 'error');
                                 }
                                 setEditingField(null);
                               }}
                               onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                               className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                               autoFocus
-                              placeholder="例如: f/2.8"
+                              placeholder={t('roll.placeholders.aperture')}
                             />
                           ) : (
                             <span 
@@ -1125,7 +1125,7 @@ export default function FilmRoll() {
                                 setEditValue(frames[currentFrame].aperture || '');
                               }}
                             >
-                              {frames[currentFrame].aperture || '暂无数据'}
+                              {frames[currentFrame].aperture || t('roll.noData')}
                             </span>
                           )}
                         </div>
@@ -1142,18 +1142,18 @@ export default function FilmRoll() {
                                   const response = await updateFrame(id, frames[currentFrame].id, { shutterSpeed: editValue });
                                   if (response.success) {
                                     setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, shutterSpeed: editValue } : frame));
-                                    showToast('快门已更新');
+                                    showToast(t('roll.updateSuccess'));
                                   }
                                 } catch (error) {
                                   console.error('更新失败:', error);
-                                  showToast('更新失败，请重试', 'error');
+                                  showToast(t('common.error'), 'error');
                                 }
                                 setEditingField(null);
                               }}
                               onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                               className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                               autoFocus
-                              placeholder="例如: 1/60s"
+                              placeholder={t('roll.placeholders.shutter')}
                             />
                           ) : (
                             <span 
@@ -1164,7 +1164,7 @@ export default function FilmRoll() {
                                 setEditValue(frames[currentFrame].shutterSpeed || '');
                               }}
                             >
-                              {frames[currentFrame].shutterSpeed || '暂无数据'}
+                              {frames[currentFrame].shutterSpeed || t('roll.noData')}
                             </span>
                           )}
                         </div>
@@ -1181,18 +1181,18 @@ export default function FilmRoll() {
                                   const response = await updateFrame(id, frames[currentFrame].id, { iso: editValue });
                                   if (response.success) {
                                     setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, iso: editValue } : frame));
-                                    showToast('感光度已更新');
+                                    showToast(t('roll.updateSuccess'));
                                   }
                                 } catch (error) {
                                   console.error('更新失败:', error);
-                                  showToast('更新失败，请重试', 'error');
+                                  showToast(t('common.error'), 'error');
                                 }
                                 setEditingField(null);
                               }}
                               onKeyPress={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                               className="w-40 text-sm font-medium text-on-surface/90 text-right bg-surface-container border border-primary/50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                               autoFocus
-                              placeholder="例如: 400"
+                              placeholder={t('roll.placeholders.iso')}
                             />
                           ) : (
                             <span 
@@ -1203,23 +1203,22 @@ export default function FilmRoll() {
                                 setEditValue(frames[currentFrame].iso || '');
                               }}
                             >
-                              {frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : '暂无数据'}
+                              {frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : t('roll.noData')}
                             </span>
                           )}
                         </div>
                       </>
                     ) : (
-                      <p className="text-sm text-on-surface-variant">No details</p>
+                      <p className="text-sm text-on-surface-variant">{t('roll.noData')}</p>
                     )}
                   </div>
                 </div>
 
-                {/* 存储信息 */}
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">Storage</h4>
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">{t('roll.storage')}</h4>
                   <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
                     <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">Format</span>
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">{t('roll.fileFormat')}</span>
                       <span className="flex-1 text-sm font-medium text-on-surface/90 text-right">
                         {frames[currentFrame]?.fileFormat 
                           ? frames[currentFrame].fileFormat!.split('/').pop()?.toUpperCase() 
@@ -1227,13 +1226,13 @@ export default function FilmRoll() {
                       </span>
                     </div>
                     <div className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
-                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">Size</span>
+                      <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">{t('roll.fileSize')}</span>
                       <span className="flex-1 text-sm font-medium text-on-surface/90 text-right">
                         {frames[currentFrame]?.fileSize 
                           ? (frames[currentFrame].fileSize! >= 1024 * 1024 
                               ? `${(frames[currentFrame].fileSize! / (1024 * 1024)).toFixed(2)} MB` 
                               : `${(frames[currentFrame].fileSize! / 1024).toFixed(1)} KB`)
-                          : '暂无数据'}
+                          : t('roll.noData')}
                       </span>
                     </div>
                   </div>
@@ -1266,11 +1265,11 @@ export default function FilmRoll() {
                                       const response = await updateFrame(id!, currentFrameData.id, { tags: updatedTags });
                                       if (response.success) {
                                         setFrames(prevFrames => prevFrames.map(frame => frame.id === currentFrameData.id ? { ...frame, tags: updatedTags } : frame));
-                                        showToast('标签已删除');
+                                        showToast(t('roll.tagDeleted'));
                                       }
                                     } catch (error) {
                                       console.error('删除标签失败:', error);
-                                      showToast('删除标签失败，请重试', 'error');
+                                      showToast(t('common.error'), 'error');
                                     }
                                   }}
                                   className="ml-1.5 text-primary/70 hover:text-primary focus:outline-none"
@@ -1282,14 +1281,14 @@ export default function FilmRoll() {
                           ) : null}
                           {/* 无标签提示 */}
                           {(!roll.tags || roll.tags.length === 0) && (!frames[currentFrame].tags || frames[currentFrame].tags.length === 0) && (
-                            <span className="text-xs font-medium text-on-surface-variant/50">No Tags</span>
+                            <span className="text-xs font-medium text-on-surface-variant/50">{t('roll.noTags')}</span>
                           )}
                         </div>
                         <div>
                           <input
                             ref={tagInputRef}
                             type="text"
-                            placeholder="Enter to add"
+                            placeholder={t('roll.enterToAdd')}
                             onKeyPress={async (e) => {
                               if (e.key === 'Enter' && e.currentTarget.value.trim() && frames[currentFrame]) {
                                 const newTag = e.currentTarget.value.trim();
@@ -1300,11 +1299,11 @@ export default function FilmRoll() {
                                     const response = await updateFrame(id!, frames[currentFrame].id, { tags: updatedTags });
                                     if (response.success) {
                                       setFrames(prevFrames => prevFrames.map(frame => frame.id === frames[currentFrame]?.id ? { ...frame, tags: updatedTags } : frame));
-                                      showToast('标签已添加');
+                                      showToast(t('roll.tagAdded'));
                                     }
                                   } catch (error) {
                                     console.error('添加标签失败:', error);
-                                    showToast('添加标签失败，请重试', 'error');
+                                    showToast(t('common.error'), 'error');
                                   }
                                 }
                                 if (tagInputRef.current) {
@@ -1317,13 +1316,13 @@ export default function FilmRoll() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-on-surface-variant">暂无标签</p>
+                      <p className="text-sm text-on-surface-variant">{t('roll.noTags')}</p>
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">Frame Border</h4>
+                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">{t('roll.frameBorder')}</h4>
                   <div className="bg-surface-container-low rounded-lg p-3 space-y-2">
                     <div className="flex items-center gap-2">
                       <input 
@@ -1334,7 +1333,7 @@ export default function FilmRoll() {
                         onChange={() => setBorderType('none')} 
                         className="w-4 h-4 text-primary" 
                       />
-                      <label htmlFor="border-none" className="text-sm text-on-surface">None</label>
+                      <label htmlFor="border-none" className="text-sm text-on-surface">{t('roll.borderNone')}</label>
                     </div>
                     <div className="flex items-center gap-2">
                       <input 
@@ -1345,7 +1344,7 @@ export default function FilmRoll() {
                         onChange={() => setBorderType('white')} 
                         className="w-4 h-4 text-primary" 
                       />
-                      <label htmlFor="border-white" className="text-sm text-on-surface">Classic White</label>
+                      <label htmlFor="border-white" className="text-sm text-on-surface">{t('roll.borderWhite')}</label>
                     </div>
                     <div className="flex items-center gap-2">
                       <input 
@@ -1356,13 +1355,13 @@ export default function FilmRoll() {
                         onChange={() => setBorderType('black')} 
                         className="w-4 h-4 text-primary" 
                       />
-                      <label htmlFor="border-black" className="text-sm text-on-surface">Black Border</label>
+                      <label htmlFor="border-black" className="text-sm text-on-surface">{t('roll.borderBlack')}</label>
                     </div>
                     
                     {/* 经典白边选项 */}
                     {borderType === 'white' && (
                       <div className="mt-3 pt-3 border-t border-outline-variant/30 space-y-2">
-                        <h5 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Display Info</h5>
+                        <h5 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">{t('roll.displayInfo')}</h5>
                         <div className="flex items-center gap-2">
                           <input 
                             type="checkbox" 
@@ -1371,7 +1370,7 @@ export default function FilmRoll() {
                             onChange={(e) => setBorderOptions({...borderOptions, showFilmStock: e.target.checked})} 
                             className="w-4 h-4 text-primary" 
                           />
-                          <label htmlFor="show-film-stock" className="text-sm text-on-surface">胶片档案</label>
+                          <label htmlFor="show-film-stock" className="text-sm text-on-surface">{t('roll.archive')}</label>
                         </div>
                         <div className="flex items-center gap-2">
                           <input 
@@ -1381,7 +1380,7 @@ export default function FilmRoll() {
                             onChange={(e) => setBorderOptions({...borderOptions, showCamera: e.target.checked})} 
                             className="w-4 h-4 text-primary" 
                           />
-                          <label htmlFor="show-camera" className="text-sm text-on-surface">相机型号</label>
+                          <label htmlFor="show-camera" className="text-sm text-on-surface">{t('roll.camera')}</label>
                         </div>
                         <div className="flex items-center gap-2">
                           <input 
@@ -1391,7 +1390,7 @@ export default function FilmRoll() {
                             onChange={(e) => setBorderOptions({...borderOptions, showLens: e.target.checked})} 
                             className="w-4 h-4 text-primary" 
                           />
-                          <label htmlFor="show-lens" className="text-sm text-on-surface">镜头型号</label>
+                          <label htmlFor="show-lens" className="text-sm text-on-surface">{t('roll.lens')}</label>
                         </div>
                         <div className="flex items-center gap-2">
                           <input 
@@ -1401,7 +1400,7 @@ export default function FilmRoll() {
                             onChange={(e) => setBorderOptions({...borderOptions, showDate: e.target.checked})} 
                             className="w-4 h-4 text-primary" 
                           />
-                          <label htmlFor="show-date" className="text-sm text-on-surface">拍摄日期</label>
+                          <label htmlFor="show-date" className="text-sm text-on-surface">{t('roll.date')}</label>
                         </div>
                         <div className="flex items-center gap-2">
                           <input 
@@ -1411,7 +1410,7 @@ export default function FilmRoll() {
                             onChange={(e) => setBorderOptions({...borderOptions, showExposure: e.target.checked})} 
                             className="w-4 h-4 text-primary" 
                           />
-                          <label htmlFor="show-exposure" className="text-sm text-on-surface">曝光参数</label>
+                          <label htmlFor="show-exposure" className="text-sm text-on-surface">{t('roll.exposure')}</label>
                         </div>
                       </div>
                     )}
@@ -1419,14 +1418,14 @@ export default function FilmRoll() {
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">Output</h4>
+                  <h4 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">{t('roll.output')}</h4>
                   <div className="bg-surface-container-low rounded-lg p-3 space-y-2">
                     <div className="flex items-center gap-2">
                       <input type="checkbox" id="export-with-border" className="w-4 h-4 text-primary" />
-                      <label htmlFor="export-with-border" className="text-sm text-on-surface">Export with border</label>
+                      <label htmlFor="export-with-border" className="text-sm text-on-surface">{t('roll.exportWithBorder')}</label>
                     </div>
                     <button className="w-full bg-primary text-on-primary py-2 rounded-lg text-sm font-medium hover:bg-primary-dim transition-colors">
-                      导出图片
+                      {t('roll.exportImage')}
                     </button>
                   </div>
                 </div>
@@ -1443,7 +1442,7 @@ export default function FilmRoll() {
                 setShowSidebar(!showSidebar);
               }}
               className="absolute right-4 top-4 p-2 bg-surface-container/80 text-on-surface rounded-full z-10"
-              title={showSidebar ? "隐藏侧边栏" : "显示侧边栏"}
+              title={showSidebar ? t('roll.hideSidebar') : t('roll.showSidebar')}
             >
                 {showSidebar ? <X size={20} /> : <Info size={20} />}
             </button>
@@ -1479,7 +1478,7 @@ export default function FilmRoll() {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-surface-container rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-surface-container border-b border-outline-variant/30 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-on-surface">Export Roll Album</h2>
+              <h2 className="text-xl font-bold text-on-surface">{t('roll.exportTitle')}</h2>
               <button
                 onClick={() => setShowExportModal(false)}
                 className="text-on-surface-variant hover:text-on-surface transition-colors"
@@ -1508,7 +1507,7 @@ export default function FilmRoll() {
                   ))}
                 </div>
                 <div className="mt-8 pt-4 border-t border-gray-200 text-center text-gray-400 text-sm">
-                  Exported with Film Album
+                  {t('roll.exportedWith')}
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
