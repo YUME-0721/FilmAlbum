@@ -451,23 +451,41 @@ rolls.post('/:id/frames', authRequired(), requireLevel('lv2'), async (c) => {
 
   let currentOrder = (maxOrder?.max_order ?? -1) + 1;
 
-  const statements = body.frames.map((frame) => {
+  const createdFrames = body.frames.map((frame, index) => {
     const id = generateId();
-    const order = currentOrder++;
+    const order = currentOrder + index;
+    return {
+      id,
+      rollId,
+      imageUrl: frame.imageUrl,
+      previewUrl: frame.previewUrl ?? null,
+      frameNumber: frame.frameNumber ?? '',
+      aperture: frame.aperture ?? '',
+      shutterSpeed: frame.shutterSpeed ?? '',
+      iso: frame.iso ?? '',
+      description: frame.description ?? '',
+      sortOrder: order,
+      fileSize: frame.fileSize ?? 0,
+      fileFormat: frame.fileFormat ?? '',
+      tags: []
+    };
+  });
+
+  const statements = createdFrames.map((frame) => {
     return c.env.DB.prepare(
       `INSERT INTO frames (id, roll_id, image_url, preview_url, frame_number, aperture, shutter_speed, iso, description, sort_order, file_size, file_format)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
-      id, rollId, frame.imageUrl,
-      frame.previewUrl ?? null, frame.frameNumber ?? '', frame.aperture ?? '',
-      frame.shutterSpeed ?? '', frame.iso ?? '',
-      frame.description ?? '', order, frame.fileSize ?? 0, frame.fileFormat ?? ''
+      frame.id, frame.rollId, frame.imageUrl,
+      frame.previewUrl, frame.frameNumber, frame.aperture,
+      frame.shutterSpeed, frame.iso,
+      frame.description, frame.sortOrder, frame.fileSize, frame.fileFormat
     );
   });
 
   await c.env.DB.batch(statements);
 
-  return c.json({ success: true }, 201);
+  return c.json({ success: true, data: createdFrames }, 201);
 });
 
 /** DELETE /api/rolls/:rollId/frames/:frameId - 删除单张底片 */
