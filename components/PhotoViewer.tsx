@@ -86,7 +86,6 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
     setSlideDirection(targetIndex > currentFrame ? 1 : -1);
     setCurrentFrame(targetIndex);
     onFrameChange?.(targetIndex);
-    window.history.replaceState(null, '', `?frame=${targetIndex}`);
   }, [currentFrame, onFrameChange]);
 
   const handleUpdateFrameData = async (frameId: string, field: string, value: any) => {
@@ -352,39 +351,116 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
               </div>
             </div>
 
-            {/* 侧边栏主体 */}
-            <div className="p-6 space-y-8">
-               {/* 胶片信息卡片 */}
-               <div className="bg-[#151515] rounded-xl p-6 shadow-lg border border-white/5">
-                  <div className="flex items-center gap-4 mb-6">
-                     <div className="w-16 h-16 bg-yellow-500 rounded-2xl flex items-center justify-center text-black text-2xl font-bold">
-                        {(filmStockData?.brand || roll.filmStock || 'F').charAt(0)}
-                     </div>
-                     <div>
-                        <h4 className="text-white text-xl font-bold leading-tight">{filmStockData?.brand || roll.filmStock.split(' ')[0]}</h4>
-                        <p className="text-white/60 text-sm mt-0.5">{filmStockData?.model || roll.filmStock.split(' ').slice(1).join(' ')}</p>
-                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
-                     <div>
-                        <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">{t('roll.type')}</p>
-                        <p className="text-white/80 text-sm font-medium">{roll.filmType || '-'}</p>
-                     </div>
-                     <div>
-                        <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">{t('roll.form.format')}</p>
-                        <p className="text-white/80 text-sm font-medium">{roll.format || '-'}</p>
-                     </div>
-                  </div>
-               </div>
+              {/* 侧边栏内容 */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
+                {/* 胶片档案 */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-on-surface-variant/80 pl-1">{t('roll.archive')}</h4>
+                  <div className="bg-[#151515] rounded-xl p-6 shadow-sm">
+                    {roll.filmStock ? (
+                      <>
+                        {/* 卡片上半部分 - LOGO和型号 */}
+                         <div className="flex items-center gap-6 mb-8">
+                          <div className="shrink-0">
+                            {(() => {
+                              const logo = filmStockData?.brandLogo || (() => {
+                                const brandName = roll.filmStock.split(' ')[0];
+                                return commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase())?.logoUrl;
+                              })();
 
-               {/* 编辑区域 */}
-               <div className="space-y-6">
-                  {/* 拍摄参数编辑 */}
-                  <div className="space-y-3">
-                    <h5 className="text-[10px] font-bold text-white/30 uppercase tracking-widest pl-1">{t('roll.exposure')}</h5>
-                    <div className="bg-white/5 rounded-2xl overflow-hidden border border-white/5">
+                              if (logo) {
+                                return (
+                                  <div className="w-[72px] h-[72px] rounded-[24px] overflow-hidden bg-transparent">
+                                    <img 
+                                      src={logo} 
+                                      alt={roll.filmStock} 
+                                      className="w-full h-full object-cover" 
+                                    />
+                                  </div>
+                                );
+                              } else {
+                                const brandName = filmStockData?.brand || roll.filmStock.split(' ')[0];
+                                return (
+                                  <div className="w-[72px] h-[72px] bg-yellow-500 rounded-[24px] flex items-center justify-center">
+                                    <span className="text-black font-serif font-bold text-3xl">{brandName.charAt(0).toUpperCase()}</span>
+                                  </div>
+                                );
+                              }
+                            })()}
+                          </div>
+                          <div className="flex flex-col justify-center">
+                            <h5 className="text-[#f4f4f5] font-lingxun text-[28px] leading-[1.1] tracking-wide lining-nums">{filmStockData?.brand || roll.filmStock.split(' ')[0]}</h5>
+                            <h6 className="text-[#f4f4f5] font-lingxun text-[28px] leading-[1.1] tracking-wide lining-nums mt-1">{filmStockData?.model || roll.filmStock.split(' ').slice(1).join(' ')}</h6>
+                          </div>
+                        </div>
+                        {/* 卡片下半部分 - 类型和画幅 */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[#a1a1aa] text-[13px] mb-2">{t('roll.type')}</p>
+                            <p className="text-[#f4f4f5] text-base font-medium">
+                              {roll.filmType === 'COLOR_NEGATIVE' ? t('roll.filmTypes.colorNegative') : 
+                               roll.filmType === 'BW_NEGATIVE' ? t('roll.filmTypes.bwNegative') : 
+                               roll.filmType === 'COLOR_POSITIVE' ? t('roll.filmTypes.colorPositive') : 
+                               roll.filmType === 'BW_POSITIVE' ? t('roll.filmTypes.bwPositive') : 
+                               roll.filmType || '-'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[#a1a1aa] text-[13px] mb-2">{t('roll.form.format')}</p>
+                            <p className="text-[#f4f4f5] text-base font-medium">{roll.format || '-'}</p>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="py-6 text-center">
+                        <p className="text-[#a1a1aa] text-sm">{t('roll.empty')}</p>
+                        <p className="text-[#a1a1aa]/60 text-xs mt-1">{t('roll.placeholders.emptyDesc')}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 拍摄信息 */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">{t('roll.shotInfo')}</h4>
+                  <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
+                    {[
+                      { field: 'shotDate', label: t('roll.date'), placeholder: roll.shotDate },
+                      { field: 'location', label: t('roll.location'), placeholder: roll.location },
+                      { field: 'camera', label: t('roll.camera'), placeholder: roll.camera },
+                      { field: 'lens', label: t('roll.lens'), placeholder: roll.lens }
+                    ].map(item => (
+                      <div key={item.field} className="flex justify-between items-center gap-4 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors group">
+                        <span className="shrink-0 text-xs font-medium text-on-surface-variant/60">{item.label}</span>
+                        {editingField?.field === item.field ? (
+                          <input
+                            autoFocus
+                            type={item.field === 'shotDate' ? 'date' : 'text'}
+                            className="bg-primary/20 text-white text-xs text-right px-2 py-1 rounded border border-primary/50 outline-none w-40"
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={() => handleUpdateFrameData(frames[currentFrame].id, item.field, editValue)}
+                            onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()}
+                          />
+                        ) : (
+                          <span 
+                            className="text-xs text-white/80 cursor-pointer group-hover:text-primary transition-colors text-right truncate max-w-[180px]"
+                            onClick={() => { setEditingField({ frameId: frames[currentFrame].id, field: item.field }); setEditValue((frames[currentFrame] as any)[item.field] || ''); }}
+                          >
+                            {(frames[currentFrame] as any)[item.field] || item.placeholder || t('roll.noData')}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 曝光参数 */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">{t('roll.exposure')}</h4>
+                  <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
                        {['aperture', 'shutterSpeed', 'iso'].map(field => (
-                          <div key={field} className="flex justify-between items-center px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group">
+                          <div key={field} className="flex justify-between items-center px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group rounded-xl">
                              <span className="text-xs text-white/40">{t(`roll.${field}`)}</span>
                              {editingField?.field === field ? (
                                 <input
@@ -408,6 +484,25 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                     </div>
                   </div>
 
+                {/* 存储信息 */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">{t('roll.storage')}</h4>
+                  <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
+                    <div className="flex justify-between items-center px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors group rounded-xl">
+                      <span className="text-xs text-white/40">{t('roll.fileFormat')}</span>
+                      <span className="text-xs text-white/80 uppercase">{frames[currentFrame].fileFormat?.split('/')[1] || frames[currentFrame].fileFormat || '-'}</span>
+                    </div>
+                    <div className="flex justify-between items-center px-4 py-3 hover:bg-white/5 transition-colors group rounded-xl">
+                      <span className="text-xs text-white/40">{t('roll.fileSize')}</span>
+                      <span className="text-xs text-white/80">
+                        {frames[currentFrame].fileSize 
+                          ? (frames[currentFrame].fileSize! / (1024 * 1024)).toFixed(2) + ' MB' 
+                          : '-'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                   {/* 标签 */}
                   <div className="space-y-4">
                     <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">{t('roll.tags')}</h4>
@@ -415,6 +510,9 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                       {frames[currentFrame] ? (
                         <div className="space-y-2">
                           <div className="flex flex-wrap gap-2">
+                            {(!roll.tags || roll.tags.length === 0) && (!frames[currentFrame].tags || frames[currentFrame].tags.length === 0) && (
+                              <span className="text-[11px] text-on-surface-variant/30 italic py-0.5">{t('roll.noTags') || '暂无标签'}</span>
+                            )}
                             {/* 胶卷公共标签 */}
                             {roll.tags?.map((tag, index) => (
                               <div key={`roll-${index}`} className="flex items-center px-2 py-0.5 bg-surface-container-highest text-on-surface-variant/80 text-[10px] font-bold tracking-wider rounded">
@@ -543,7 +641,6 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                     </div>
                   </div>
                </div>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -566,10 +663,10 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}
             className={`fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl z-[100] flex items-center gap-3 ${
-              toast.type === 'success' ? 'bg-primary text-on-primary' : 'bg-error text-on-error'
+              toast?.type === 'success' ? 'bg-primary text-on-primary' : 'bg-error text-on-error'
             }`}
           >
-            <span className="text-sm font-bold">{toast.message}</span>
+            <span className="text-sm font-bold">{toast?.message}</span>
           </motion.div>
         )}
       </AnimatePresence>

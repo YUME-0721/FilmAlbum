@@ -140,3 +140,7 @@ export function reorderFrames(rollId: string, frameIds: string[]) {
 export function updateFrame(rollId: string, frameId: string, data: Record<string, unknown>) {
   return put(`/rolls/${rollId}/frames/${frameId}`, data);
 }
+/** 获取单张底片详情（含胶卷信息） */
+export function getFrameDetail(frameId: string) {
+  return get<RollDetail>(`/rolls/frame/${frameId}`);
+}

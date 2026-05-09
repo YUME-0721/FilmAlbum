@@ -294,7 +294,7 @@ export default function FilmRoll() {
               <div
                 key={frame.id}
                 className="group relative aspect-[3/2] bg-surface-container rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500"
-                onClick={() => navigate(`/roll/${id}/frame/${frame.id}`)}
+                onClick={() => navigate(`/frame/${frame.id}`)}
               >
                 <img
                   src={frame.previewUrl || frame.imageUrl}

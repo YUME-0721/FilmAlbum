@@ -43,7 +43,7 @@ export default function App() {
                 <FilmRoll />
               </ProtectedRoute>
             } />
-            <Route path="roll/:id/frame/:frameId" element={
+            <Route path="frame/:frameId" element={
               <ProtectedRoute>
                 <FrameView />
               </ProtectedRoute>

@@ -5,6 +5,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { authRequired, authOptional, generateId, requireLevel } from '../middleware/auth';
+import { getUploadStrategy } from '../utils/upload-helper';
 
 const rolls = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
@@ -170,6 +171,79 @@ rolls.get('/:id', authOptional(), async (c) => {
   });
 });
 
+/** GET /api/rolls/frame/:frameId - 通过帧 ID 获取底片及所属胶卷完整信息 */
+rolls.get('/frame/:frameId', authOptional(), async (c) => {
+  const frameId = c.req.param('frameId');
+  const currentUserId = c.get('userId');
+
+  const frameRecord = await c.env.DB.prepare(
+    'SELECT roll_id FROM frames WHERE id = ?'
+  ).bind(frameId).first<{ roll_id: string }>();
+
+  if (!frameRecord) {
+    return c.json({ success: false, error: '底片不存在' }, 404);
+  }
+
+  const rollId = frameRecord.roll_id;
+
+  const roll = await c.env.DB.prepare(
+    `SELECT r.*, u.nickname as author_name, u.avatar_url as author_avatar
+     FROM rolls r JOIN users u ON r.user_id = u.id
+     WHERE r.id = ?`
+  ).bind(rollId).first<Record<string, unknown>>();
+
+  if (!roll) {
+    return c.json({ success: false, error: '胶卷不存在' }, 404);
+  }
+
+  const frames = await c.env.DB.prepare(
+    'SELECT * FROM frames WHERE roll_id = ? ORDER BY sort_order'
+  ).bind(rollId).all();
+
+  return c.json({
+    success: true,
+    data: {
+      id: roll.id,
+      title: roll.title,
+      filmStock: roll.film_stock,
+      camera: roll.camera,
+      lens: roll.lens,
+      location: roll.location,
+      shotDate: roll.shot_date,
+      format: roll.format,
+      filmType: roll.film_type,
+      status: roll.status,
+      tags: JSON.parse((roll.tags as string) || '[]'),
+      author: {
+        id: roll.user_id,
+        nickname: roll.author_name,
+        avatarUrl: roll.author_avatar
+      },
+      frames: frames.results?.map((f: Record<string, unknown>) => ({
+        id: f.id,
+        imageUrl: f.image_url,
+        previewUrl: f.preview_url,
+        frameNumber: f.frame_number,
+        aperture: f.aperture,
+        shutterSpeed: f.shutter_speed,
+        iso: f.iso,
+        description: f.description,
+        sortOrder: f.sort_order,
+        shotDate: f.shot_date,
+        location: f.location,
+        camera: f.camera,
+        lens: f.lens,
+        fileSize: f.file_size,
+        fileFormat: f.file_format,
+        tags: JSON.parse((f.tags as string) || '[]')
+      })) ?? [],
+      isOwner: String(currentUserId) === String(roll.user_id),
+      createdAt: roll.created_at
+    }
+  });
+});
+
+
 /** POST /api/rolls - 创建胶卷 */
 rolls.post('/', authRequired(), async (c) => {
   const userId = c.get('userId');
@@ -304,18 +378,21 @@ rolls.delete('/:id', authRequired(), requireLevel('lv2'), async (c) => {
 
   // 1. 同步删除图床上的整个相册文件夹
   try {
-    const displayUserId = String(userId).padStart(4, '0');
-    // 路径映射逻辑必须与 upload.ts 保持一致: FilmAlbum/{userId}/{rollId}
-    const folderPath = `FilmAlbum/${displayUserId}/${rollId}`;
+    const strategy = await getUploadStrategy(c, { type: 'roll', userId: String(userId), rollId });
+    const imgBedUrl = strategy.imgBedUrl;
+    const imgBedToken = strategy.imgBedToken;
     
-    const imgBedUrl = c.env.IMG_BED_URL;
-    const imgBedToken = c.env.IMG_BED_TOKEN;
+    // 提取相对路径（去掉前导斜杠）
+    let folderPath = strategy.finalPath;
+    if (folderPath.startsWith('/')) folderPath = folderPath.slice(1);
+    // 去掉结尾斜杠，图床文件夹删除通常不需要结尾斜杠
+    if (folderPath.endsWith('/')) folderPath = folderPath.slice(0, -1);
 
     if (imgBedUrl && imgBedToken) {
-      // 按照文档示例：DELETE /api/manage/delete/{path}?folder=true
-      const deleteUrl = `${imgBedUrl}/api/manage/delete/${folderPath}?folder=true`;
+      // 按照文档示例：GET /api/manage/delete/{path}?folder=true
+      const deleteUrl = `${imgBedUrl.replace(/\/$/, '')}/api/manage/delete/${folderPath}?folder=true`;
       const response = await fetch(deleteUrl, {
-        method: 'DELETE',
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${imgBedToken}`
         }
@@ -418,20 +495,24 @@ rolls.delete('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), as
         path = path.slice(1); // 移除 /
       }
       
-      const imgBedUrl = c.env.IMG_BED_URL;
-      const imgBedToken = c.env.IMG_BED_TOKEN;
+      const settings = await c.env.DB.prepare(
+        "SELECT key, value FROM system_settings WHERE key IN ('img_bed_url', 'img_bed_token')"
+      ).all<{ key: string; value: string }>();
+      const config = settings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
+      
+      const imgBedUrl = config['img_bed_url'] || c.env.IMG_BED_URL;
+      const imgBedToken = config['img_bed_token'] || c.env.IMG_BED_TOKEN;
       
       if (imgBedUrl && imgBedToken) {
-        // 根据文档示例：DELETE /api/manage/delete/{path}
-        const deleteUrl = `${imgBedUrl}/api/manage/delete/${path}`;
+        // 根据文档示例：GET /api/manage/delete/{path}
+        const deleteUrl = `${imgBedUrl.replace(/\/$/, '')}/api/manage/delete/${path}`;
         const response = await fetch(deleteUrl, {
-          method: 'DELETE',
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${imgBedToken}`
           }
         });
         
-        // 记录一下结果，方便排查
         const result = await response.json() as { success: boolean, error?: string };
         if (!result.success) {
           console.error(`[Rolls] Image bed delete failed for path ${path}:`, result.error);
@@ -455,13 +536,18 @@ rolls.delete('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), as
         path = path.slice(1);
       }
       
-      const imgBedUrl = c.env.IMG_BED_URL;
-      const imgBedToken = c.env.IMG_BED_TOKEN;
+      const settings = await c.env.DB.prepare(
+        "SELECT key, value FROM system_settings WHERE key IN ('img_bed_url', 'img_bed_token')"
+      ).all<{ key: string; value: string }>();
+      const config = settings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
+      
+      const imgBedUrl = config['img_bed_url'] || c.env.IMG_BED_URL;
+      const imgBedToken = config['img_bed_token'] || c.env.IMG_BED_TOKEN;
       
       if (imgBedUrl && imgBedToken) {
-        const deleteUrl = `${imgBedUrl}/api/manage/delete/${path}`;
+        const deleteUrl = `${imgBedUrl.replace(/\/$/, '')}/api/manage/delete/${path}`;
         const response = await fetch(deleteUrl, {
-          method: 'DELETE',
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${imgBedToken}`
           }

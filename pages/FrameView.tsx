@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getRoll, type RollDetail, type FrameItem } from '../src/api/rolls.ts';
+import { getFrameDetail, type RollDetail, type FrameItem } from '../src/api/rolls.ts';
 import PhotoViewer from '../components/PhotoViewer';
 import { useTranslation } from '../src/hooks/useTranslation';
 
 export default function FrameView() {
-  const { id: rollId, frameId } = useParams<{ id: string; frameId: string }>();
+  const { frameId } = useParams<{ frameId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [roll, setRoll] = useState<RollDetail | null>(null);
@@ -13,23 +13,23 @@ export default function FrameView() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchRoll = async () => {
-      if (!rollId) return;
+    const fetchFrameDetail = async () => {
+      if (!frameId) return;
       setIsLoading(true);
       try {
-        const response = await getRoll(rollId);
+        const response = await getFrameDetail(frameId);
         if (response.success && response.data) {
           setRoll(response.data);
           setFrames(response.data.frames || []);
         }
       } catch (error) {
-        console.error('加载胶卷失败:', error);
+        console.error('加载底片详情失败:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchRoll();
-  }, [rollId]);
+    fetchFrameDetail();
+  }, [frameId]);
 
   if (isLoading) {
     return (
@@ -55,11 +55,11 @@ export default function FrameView() {
       roll={roll}
       frames={frames}
       initialIndex={safeIndex}
-      onClose={() => navigate(`/roll/${rollId}`)}
+      onClose={() => navigate(`/roll/${roll.id}`)}
       onFrameChange={(index) => {
         const targetFrame = frames[index];
         if (targetFrame) {
-          navigate(`/roll/${rollId}/frame/${targetFrame.id}`, { replace: true });
+          navigate(`/frame/${targetFrame.id}?frame=${index + 1}`, { replace: true });
         }
       }}
       onUpdateFrames={(newFrames) => setFrames(newFrames)}
