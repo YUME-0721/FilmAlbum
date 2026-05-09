@@ -151,7 +151,7 @@ export default function RollForm({
                                   const defaultFormat = baseFormat === '120' ? '645' : '135';
                                   setFormData({
                                     ...formData, 
-                                    filmStock: `${stock.brand} ${stock.model}`,
+                                    filmStock: `${stock.brand} ${stock.model} ${stock.format}`,
                                     format: defaultFormat,
                                     filmType: stock.filmType || formData.filmType
                                   });
@@ -166,7 +166,7 @@ export default function RollForm({
                                  </div>
                                )}
                                <span>
-                                 {stock.brand} {stock.brandZh && <span className="text-on-surface-variant/60 ml-1 text-[10px]">({stock.brandZh})</span>} {stock.model}
+                                 {stock.brand} {stock.model} <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${stock.format === '120' ? 'bg-amber-500/20 text-amber-500' : 'bg-blue-500/20 text-blue-500'}`}>{stock.format}</span>
                                </span>
                              </div>
                           ))}

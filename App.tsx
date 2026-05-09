@@ -9,6 +9,7 @@ import Layout from './components/Layout.tsx';
 import Home from './pages/Home.tsx';
 import Profile from './pages/Profile.tsx';
 import FilmRoll from './pages/FilmRoll.tsx';
+import FrameView from './pages/FrameView.tsx';
 import Post from './pages/Post.tsx';
 import Login from './pages/Login.tsx';
 import ResetPassword from './pages/ResetPassword.tsx';
@@ -40,6 +41,11 @@ export default function App() {
             <Route path="roll/:id" element={
               <ProtectedRoute>
                 <FilmRoll />
+              </ProtectedRoute>
+            } />
+            <Route path="roll/:id/frame/:frameId" element={
+              <ProtectedRoute>
+                <FrameView />
               </ProtectedRoute>
             } />
             <Route path="post/:id" element={
