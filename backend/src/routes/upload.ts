@@ -28,6 +28,7 @@ upload.post('/', authRequired(), async (c) => {
     let strategyType: UploadType = 'avatar';
     if (typeQuery === 'filmStock') strategyType = 'film_stock';
     else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (typeQuery === 'preview') strategyType = 'preview';
     else if (rollId) strategyType = 'roll';
 
     // 2. 上传主图
@@ -250,7 +251,10 @@ upload.post('/chunk/upload', authRequired(), async (c) => {
     
     const urlParams = new URLSearchParams({
       chunked: 'true',
-      uploadChannel: strategy.channel
+      uploadChannel: strategy.channel,
+      serverCompress: strategy.compress,
+      uploadNameType: strategy.globalNameType,
+      uploadFolder: strategy.finalPath
     });
     const targetUrl = `${strategy.imgBedUrl.replace(/\/$/, '')}/upload?${urlParams.toString()}`;
     
@@ -288,7 +292,10 @@ upload.post('/chunk/merge', authRequired(), async (c) => {
     const urlParams = new URLSearchParams({
       chunked: 'true',
       merge: 'true',
-      uploadChannel: strategy.channel
+      uploadChannel: strategy.channel,
+      serverCompress: strategy.compress,
+      uploadNameType: strategy.globalNameType,
+      uploadFolder: strategy.finalPath
     });
     const targetUrl = `${strategy.imgBedUrl.replace(/\/$/, '')}/upload?${urlParams.toString()}`;
     
@@ -307,7 +314,7 @@ upload.post('/chunk/merge', authRequired(), async (c) => {
     if (!response.ok) throw new Error(await response.text());
     const result = await response.json() as any;
     if (Array.isArray(result) && result[0]?.src) {
-        return c.json({ success: true, url: `${strategy.imgBedUrl.replace(/\/$/, '')}${result[0].src}` });
+        return c.json({ success: true, data: { url: `${strategy.imgBedUrl.replace(/\/$/, '')}${result[0].src}` } });
     }
     throw new Error('图床合并返回数据格式异常');
   } catch (error: any) {

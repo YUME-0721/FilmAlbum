@@ -111,6 +111,8 @@ const i18n = {
     filterType: '类型筛选',
     resetFilter: '重置',
     noFilmStocks: '暂无胶卷型号，点击右上角新增',
+    confirm: '确认',
+    cancel: '取消',
   },
   'en-US': {
     title: 'Super Admin',
@@ -207,6 +209,8 @@ const i18n = {
     filterType: 'Type',
     resetFilter: 'Reset',
     noFilmStocks: 'No film stocks yet. Click Add to create one.',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
   }
 };
 
@@ -288,6 +292,7 @@ export default function Admin() {
   const [editingFilm, setEditingFilm] = useState<any | null>(null);
   const [filmForm, setFilmForm] = useState({ brand: '', brandZh: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
   const [filmSaveStatus, setFilmSaveStatus] = useState({ type: '', message: '' });
+  const [confirmModal, setConfirmModal] = useState<{ show: boolean; title: string; message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => {
     if (token) fetchDashboardData();
@@ -328,7 +333,7 @@ export default function Admin() {
 
   const handleSaveFilmStock = async () => {
     if (!filmForm.brand.trim() || !filmForm.model.trim() || !filmForm.iso) {
-      alert(adminLang === 'zh-CN' ? '品牌、型号、感光度为必填项' : 'Brand, model and ISO are required');
+      setFilmSaveStatus({ type: 'error', message: adminLang === 'zh-CN' ? '品牌、型号、感光度为必填项' : 'Brand, model and ISO are required' });
       return;
     }
     setFilmSaveStatus({ type: 'loading', message: at('saving') });
@@ -355,14 +360,21 @@ export default function Admin() {
     }
   };
 
-  const handleDeleteFilmStock = async (id: string) => {
-    if (!window.confirm(at('confirmDelete'))) return;
-    try {
-      const res = await del(`/admin/film-stocks/${id}`, undefined, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.success) fetchFilmStocks();
-    } catch (e) {
-      console.error('delete film stock failed', e);
-    }
+  const handleDeleteFilmStock = (id: string) => {
+    setConfirmModal({
+      show: true,
+      title: at('deleteFilmStock'),
+      message: at('confirmDelete'),
+      onConfirm: async () => {
+        try {
+          const res = await del(`/admin/film-stocks/${id}`, undefined, { headers: { Authorization: `Bearer ${token}` } });
+          if (res.success) fetchFilmStocks();
+        } catch (e) {
+          console.error('delete film stock failed', e);
+        }
+        setConfirmModal(null);
+      }
+    });
   };
 
   const toggleLanguage = () => {
@@ -870,51 +882,69 @@ export default function Admin() {
           {activeTab === 'filmstocks' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
               {/* 筛选栏 + 操作按钮 */}
-              <div className={`rounded-2xl border ${cardBg} p-4`}>
-                <div className="flex flex-col md:flex-row gap-3 items-center">
-                  <div className={`flex items-center gap-2 flex-1 px-3 py-2 rounded-xl border ${isDarkMode ? 'bg-[#242424] border-white/10' : 'bg-white border-gray-200'}`}>
-                    <Search size={14} className={mutedText} />
+              <div className={`rounded-2xl border ${cardBg} p-5 shadow-sm`}>
+                <div className="flex flex-col md:flex-row gap-4 items-center">
+                  <div className={`flex items-center gap-3 flex-1 px-4 py-2.5 rounded-2xl border transition-all ${
+                    isDarkMode 
+                      ? 'bg-[#242424] border-white/10 focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/10' 
+                      : 'bg-white border-gray-200 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-100'
+                  }`}>
+                    <Search size={16} className={mutedText} />
                     <input
                       type="text"
                       placeholder={at('filterSearch')}
                       value={filmFilter.search}
                       onChange={e => handleFilmFilter({ ...filmFilter, search: e.target.value })}
-                      className="flex-1 bg-transparent outline-none text-sm"
+                      className="flex-1 bg-transparent outline-none text-sm placeholder:opacity-50"
                     />
                     {filmFilter.search && (
-                      <button onClick={() => handleFilmFilter({ ...filmFilter, search: '' })} className="opacity-40 hover:opacity-100">
-                        <X size={12} />
+                      <button 
+                        onClick={() => handleFilmFilter({ ...filmFilter, search: '' })} 
+                        className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                      >
+                        <X size={14} className="opacity-40" />
                       </button>
                     )}
                   </div>
-                  <select
-                    value={filmFilter.format}
-                    onChange={e => handleFilmFilter({ ...filmFilter, format: e.target.value })}
-                    className={`${inputCls} w-auto min-w-[120px]`}
-                  >
-                    <option value="">{at('filterAll')} {at('filmFormat')}</option>
-                    <option value="135">35mm (135)</option>
-                    <option value="120">{adminLang === 'zh-CN' ? '中画幅 (120)' : 'Medium (120)'}</option>
-                  </select>
-                  <select
-                    value={filmFilter.filmType}
-                    onChange={e => handleFilmFilter({ ...filmFilter, filmType: e.target.value })}
-                    className={`${inputCls} w-auto min-w-[140px]`}
-                  >
-                    <option value="">{at('filterAll')} {at('filmType')}</option>
-                    <option value="COLOR_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_NEGATIVE']}</option>
-                    <option value="BW_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['BW_NEGATIVE']}</option>
-                    <option value="COLOR_POSITIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_POSITIVE']}</option>
-                    <option value="BW_POSITIVE">{FILM_TYPE_LABELS[adminLang]['BW_POSITIVE']}</option>
-                  </select>
-                  {(filmFilter.search || filmFilter.format || filmFilter.filmType) && (
-                    <button
-                      onClick={() => handleFilmFilter({ search: '', format: '', filmType: '' })}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-100'}`}
+                  
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    <select
+                      value={filmFilter.format}
+                      onChange={e => handleFilmFilter({ ...filmFilter, format: e.target.value })}
+                      className={`${inputCls} !w-full md:!w-40 !rounded-2xl !py-2.5 !px-4 cursor-pointer`}
                     >
-                      {at('resetFilter')}
-                    </button>
-                  )}
+                      <option value="">{at('filterAll')} {at('filmFormat')}</option>
+                      <option value="135">35mm (135)</option>
+                      <option value="120">{adminLang === 'zh-CN' ? '中画幅 (120)' : 'Medium (120)'}</option>
+                    </select>
+                    
+                    <select
+                      value={filmFilter.filmType}
+                      onChange={e => handleFilmFilter({ ...filmFilter, filmType: e.target.value })}
+                      className={`${inputCls} !w-full md:!w-48 !rounded-2xl !py-2.5 !px-4 cursor-pointer`}
+                    >
+                      <option value="">{at('filterAll')} {at('filmType')}</option>
+                      <option value="COLOR_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_NEGATIVE']}</option>
+                      <option value="BW_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['BW_NEGATIVE']}</option>
+                      <option value="COLOR_POSITIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_POSITIVE']}</option>
+                      <option value="BW_POSITIVE">{FILM_TYPE_LABELS[adminLang]['BW_POSITIVE']}</option>
+                    </select>
+
+                    {(filmFilter.search || filmFilter.format || filmFilter.filmType) && (
+                      <button
+                        onClick={() => handleFilmFilter({ search: '', format: '', filmType: '' })}
+                        className={`flex items-center justify-center min-w-[44px] h-[42px] rounded-2xl border transition-all ${
+                          isDarkMode 
+                            ? 'border-white/10 hover:bg-white/5 text-white/70' 
+                            : 'border-gray-200 hover:bg-gray-100 text-gray-500'
+                        }`}
+                        title={at('resetFilter')}
+                      >
+                        <RefreshCw size={16} className="rotate-90" />
+                      </button>
+                    )}
+                  </div>
+
                   <button
                     onClick={() => {
                       setEditingFilm(null);
@@ -922,9 +952,9 @@ export default function Admin() {
                       setFilmSaveStatus({ type: '', message: '' });
                       setShowFilmModal(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-xl transition-all whitespace-nowrap shadow-lg shadow-violet-500/20"
+                    className="flex items-center justify-center gap-2 h-[42px] px-6 bg-violet-600 hover:bg-violet-700 active:scale-95 text-white text-sm font-bold rounded-2xl transition-all whitespace-nowrap shadow-lg shadow-violet-500/20 w-full md:w-auto"
                   >
-                    <Plus size={14} />
+                    <Plus size={16} />
                     {at('addFilmStock')}
                   </button>
                 </div>
@@ -992,7 +1022,7 @@ export default function Admin() {
                         </div>
 
                         {/* 操作按钮 */}
-                        <div className="flex gap-2 mt-auto pt-2 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="flex gap-2 mt-auto pt-4 border-t border-white/5 transition-all duration-300">
                           <button
                             onClick={() => {
                               setEditingFilm(stock);
@@ -1005,14 +1035,22 @@ export default function Admin() {
                               setFilmSaveStatus({ type: '', message: '' });
                               setShowFilmModal(true);
                             }}
-                            className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg font-bold transition-colors ${isDarkMode ? 'hover:bg-white/8 text-white/60 hover:text-white' : 'hover:bg-gray-100 text-gray-500 hover:text-gray-900'}`}
+                            className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl font-bold transition-all ${
+                              isDarkMode 
+                                ? 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/5' 
+                                : 'bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 border border-gray-100'
+                            }`}
                           >
                             <Pencil size={12} />
                             {at('editFilmStock')}
                           </button>
                           <button
                             onClick={() => handleDeleteFilmStock(stock.id)}
-                            className="flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg font-bold transition-colors text-red-400 hover:bg-red-500/10"
+                            className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl font-bold transition-all ${
+                              isDarkMode
+                                ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20'
+                                : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-100'
+                            }`}
                           >
                             <Trash2 size={12} />
                             {at('deleteFilmStock')}
@@ -1229,14 +1267,72 @@ export default function Admin() {
                   <p className={`mt-3 text-[10px] italic ${mutedText}`}>{at('imgBedPathDesc')}</p>
                 </div>
 
-                <button onClick={handleSaveImgBed} className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98]">
-                  保存并应用图床策略
-                </button>
+                <div className="space-y-3">
+                  {imgBedSaveStatus.message && (
+                    <div className={`text-xs font-bold px-4 py-2 rounded-lg border transition-all animate-in fade-in slide-in-from-top-1 ${
+                      imgBedSaveStatus.type === 'success' 
+                        ? 'bg-green-500/10 border-green-500/20 text-green-500' 
+                        : imgBedSaveStatus.type === 'error'
+                          ? 'bg-red-500/10 border-red-500/20 text-red-500'
+                          : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        {imgBedSaveStatus.type === 'loading' && <RefreshCw size={12} className="animate-spin" />}
+                        {imgBedSaveStatus.message}
+                      </div>
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={handleSaveImgBed} 
+                    disabled={imgBedSaveStatus.type === 'loading'}
+                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                  >
+                    {imgBedSaveStatus.type === 'loading' ? <RefreshCw size={18} className="animate-spin" /> : null}
+                    {imgBedSaveStatus.type === 'loading' ? at('saving') : '保存并应用图床策略'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
         </div>
       </main>
+
+      {/* 全局确认弹窗 */}
+      {confirmModal?.show && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div 
+            className={`w-full max-w-sm rounded-3xl border ${cardBg} p-6 shadow-2xl scale-in-center animate-in zoom-in-95 duration-200`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
+                <Trash2 size={32} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">{confirmModal.title}</h3>
+                <p className={`mt-2 text-sm ${mutedText}`}>{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className={`flex-1 py-3 rounded-2xl text-sm font-bold border transition-all ${
+                  isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                {at('cancel')}
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-red-500/20 transition-all active:scale-95"
+              >
+                {at('confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
