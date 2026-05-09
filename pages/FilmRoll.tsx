@@ -9,6 +9,7 @@ import { getRoll, addFrames, deleteFrame, deleteRoll, updateRoll, reorderFrames,
 import { uploadImage } from '../src/api/upload.ts';
 import { getFilmStocks, type FilmStock } from '../src/api/film-stocks.ts';
 import { getGear, type Gear } from '../src/api/gear.ts';
+import { useUpload } from '../src/context/UploadContext.tsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from '../src/hooks/useTranslation';
 import FilmStockManager from '../components/FilmStockManager';
@@ -44,10 +45,9 @@ export default function FilmRoll() {
   const [roll, setRoll] = useState<RollDetail>(FALLBACK_ROLL);
   const [frames, setFrames] = useState<FrameItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
+  const { sessions, startUpload } = useUpload();
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
-  const [uploadStatus, setUploadStatus] = useState<{ current: number; total: number } | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [filmStocks, setFilmStocks] = useState<FilmStock[]>([]);
@@ -100,42 +100,14 @@ export default function FilmRoll() {
     const files = e.target.files;
     if (!files || files.length === 0 || !id) return;
 
-    setIsUploading(true);
-    setUploadStatus({ current: 0, total: files.length });
-    let successCount = 0;
-
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setUploadStatus({ current: i + 1, total: files.length });
-        try {
-          const uploadResult = await uploadImage(file, id, 'frame');
-          const newFrame: FrameItem = {
-            id: `temp-${Date.now()}-${i}`,
-            imageUrl: uploadResult.url,
-            previewUrl: uploadResult.previewUrl,
-            frameNumber: String(frames.length + successCount + 1).padStart(2, '0') + 'A',
-            sortOrder: frames.length + successCount,
-            fileSize: file.size,
-            fileFormat: file.type,
-            aperture: '',
-            shutterSpeed: '',
-            iso: '',
-            description: ''
-          };
-          const addResponse = await addFrames(id, [newFrame]);
-          if (addResponse.success) {
-            setFrames(prev => [...prev, (addResponse.data?.[0] as FrameItem) || newFrame]);
-            successCount++;
-          }
-        } catch (err) {
-          console.error('上传失败:', err);
-        }
-      }
-      showToast(`成功添加 ${successCount} 张照片`);
+      await startUpload(id, roll.title, files, (newFrame) => {
+        setFrames(prev => [...prev, newFrame]);
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      showToast('部分图片上传失败', 'error');
     } finally {
-      setIsUploading(false);
-      setUploadStatus(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -258,9 +230,17 @@ export default function FilmRoll() {
           </div>
           
           <div className="flex items-center gap-2">
-            <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20">
+            <button 
+              onClick={() => fileInputRef.current?.click()} 
+              disabled={!!sessions[id!] && !sessions[id!].isCompleted} 
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20"
+            >
               <ImagePlus size={20} />
-              <span>{isUploading ? `${uploadStatus?.current}/${uploadStatus?.total}` : t('common.upload')}</span>
+              <span>
+                {sessions[id!] && !sessions[id!].isCompleted 
+                  ? `${sessions[id!].current}/${sessions[id!].total}` 
+                  : t('common.upload')}
+              </span>
             </button>
             <button onClick={() => {/* TODO: Implement roll export */}} className="p-2.5 hover:bg-surface-variant rounded-xl transition-colors border border-outline-variant/30" title="Export Roll">
               <Download size={20} />

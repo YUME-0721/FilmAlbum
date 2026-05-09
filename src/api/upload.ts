@@ -43,11 +43,20 @@ export async function uploadImage(
 ): Promise<UploadResult> {
   const { smartCompress } = await import('../utils/image-compress.ts');
 
-  // 获取上传策略
+  // 获取上传策略 (使用简单缓存避免重复请求)
   const qType = type === 'filmStock' ? 'filmStock' : (rollId ? 'roll' : '');
-  const strategyRes = await get<any>(`/upload/strategy?type=${qType}${rollId ? `&rollId=${rollId}` : ''}`);
-  if (!strategyRes.success) throw new Error('获取上传策略失败');
-  const strategy = strategyRes.data;
+  const cacheKey = `strategy_${qType}_${rollId || 'default'}`;
+  let strategy;
+  
+  const cached = (window as any)[cacheKey];
+  if (cached && Date.now() - cached.time < 300000) { // 5分钟缓存
+    strategy = cached.data;
+  } else {
+    const strategyRes = await get<any>(`/upload/strategy?type=${qType}${rollId ? `&rollId=${rollId}` : ''}`);
+    if (!strategyRes.success) throw new Error('获取上传策略失败');
+    strategy = strategyRes.data;
+    (window as any)[cacheKey] = { data: strategy, time: Date.now() };
+  }
 
   // 预处理主图和预览图
   let mainFile = file;

@@ -38,6 +38,9 @@ export const translations = {
       sending: '发送中...',
       share: '分享',
       download: '下载',
+      completed: '已完成',
+      processing: '处理中...',
+      clear: '清除',
     },
     login: {
       welcome: '欢迎回来，继续你的胶片旅程',
@@ -368,6 +371,9 @@ export const translations = {
       sending: 'Sending...',
       share: 'Share',
       download: 'Download',
+      completed: 'Completed',
+      processing: 'Processing...',
+      clear: 'Clear',
     },
     login: {
       welcome: 'Welcome back, continue your film journey',
