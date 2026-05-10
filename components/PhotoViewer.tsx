@@ -37,6 +37,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
     showDate: true,
     showExposure: true
   });
+  const [isImageLoading, setIsImageLoading] = useState(true);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > window.innerHeight);
   const [filmStockData, setFilmStockData] = useState<FilmStock | null>(null);
   const [editingField, setEditingField] = useState<{frameId: string, field: string} | null>(null);
@@ -44,6 +45,11 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [lastAspectRatio, setLastAspectRatio] = useState<number>(1.5);
   const tagInputRef = useRef<HTMLInputElement>(null);
+
+  // 当当前帧改变时，重置图片加载状态
+  useEffect(() => {
+    setIsImageLoading(true);
+  }, [currentFrame]);
 
   // 同步外部 frames 变化
   useEffect(() => {
@@ -282,13 +288,25 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                   layout
                   className={`w-full transition-all duration-300 ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-8' : 'bg-black p-8'}`}
                 >
-                  <div className="flex justify-center">
+                  <div className="flex justify-center relative overflow-hidden" style={{ minHeight: isImageLoading ? '300px' : 'auto' }}>
+                    {isImageLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-sm z-10">
+                        <div className="animate-pulse text-white/20 text-xs font-bold uppercase tracking-widest">Loading...</div>
+                      </div>
+                    )}
                     <img
                       src={frames[currentFrame].imageUrl}
                       alt={frames[currentFrame].frameNumber}
-                      onLoad={(e) => setLastAspectRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
-                      style={{ aspectRatio: lastAspectRatio }}
-                      className={`object-contain shadow-2xl transition-all duration-500 ${borderType === 'none' ? 'max-w-full max-h-[80vh]' : 'max-w-[90%] max-h-[70vh]'}`}
+                      onLoad={(e) => {
+                        setLastAspectRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight);
+                        setIsImageLoading(false);
+                      }}
+                      style={{ 
+                        aspectRatio: lastAspectRatio,
+                        opacity: isImageLoading ? 0 : 1,
+                        transition: 'opacity 0.3s ease-in-out'
+                      }}
+                      className={`object-contain shadow-2xl ${borderType === 'none' ? 'max-w-full max-h-[80vh]' : 'max-w-[90%] max-h-[70vh]'}`}
                     />
                   </div>
                   {/* 边框信息层 */}
@@ -305,7 +323,16 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                            })()}
                            <div>
                              <h5 className="font-bold text-lg leading-tight">{filmStockData?.brand || roll.filmStock.split(' ')[0]}</h5>
-                             <h6 className="font-medium text-sm opacity-80">{filmStockData?.model || roll.filmStock.split(' ').slice(1).join(' ')}</h6>
+                             <h6 className="font-medium text-sm opacity-80">
+                               {(() => {
+                                 const fullModel = filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock);
+                                 const brand = filmStockData?.brand || roll.filmStock.split(' ')[0];
+                                 if (fullModel.toLowerCase().startsWith(brand.toLowerCase())) {
+                                   return fullModel.slice(brand.length).trim();
+                                 }
+                                 return fullModel;
+                               })()}
+                             </h6>
                            </div>
                         </div>
                       )}
@@ -397,7 +424,15 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                           </div>
                           <div className="flex flex-col justify-center">
                             <h5 className="text-[#f4f4f5] font-lingxun text-[32px] leading-tight tracking-wide lining-nums">
-                              {filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock)}
+                              {(() => {
+                                const fullModel = filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock);
+                                const brand = filmStockData?.brand || roll.filmStock.split(' ')[0];
+                                // 如果 model 中已经包含了 brand，则去掉 brand
+                                if (fullModel.toLowerCase().startsWith(brand.toLowerCase())) {
+                                  return fullModel.slice(brand.length).trim();
+                                }
+                                return fullModel;
+                              })()}
                             </h5>
                           </div>
                         </div>

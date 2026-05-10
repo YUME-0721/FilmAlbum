@@ -15,6 +15,12 @@ export default function FrameView() {
   useEffect(() => {
     const fetchFrameDetail = async () => {
       if (!frameId) return;
+      
+      // 如果已经有当前 roll 且 frames 中包含该 frameId，则不需要重新加载数据和显示 Loading
+      if (roll && frames.some(f => f.id === frameId)) {
+        return;
+      }
+
       setIsLoading(true);
       try {
         const response = await getFrameDetail(frameId);
@@ -29,7 +35,7 @@ export default function FrameView() {
       }
     };
     fetchFrameDetail();
-  }, [frameId]);
+  }, [frameId, roll, frames]);
 
   if (isLoading) {
     return (
