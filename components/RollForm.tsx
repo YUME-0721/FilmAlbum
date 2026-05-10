@@ -145,32 +145,40 @@ export default function RollForm({
                       <>
                         {filterFilmStocks(filmStocks, filmStockSearch)
                             .map(stock => (
-                             <div
-                               key={stock.id}
-                               className="px-4 py-2 text-sm text-on-surface hover:bg-surface-variant cursor-pointer flex items-center gap-3"
-                                onClick={() => {
-                                  const baseFormat = stock.format === '120' ? '120' : '135';
-                                  const defaultFormat = baseFormat === '120' ? '645' : '135';
-                                  setFormData({
-                                    ...formData, 
-                                    filmStock: `${stock.brand} ${stock.model} ${stock.format}`,
-                                    format: defaultFormat,
-                                    filmType: stock.filmType || formData.filmType
-                                  });
-                                  setFilmStockSearch('');
-                                }}
-                             >
-                               {stock.brandLogo ? (
-                                 <img src={stock.brandLogo} alt={stock.brand} className="w-6 h-6 object-contain rounded-md bg-white/5" />
-                               ) : (
-                                 <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-[8px] font-bold text-primary">
-                                   {stock.brand.slice(0, 2).toUpperCase()}
+                               <div
+                                 key={stock.id}
+                                 className="px-4 py-2 text-sm text-on-surface hover:bg-surface-variant cursor-pointer flex items-center gap-3 overflow-hidden group"
+                                 onClick={() => {
+                                   const baseFormat = stock.format;
+                                   const formatDef = rollFormats.find(f => f.format === baseFormat);
+                                   const defaultFormat = formatDef?.frames[0] || baseFormat;
+                                   setFormData({
+                                     ...formData, 
+                                     filmStock: `${stock.brand} ${stock.model}`,
+                                     format: defaultFormat,
+                                     filmType: stock.filmType || formData.filmType
+                                   });
+                                   setFilmStockSearch('');
+                                 }}
+                               >
+                                 <div className="flex-shrink-0">
+                                   {stock.brandLogo ? (
+                                     <img src={stock.brandLogo} alt={stock.brand} className="w-6 h-6 object-contain rounded-md bg-white/5" />
+                                   ) : (
+                                     <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-[8px] font-bold text-primary">
+                                       {stock.brand.slice(0, 2).toUpperCase()}
+                                     </div>
+                                   )}
                                  </div>
-                               )}
-                               <span>
-                                 {stock.brand} {stock.model} <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${stock.format === '120' ? 'bg-amber-500/20 text-amber-500' : 'bg-blue-500/20 text-blue-500'}`}>{stock.format}</span>
-                               </span>
-                             </div>
+                                 <div className="flex-1 min-w-0 overflow-hidden">
+                                   <span className="animate-marquee-slow whitespace-nowrap">
+                                     {stock.model}
+                                   </span>
+                                 </div>
+                                 <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold ${stock.format === '120' ? 'bg-amber-500/20 text-amber-500' : 'bg-blue-500/20 text-blue-500'}`}>
+                                   {stock.format}
+                                 </span>
+                               </div>
                           ))}
                       </>
                     )}
@@ -413,7 +421,14 @@ export default function RollForm({
                 className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-4 py-3 text-sm text-on-surface outline-none transition-colors"
               >
                 {(() => {
-                  const currentStock = filmStocks.find(s => `${s.brand} ${s.model}` === formData.filmStock);
+                  const currentStock = filmStocks.find(s => {
+                    const fullModelName = `${s.brand} ${s.model}`;
+                    if (fullModelName !== formData.filmStock) return false;
+                    
+                    // 如果当前已选择了某个画幅，优先寻找匹配该基准规格的型号
+                    const currentBaseFormat = rollFormats.find(f => f.frames.includes(formData.format))?.format;
+                    return !currentBaseFormat || s.format === currentBaseFormat;
+                  });
                   const baseFormat = currentStock?.format || '135';
                   
                   const formatDef = rollFormats.find(f => f.format === baseFormat);

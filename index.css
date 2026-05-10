@@ -27,6 +27,9 @@
   --color-secondary: #40b26b;
   --color-on-secondary: #002610;
 
+  --color-error: #ff5252;
+  --color-on-error: #ffffff;
+
   --font-headline: "Noto Serif SC", serif;
   --font-body: "Inter", sans-serif;
   --font-label: "Space Grotesk", sans-serif;
@@ -59,6 +62,9 @@ html.light {
   --color-on-secondary-container: #1e8e3e;
   --color-secondary: #34a853;
   --color-on-secondary: #ffffff;
+
+  --color-error: #d93025;
+  --color-on-error: #ffffff;
 }
 
 @layer utilities {
@@ -178,5 +184,21 @@ html.light {
   
   html.light input[type="date"]:hover::-ms-calendar-picker-indicator {
     filter: brightness(0.8);
+  }
+
+  @keyframes marquee-scroll {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(0); }
+    80% { transform: translateX(-40%); }
+    100% { transform: translateX(-40%); }
+  }
+
+  .animate-marquee-slow {
+    display: inline-block;
+    transition: transform 0.5s ease;
+  }
+
+  .group:hover .animate-marquee-slow {
+    animation: marquee-scroll 4s ease-in-out infinite alternate;
   }
 }

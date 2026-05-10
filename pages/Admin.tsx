@@ -3,7 +3,7 @@
  * 独立全屏布局，不使用主导航栏
  * 含独立的语言切换和明暗主题切换
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../src/context/SettingsContext';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { get, post, put, del } from '../src/api/client';
@@ -124,6 +124,16 @@ const i18n = {
     editLevel: '编辑等级',
     deleteLevel: '删除等级',
     confirmDeleteLevel: '确认删除等级 {name}？',
+    maintenance: '系统维护',
+    backupAndRestore: '系统备份与还原',
+    backupNow: '立即备份',
+    restoreData: '还原数据',
+    includeContent: '包含影集与内容数据 (体积较大)',
+    backupDesc: '备份文件包含系统配置、用户信息以及影集元数据。注意：备份不包含第三方图床中的原始图片文件。',
+    restoreConfirm: '确定要还原数据吗？这将覆盖当前所有数据且不可撤销！',
+    backupSuccess: '备份已生成，正在下载...',
+    restoreSuccess: '系统已成功恢复',
+    invalidBackupFile: '无效的备份文件',
   },
   'en-US': {
     title: 'Super Admin',
@@ -233,6 +243,16 @@ const i18n = {
     editLevel: 'Edit Level',
     deleteLevel: 'Delete Level',
     confirmDeleteLevel: 'Delete level {name}?',
+    maintenance: 'Maintenance',
+    backupAndRestore: 'Backup & Restore',
+    backupNow: 'Backup Now',
+    restoreData: 'Restore Data',
+    includeContent: 'Include Album & Content (Larger Size)',
+    backupDesc: 'Backup file includes system config, users, and album metadata. Note: It does NOT include original images in external image beds.',
+    restoreConfirm: 'Are you sure you want to restore? This will overwrite ALL current data and cannot be undone!',
+    backupSuccess: 'Backup generated, downloading...',
+    restoreSuccess: 'System restored successfully',
+    invalidBackupFile: 'Invalid backup file',
   }
 };
 
@@ -320,7 +340,9 @@ export default function Admin() {
   const [editingFilm, setEditingFilm] = useState<any | null>(null);
   const [filmForm, setFilmForm] = useState({ brand: '', brandZh: '', model: '', iso: '', format: '135', filmType: 'COLOR_NEGATIVE', process: 'C-41', brandLogo: '' });
   const [filmSaveStatus, setFilmSaveStatus] = useState({ type: '', message: '' });
-  const [confirmModal, setConfirmModal] = useState<{ show: boolean; title: string; message: string; onConfirm: () => void } | null>(null);
+   const [confirmModal, setConfirmModal] = useState<{ show: boolean; title: string; message: string; onConfirm: () => void } | null>(null);
+  const [includeContentBackup, setIncludeContentBackup] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (token) fetchDashboardData();
@@ -613,6 +635,60 @@ export default function Admin() {
     } catch (err: any) {
       setTestEmailStatus({ type: 'error', message: err.message || at('updateFailed') });
     }
+  };
+
+  const handleBackup = async () => {
+    try {
+      const response = await get('/admin/system/backup', { includeContent: String(includeContentBackup) }, { headers: { Authorization: `Bearer ${token}` } });
+      if (response.success) {
+        const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const fileName = `FilmAlbum_Backup_${new Date().toISOString().split('T')[0]}_${includeContentBackup ? 'Full' : 'Config'}.json`;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert(at('backupSuccess'));
+      }
+    } catch (err) {
+      alert(at('updateFailed'));
+    }
+  };
+
+  const handleRestore = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm(at('restoreConfirm'))) {
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = JSON.parse(event.target?.result as string);
+        if (!content.tables) {
+          alert(at('invalidBackupFile'));
+          return;
+        }
+
+        const response = await post('/admin/system/restore', content, { headers: { Authorization: `Bearer ${token}` } });
+        if (response.success) {
+          alert(at('restoreSuccess'));
+          window.location.reload();
+        } else {
+          alert(response.error || at('updateFailed'));
+        }
+      } catch (err) {
+        alert(at('invalidBackupFile'));
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
   };
 
   // ── 颜色常量与样式基础 ────────────────────────────────────────────
@@ -1153,6 +1229,67 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
+
+              {/* 系统维护（备份与还原） */}
+              <div className={`rounded-[32px] border ${cardBg} p-8 shadow-sm`}>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-500">
+                    <RefreshCw size={24} />
+                  </div>
+                  <div>
+                    <h2 className="font-black text-xl tracking-tight">{at('backupAndRestore')}</h2>
+                    <p className={`text-xs font-medium mt-1 ${mutedText}`}>Backup & Restore System Data</p>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col gap-6">
+                  <div className={`p-6 rounded-2xl ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'} border border-inherit`}>
+                    <p className="text-sm leading-relaxed opacity-70">
+                      {at('backupDesc')}
+                    </p>
+                    
+                    <div className="mt-8 flex flex-col md:flex-row items-center gap-8">
+                      <label className="flex items-center gap-3 cursor-pointer group">
+                        <div 
+                          className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                            includeContentBackup 
+                              ? 'bg-indigo-500 border-indigo-500 shadow-lg shadow-indigo-500/20' 
+                              : 'border-current opacity-30 group-hover:opacity-60'
+                          }`}
+                          onClick={() => setIncludeContentBackup(!includeContentBackup)}
+                        >
+                          {includeContentBackup && <div className="w-2 h-2 bg-white rounded-sm" />}
+                        </div>
+                        <span className="text-sm font-bold">{at('includeContent')}</span>
+                      </label>
+                      
+                      <div className="flex gap-4 w-full md:w-auto ml-auto">
+                        <button 
+                          onClick={handleBackup} 
+                          className="flex-1 md:flex-none px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                          {at('backupNow')}
+                        </button>
+                        <button 
+                          onClick={() => fileInputRef.current?.click()} 
+                          className={`flex-1 md:flex-none px-8 py-3 border rounded-2xl text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                            isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-100'
+                          }`}
+                        >
+                          {at('restoreData')}
+                        </button>
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          className="hidden" 
+                          accept=".json" 
+                          onChange={handleRestore} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1625,7 +1762,7 @@ export default function Admin() {
             <div className="flex gap-3 mt-8">
               <button
                 onClick={() => setConfirmModal(null)}
-                className={`flex-1 py-3 rounded-2xl text-sm font-bold border transition-all ${
+                className={`flex-1 py-3 rounded-2xl text-sm font-bold border transition-all hover:scale-[1.02] active:scale-[0.98] ${
                   isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-100'
                 }`}
               >
@@ -1633,7 +1770,7 @@ export default function Admin() {
               </button>
               <button
                 onClick={confirmModal?.onConfirm}
-                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-red-500/20 transition-all active:scale-95"
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 {at('confirm')}
               </button>

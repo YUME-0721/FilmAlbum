@@ -349,8 +349,18 @@ export default function FilmRoll() {
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="relative bg-surface p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl">
               <h3 className="text-xl font-bold text-on-surface mb-2">{confirmDialog.message}</h3>
               <div className="flex gap-4 mt-8">
-                <button onClick={() => setConfirmDialog(null)} className="flex-1 px-6 py-3 rounded-2xl hover:bg-surface-variant transition-colors font-bold">{t('common.cancel')}</button>
-                <button onClick={confirmDialog.onConfirm} className="flex-1 px-6 py-3 bg-error text-on-error rounded-2xl font-bold hover:bg-error/90 transition-colors">{t('common.confirm')}</button>
+                <button 
+                  onClick={() => setConfirmDialog(null)} 
+                  className="flex-1 px-6 py-3 rounded-2xl bg-surface-variant/50 text-on-surface-variant hover:bg-surface-variant hover:scale-[1.02] active:scale-[0.98] transition-all font-bold"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button 
+                  onClick={confirmDialog.onConfirm} 
+                  className="flex-1 px-6 py-3 bg-error text-on-error rounded-2xl font-bold hover:bg-error/90 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-error/20"
+                >
+                  {t('common.confirm')}
+                </button>
               </div>
             </motion.div>
           </div>

@@ -420,4 +420,92 @@ admin.delete('/film-stocks/:id', adminAuthRequired(), async (c) => {
   return c.json({ success: true });
 });
 
+/**
+ * GET /api/admin/system/backup - 系统备份
+ * query: includeContent=true/false
+ */
+admin.get('/system/backup', adminAuthRequired(), async (c) => {
+  const includeContent = c.req.query('includeContent') === 'true';
+  
+  const CORE_TABLES = ['users', 'system_settings', 'film_stocks'];
+  const CONTENT_TABLES = [
+    'rolls', 'frames', 'gear', 'posts', 'post_images', 
+    'likes', 'comments', 'follows', 'messages', 'notifications'
+  ];
+
+  const targetTables = includeContent ? [...CORE_TABLES, ...CONTENT_TABLES] : CORE_TABLES;
+  const backupData: Record<string, any[]> = {};
+
+  try {
+    for (const table of targetTables) {
+      const result = await c.env.DB.prepare(`SELECT * FROM ${table}`).all();
+      backupData[table] = result.results || [];
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        includeContent,
+        tables: backupData
+      }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, error: `备份失败: ${err.message}` }, 500);
+  }
+});
+
+/**
+ * POST /api/admin/system/restore - 系统还原
+ */
+admin.post('/system/restore', adminAuthRequired(), async (c) => {
+  try {
+    const body = await c.req.json<{ tables: Record<string, any[]> }>();
+    if (!body.tables) return c.json({ success: false, error: '无效的备份文件' }, 400);
+
+    const tablesToRestore = Object.keys(body.tables);
+    
+    // 开始还原流程
+    // 注意：由于 D1 的限制，我们手动处理清理和插入
+    for (const table of tablesToRestore) {
+      const rows = body.tables[table];
+      if (!Array.isArray(rows)) continue;
+
+      // 1. 清理现有数据
+      await c.env.DB.prepare(`DELETE FROM ${table}`).run();
+
+      // 2. 批量插入新数据
+      if (rows.length > 0) {
+        const columns = Object.keys(rows[0]);
+        const placeholders = columns.map(() => '?').join(', ');
+        const query = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
+        
+        const stmt = c.env.DB.prepare(query);
+        
+        // 分批处理以避免 D1 限制（每批 100 条）
+        const batchSize = 50;
+        for (let i = 0; i < rows.length; i += batchSize) {
+          const chunk = rows.slice(i, i + batchSize);
+          const batchStmts = chunk.map(row => {
+            const values = columns.map(col => {
+              const val = row[col];
+              // 处理 JSON 字符串或对象
+              if (typeof val === 'object' && val !== null) return JSON.stringify(val);
+              return val;
+            });
+            return stmt.bind(...values);
+          });
+          await c.env.DB.batch(batchStmts);
+        }
+      }
+    }
+
+    return c.json({ success: true, message: '系统已成功从备份中恢复' });
+  } catch (err: any) {
+    console.error('Restore error:', err);
+    return c.json({ success: false, error: `还原失败: ${err.message}` }, 500);
+  }
+});
+
 export default admin;
