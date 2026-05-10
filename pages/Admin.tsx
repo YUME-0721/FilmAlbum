@@ -272,9 +272,13 @@ export default function Admin() {
     lv2_roll_limit: '10',
     api_base_url: '',
     img_bed_path: '/FilmAlbum/',
-    user_levels: '[]'
+    user_levels: '[]',
+    roll_formats: '',
+    film_types: ''
   });
   const [userLevels, setUserLevels] = useState<any[]>([]);
+  const [rollFormats, setRollFormats] = useState<any[]>([]);
+  const [filmTypes, setFilmTypes] = useState<string[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', nickname: '', level: 'lv1' });
@@ -483,6 +487,12 @@ export default function Admin() {
             console.error('Failed to parse user levels', e);
           }
         }
+        if (s['roll_formats']) {
+          try { setRollFormats(JSON.parse(s['roll_formats'])); } catch (e) {}
+        }
+        if (s['film_types']) {
+          try { setFilmTypes(JSON.parse(s['film_types'])); } catch (e) {}
+        }
       }
       if (usersRes.success && usersRes.data) setUsers(usersRes.data.users);
     } catch (err: any) {
@@ -498,6 +508,12 @@ export default function Admin() {
       if (res.success) {
         setSystemSettings(prev => ({ ...prev, [key]: value }));
         if (key === 'user_levels') setUserLevels(JSON.parse(value));
+        if (key === 'roll_formats') {
+          try { setRollFormats(JSON.parse(value)); alert(at('saved')); } catch (e) { alert('JSON Error'); }
+        }
+        if (key === 'film_types') {
+          try { setFilmTypes(JSON.parse(value)); alert(at('saved')); } catch (e) { alert('JSON Error'); }
+        }
       } else {
         alert(at('updateFailed'));
       }
@@ -840,6 +856,41 @@ export default function Admin() {
                 </div>
               </div>
 
+              {/* 胶卷基础设置 */}
+              <div className={`rounded-[32px] border ${cardBg} p-8 shadow-sm`}>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500">
+                    <Film size={24} />
+                  </div>
+                  <div>
+                    <h2 className="font-black text-xl tracking-tight">胶卷基础设置</h2>
+                    <p className={`text-xs font-medium mt-1 ${mutedText}`}>Roll Formats & Film Types (JSON)</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>胶卷规格 (Roll Formats)</label>
+                    <textarea
+                      value={settings.roll_formats}
+                      onChange={(e) => setSystemSettings(p => ({...p, roll_formats: e.target.value}))}
+                      className={`${inputCls} font-mono text-xs`}
+                      rows={10}
+                    />
+                    <button onClick={() => handleUpdateSetting('roll_formats', settings.roll_formats)} className="mt-3 w-full py-3 bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white rounded-2xl text-sm font-bold shadow-lg shadow-amber-500/20 transition-all">保存规格设置</button>
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>底片类型 (Film Types)</label>
+                    <textarea
+                      value={settings.film_types}
+                      onChange={(e) => setSystemSettings(p => ({...p, film_types: e.target.value}))}
+                      className={`${inputCls} font-mono text-xs`}
+                      rows={10}
+                    />
+                    <button onClick={() => handleUpdateSetting('film_types', settings.film_types)} className="mt-3 w-full py-3 bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white rounded-2xl text-sm font-bold shadow-lg shadow-amber-500/20 transition-all">保存类型设置</button>
+                  </div>
+                </div>
+              </div>
+
               {/* 等级设置区域 */}
               <div className={`rounded-[32px] border ${cardBg} p-8 shadow-sm`}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -1141,8 +1192,7 @@ export default function Admin() {
                       className={`${inputCls} !w-full md:!w-40 !rounded-2xl !py-3 !px-4 cursor-pointer`}
                     >
                       <option value="">{at('filterAll')} {at('filmFormat')}</option>
-                      <option value="135">35mm (135)</option>
-                      <option value="120">{adminLang === 'zh-CN' ? '中画幅 (120)' : 'Medium (120)'}</option>
+                      {rollFormats.map(r => <option key={r.format} value={r.format}>{r.label}</option>)}
                     </select>
                     
                     <select
@@ -1151,10 +1201,7 @@ export default function Admin() {
                       className={`${inputCls} !w-full md:!w-48 !rounded-2xl !py-3 !px-4 cursor-pointer`}
                     >
                       <option value="">{at('filterAll')} {at('filmType')}</option>
-                      <option value="COLOR_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_NEGATIVE']}</option>
-                      <option value="BW_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['BW_NEGATIVE']}</option>
-                      <option value="COLOR_POSITIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_POSITIVE']}</option>
-                      <option value="BW_POSITIVE">{FILM_TYPE_LABELS[adminLang]['BW_POSITIVE']}</option>
+                      {filmTypes.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
 
                     {(filmFilter.search || filmFilter.format || filmFilter.filmType) && (
@@ -1378,8 +1425,9 @@ export default function Admin() {
                         <div>
                           <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-60`}>{at('filmFormat')}</label>
                           <select value={filmForm.format} onChange={e => setFilmForm(p => ({ ...p, format: e.target.value }))} className={inputCls}>
-                            <option value="135">35mm (135)</option>
-                            <option value="120">{adminLang === 'zh-CN' ? '中画幅 (120)' : 'Medium (120)'}</option>
+                            {rollFormats.map(r => (
+                              <option key={r.format} value={r.format}>{r.label}</option>
+                            ))}
                           </select>
                         </div>
                       </div>
@@ -1387,10 +1435,9 @@ export default function Admin() {
                         <div>
                           <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-60`}>{at('filmType')}</label>
                           <select value={filmForm.filmType} onChange={e => setFilmForm(p => ({ ...p, filmType: e.target.value }))} className={inputCls}>
-                            <option value="COLOR_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_NEGATIVE']}</option>
-                            <option value="BW_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['BW_NEGATIVE']}</option>
-                            <option value="COLOR_POSITIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_POSITIVE']}</option>
-                            <option value="BW_POSITIVE">{FILM_TYPE_LABELS[adminLang]['BW_POSITIVE']}</option>
+                            {filmTypes.map(t => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
                           </select>
                         </div>
                         <div>

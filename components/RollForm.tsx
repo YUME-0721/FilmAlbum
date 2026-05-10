@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { filterFilmStocks } from '../src/constants/brands';
 import { X, Tag } from 'lucide-react';
 import { useTranslation } from '../src/hooks/useTranslation';
+import { useSettings } from '../src/context/SettingsContext';
 
 interface RollFormProps {
   isEditing: boolean;
@@ -61,6 +62,7 @@ export default function RollForm({
   isLoadingGear
 }: RollFormProps) {
   const { t } = useTranslation();
+  const { rollFormats, filmTypes } = useSettings();
   // 使用rollForm作为formData
   const formData = rollForm;
   const setFormData = setRollForm;
@@ -414,25 +416,17 @@ export default function RollForm({
                   const currentStock = filmStocks.find(s => `${s.brand} ${s.model}` === formData.filmStock);
                   const baseFormat = currentStock?.format || '135';
                   
-                  if (baseFormat === '120') {
+                  const formatDef = rollFormats.find(f => f.format === baseFormat);
+                  if (formatDef && formatDef.frames) {
                     return (
                       <>
-                        <option value="620">{t('roll.form.formats.medium620')}</option>
-                        <option value="630">{t('roll.form.formats.medium630')}</option>
-                        <option value="645">{t('roll.form.formats.medium645')}</option>
-                        <option value="66">{t('roll.form.formats.medium66')}</option>
-                        <option value="6x7">{t('roll.form.formats.medium67')}</option>
-                        <option value="6x9">{t('roll.form.formats.medium69')}</option>
-                      </>
-                    );
-                  } else {
-                    return (
-                      <>
-                        <option value="135">{t('roll.form.formats.full')}</option>
-                        <option value="135_half">{t('roll.form.formats.half')}</option>
+                        {formatDef.frames.map((frame: string) => (
+                          <option key={frame} value={frame}>{frame} ({baseFormat})</option>
+                        ))}
                       </>
                     );
                   }
+                  return <option value="135">35mm (135)</option>;
                 })()}
               </select>
             </div>
@@ -448,10 +442,9 @@ export default function RollForm({
                 }}
                 className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-4 py-3 text-sm text-on-surface outline-none transition-colors"
               >
-                <option value="COLOR_NEGATIVE">{t('roll.filmTypes.colorNegative')}</option>
-                <option value="BW_NEGATIVE">{t('roll.filmTypes.bwNegative')}</option>
-                <option value="COLOR_POSITIVE">{t('roll.filmTypes.colorPositive')}</option>
-                <option value="BW_POSITIVE">{t('roll.filmTypes.bwPositive')}</option>
+                {filmTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
               </select>
             </div>
           </div>

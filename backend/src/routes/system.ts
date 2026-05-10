@@ -7,7 +7,7 @@ const system = new Hono<{ Bindings: Env }>();
 system.get('/settings', async (c) => {
   try {
     const settings = await c.env.DB.prepare(
-      "SELECT key, value FROM system_settings WHERE key IN ('open_registration', 'default_language', 'lv2_roll_limit')"
+      "SELECT key, value FROM system_settings WHERE key IN ('open_registration', 'default_language', 'lv2_roll_limit', 'roll_formats', 'film_types')"
     ).all<{ key: string; value: string }>();
 
     const settingsMap = settings.results.reduce((acc, curr) => {
@@ -21,6 +21,8 @@ system.get('/settings', async (c) => {
         openRegistration: settingsMap['open_registration'] !== 'false',
         defaultLanguage: settingsMap['default_language'] || 'zh-CN',
         lv2RollLimit: parseInt(settingsMap['lv2_roll_limit'] || '10', 10),
+        rollFormats: settingsMap['roll_formats'] ? JSON.parse(settingsMap['roll_formats']) : [{"format":"135","label":"35mm (135)","frames":["半格","35mm","xpan"]},{"format":"120","label":"中画幅 (120)","frames":["620","630","645","6x6","6x7","6x9"]}],
+        filmTypes: settingsMap['film_types'] ? JSON.parse(settingsMap['film_types']) : ["彩色负片","黑白负片","彩色反转片","黑白反转片"],
       }
     });
   } catch (error) {
@@ -32,6 +34,8 @@ system.get('/settings', async (c) => {
         openRegistration: true,
         defaultLanguage: 'zh-CN',
         lv2RollLimit: 10,
+        rollFormats: [{"format":"135","label":"35mm (135)","frames":["半格","35mm","xpan"]},{"format":"120","label":"中画幅 (120)","frames":["620","630","645","6x6","6x7","6x9"]}],
+        filmTypes: ["彩色负片","黑白负片","彩色反转片","黑白反转片"],
       }
     });
   }

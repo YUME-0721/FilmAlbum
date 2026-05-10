@@ -3,6 +3,7 @@ import type { FilmStock } from '../src/api/film-stocks';
 import { createFilmStock, updateFilmStock, deleteFilmStock } from '../src/api/film-stocks';
 import { commonBrands, brandMap, getBrandDisplayName, filterFilmStocks } from '../src/constants/brands';
 import { X, Plus, Film, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useSettings } from '../src/context/SettingsContext';
 
 interface FilmStockManagerProps {
   filmStocks: FilmStock[];
@@ -45,6 +46,7 @@ export default function FilmStockManager({
   const brandInputRef = React.useRef<HTMLInputElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const { rollFormats, filmTypes } = useSettings();
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -123,8 +125,8 @@ export default function FilmStockManager({
               brand: '',
               model: '',
               iso: 0,
-              format: '135',
-              filmType: 'COLOR_NEGATIVE',
+              format: rollFormats?.[0]?.format || '135',
+              filmType: filmTypes?.[0] || 'COLOR_NEGATIVE',
               process: 'C-41'
             });
           setEditFilmStock(null);
@@ -146,8 +148,8 @@ export default function FilmStockManager({
                 brand: '',
                 model: '',
                 iso: 0,
-                format: '135',
-                filmType: 'COLOR_NEGATIVE',
+                format: rollFormats?.[0]?.format || '135',
+                filmType: filmTypes?.[0] || 'COLOR_NEGATIVE',
                 process: 'C-41'
               });
             setShowAddModal(false);
@@ -194,8 +196,8 @@ export default function FilmStockManager({
                     brand: '',
                     model: '',
                     iso: 0,
-                    format: '135',
-                    filmType: 'COLOR_NEGATIVE',
+                    format: rollFormats?.[0]?.format || '135',
+                    filmType: filmTypes?.[0] || 'COLOR_NEGATIVE',
                     process: 'C-41'
                   });
                   setShowAddModal(true);
@@ -227,7 +229,7 @@ export default function FilmStockManager({
                       <td className="py-3 px-4 text-sm text-on-surface">{stock.iso}</td>
                       <td className="py-3 px-4 text-sm text-on-surface">{stock.format}</td>
                       <td className="py-3 px-4 text-sm text-on-surface">
-                        {stock.filmType === 'COLOR_NEGATIVE' ? '彩色负片' : stock.filmType === 'BW_NEGATIVE' ? '黑白负片' : stock.filmType === 'COLOR_POSITIVE' ? '彩色正片' : stock.filmType === 'BW_POSITIVE' ? '黑白正片' : stock.filmType}
+                        {stock.filmType}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
@@ -501,8 +503,9 @@ export default function FilmStockManager({
                     onChange={e => setAddFilmStockForm({...addFilmStockForm, format: e.target.value})}
                     className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-4 py-3 text-sm text-on-surface outline-none transition-colors"
                   >
-                    <option value="135">全画幅（135）</option>
-                    <option value="120">中画幅（120）</option>
+                    {rollFormats?.map(r => (
+                      <option key={r.format} value={r.format}>{r.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -517,10 +520,9 @@ export default function FilmStockManager({
                     onChange={e => setAddFilmStockForm({...addFilmStockForm, filmType: e.target.value})}
                     className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-4 py-3 text-sm text-on-surface outline-none transition-colors"
                   >
-                    <option value="COLOR_NEGATIVE">彩色负片</option>
-                    <option value="BW_NEGATIVE">黑白负片</option>
-                    <option value="COLOR_POSITIVE">彩色正片 (反转片)</option>
-                    <option value="BW_POSITIVE">黑白正片 (反转片)</option>
+                    {filmTypes?.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-2">

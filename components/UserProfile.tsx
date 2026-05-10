@@ -4,7 +4,7 @@
  * 根据登录用户与目标用户的关系显示不同的界面
  */
 import React, { useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext';
 import { getRolls, type RollListItem } from '../src/api/rolls';
 import { getFilmStocks, type FilmStock } from '../src/api/film-stocks.ts';
@@ -55,8 +55,9 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   const { t } = useTranslation();
   const { id: paramId } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser, isLoggedIn } = useAuth();
-  const { lv2RollLimit } = useSettings();
+  const { user: currentUser, isLoggedIn, isLoading: authLoading } = useAuth();
+  const location = useLocation();
+  const { lv2RollLimit, filmTypes, rollFormats } = useSettings();
 
   const [activeTab, setActiveTab] = useState('album');
   const [profile, setProfile] = useState<UserProfileData | null>(null);
@@ -111,8 +112,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     lens: '', 
     shotDate: new Date().toISOString().split('T')[0], 
     endDate: new Date().toISOString().split('T')[0], 
-    format: '135', 
-    filmType: 'COLOR_NEGATIVE',
+    format: rollFormats?.[0]?.format || '135', 
+    filmType: filmTypes?.[0] || 'COLOR_NEGATIVE',
     tags: [] as string[]
   });
   const [tagInput, setTagInput] = useState('');
@@ -151,8 +152,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     brand: '',
     model: '',
     iso: 0,
-    format: '135',
-    filmType: 'COLOR_NEGATIVE',
+    format: rollFormats?.[0]?.format || '135',
+    filmType: filmTypes?.[0] || 'COLOR_NEGATIVE',
     process: 'C-41'
   });
   
@@ -187,12 +188,16 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
 
   /** 获取用户资料 */
   const fetchProfile = useCallback(async () => {
+    // 如果认证还在加载，先不处理，等待认证完成
+    if (authLoading) return;
+
     if (!targetUserId) {
       setProfile(null);
       setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     try {
       const result = await get<UserProfileData>(`/users/${targetUserId}`);
       if (result.success && result.data) {
@@ -208,7 +213,22 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [targetUserId, activeTab]);
+  }, [targetUserId, activeTab, authLoading]);
+
+  // 处理锚点跳转
+  React.useEffect(() => {
+    if (!isLoading && !authLoading && location.hash) {
+      const id = location.hash.substring(1);
+      const element = document.getElementById(id);
+      if (element) {
+        // 给一点延迟确保渲染完成
+        const timer = setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isLoading, authLoading, location.hash]);
 
   /** 获取胶卷型号列表 */
   const fetchFilmStocks = useCallback(async () => {
@@ -498,8 +518,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
           lens: '', 
           shotDate: new Date().toISOString().split('T')[0], 
           endDate: new Date().toISOString().split('T')[0], 
-          format: '135', 
-          filmType: 'COLOR_NEGATIVE',
+          format: rollFormats?.[0]?.format || '135', 
+          filmType: filmTypes?.[0] || 'COLOR_NEGATIVE',
           tags: [] as string[]
         });
         setTagInput('');
@@ -578,7 +598,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     setShowEditModal(true);
   };
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <main className="max-w-7xl mx-auto px-8 pt-12 pb-24 flex items-center justify-center min-h-[60vh]">
         <div className="text-on-surface-variant font-label text-sm tracking-widest uppercase animate-pulse">加载中...</div>
@@ -769,10 +789,9 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                   className="bg-transparent border-none text-[10px] font-label font-bold focus:ring-0 cursor-pointer pr-8 uppercase tracking-[0.1em] text-on-surface-variant outline-none"
                 >
                   <option value="">{t('roll.type')}: {t('common.all')}</option>
-                  <option value="COLOR_NEGATIVE">{t('roll.filmTypes.colorNegative')}</option>
-                  <option value="BW_NEGATIVE">{t('roll.filmTypes.bwNegative')}</option>
-                  <option value="COLOR_POSITIVE">{t('roll.filmTypes.colorPositive')}</option>
-                  <option value="BW_POSITIVE">{t('roll.filmTypes.bwPositive')}</option>
+                  {filmTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -801,7 +820,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         rolls.length > 0 ? (
           <div className="space-y-16">
             {rolls.map((roll, index) => (
-              <div key={roll.id} className="group">
+              <div key={roll.id} id={`roll-${roll.id}`} className="group">
                 {/* Roll Header: Responsive layout */}
                 <div className="flex flex-col md:flex-row md:items-baseline justify-between mb-4 px-2 gap-3">
                   <div className="flex flex-wrap items-center gap-3">

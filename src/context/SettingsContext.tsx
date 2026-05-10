@@ -16,6 +16,8 @@ interface SettingsContextType {
   isDarkMode: boolean;
   openRegistration: boolean;
   lv2RollLimit: number;
+  rollFormats: {format: string, label: string, frames: string[]}[];
+  filmTypes: string[];
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -51,6 +53,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [openRegistration, setOpenRegistration] = useState(true);
   const [lv2RollLimit, setLv2RollLimit] = useState(10);
+  const [rollFormats, setRollFormats] = useState<{format: string, label: string, frames: string[]}[]>([{"format":"135","label":"35mm (135)","frames":["半格","35mm","xpan"]},{"format":"120","label":"中画幅 (120)","frames":["620","630","645","6x6","6x7","6x9"]}]);
+  const [filmTypes, setFilmTypes] = useState<string[]>(["彩色负片","黑白负片","彩色反转片","黑白反转片"]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // 初始化设置
@@ -62,7 +66,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       let limit = 10;
 
       try {
-        const res = await get<{ openRegistration: boolean; defaultLanguage: Language; lv2RollLimit: number }>('/system/settings');
+        const res = await get<{ openRegistration: boolean; defaultLanguage: Language; lv2RollLimit: number; rollFormats?: any[]; filmTypes?: string[] }>('/system/settings');
         if (res.success && res.data) {
           regOpen = res.data.openRegistration;
           limit = res.data.lv2RollLimit;
@@ -70,6 +74,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           if (!localStorage.getItem('language')) {
             defaultLang = res.data.defaultLanguage;
           }
+          if (res.data.rollFormats) setRollFormats(res.data.rollFormats);
+          if (res.data.filmTypes) setFilmTypes(res.data.filmTypes);
         }
       } catch (error) {
         console.error('获取系统设置失败:', error);
@@ -144,7 +150,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setLanguage,
       isDarkMode,
       openRegistration,
-      lv2RollLimit
+      lv2RollLimit,
+      rollFormats,
+      filmTypes
     }}>
       {children}
     </SettingsContext.Provider>
