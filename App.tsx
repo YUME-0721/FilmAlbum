@@ -17,6 +17,7 @@ import Settings from './pages/Settings.tsx';
 import Messages from './pages/Messages.tsx';
 import Admin from './pages/Admin.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
+import ScrollToTop from './components/ScrollToTop.tsx';
 import { UploadProvider } from './src/context/UploadContext.tsx';
 import UploadManager from './components/UploadManager.tsx';
 
@@ -25,6 +26,7 @@ export default function App() {
     <SettingsProvider>
       <AuthProvider>
         <UploadProvider>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Layout />}>
               {/* 主页公开访问 */}

@@ -133,7 +133,7 @@ export const translations = {
       shotInfo: '拍摄信息',
       exposure: '曝光参数',
       aperture: '光圈',
-      shutter: '快门',
+      shutterSpeed: '快门',
       iso: '感光度',
       form: {
         title: '影集标题',
@@ -198,7 +198,7 @@ export const translations = {
       inputLens: '输入镜头型号',
       placeholders: {
         aperture: '例如: f/2.8',
-        shutter: '例如: 1/60s',
+        shutterSpeed: '例如: 1/60s',
         iso: '例如: 400',
         emptyDesc: '可在影集设置中添加'
       }
@@ -466,7 +466,7 @@ export const translations = {
       shotInfo: 'Shot Info',
       exposure: 'Exposure',
       aperture: 'Aperture',
-      shutter: 'Shutter',
+      shutterSpeed: 'Shutter',
       iso: 'ISO',
       form: {
         title: 'Title',
@@ -531,7 +531,7 @@ export const translations = {
       inputLens: 'Enter lens model',
       placeholders: {
         aperture: 'e.g.: f/2.8',
-        shutter: 'e.g.: 1/60s',
+        shutterSpeed: 'e.g.: 1/60s',
         iso: 'e.g.: 400',
         emptyDesc: 'Can be added in album settings'
       }

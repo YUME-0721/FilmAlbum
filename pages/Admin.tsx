@@ -599,92 +599,90 @@ export default function Admin() {
     }
   };
 
-  // ── 颜色常量 ────────────────────────────────────────────
-  const bg = isDarkMode ? 'bg-[#0d0d0d]' : 'bg-gray-50';
-  const text = isDarkMode ? 'text-white' : 'text-gray-900';
-  const cardBg = isDarkMode ? 'bg-[#1a1a1a] border-white/8' : 'bg-white border-gray-200';
-  const inputCls = `w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-    isDarkMode ? 'bg-[#242424] border-white/10 text-white placeholder:text-white/30' : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
+  // ── 颜色常量与样式基础 ────────────────────────────────────────────
+  const bg = isDarkMode ? 'bg-[#0a0a0a]' : 'bg-[#f8f9fa]';
+  const text = isDarkMode ? 'text-[#f4f4f5]' : 'text-[#18181b]';
+  const cardBg = isDarkMode ? 'bg-[#121212] border-white/5 shadow-2xl shadow-black/50' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/50';
+  const inputCls = `w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition-all duration-300 focus:ring-4 ${
+    isDarkMode 
+      ? 'bg-[#1a1a1a] border-white/10 text-white placeholder:text-white/30 focus:border-blue-500/50 focus:ring-blue-500/10' 
+      : 'bg-[#f4f4f5] border-transparent text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-blue-400 focus:ring-blue-100'
   }`;
   const mutedText = isDarkMode ? 'text-white/40' : 'text-gray-400';
-  const dividerCls = isDarkMode ? 'divide-white/8' : 'divide-gray-100';
+  const dividerCls = isDarkMode ? 'divide-white/5' : 'divide-gray-100';
 
-  // ── 顶部导航栏 ───────────────────────────────────────────
-  const Topbar = () => (
-    <header className={`fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-6 border-b backdrop-blur-md ${
-      isDarkMode ? 'bg-[#0d0d0d]/90 border-white/8' : 'bg-white/90 border-gray-200'
-    }`}>
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-3 mr-4">
-          <ShieldAlert size={20} className="text-blue-500" />
-          <span className="font-bold tracking-wider text-sm uppercase hidden sm:inline">{at('title')}</span>
+  // ── 侧边栏 (Sidebar) ───────────────────────────────────────────
+  const Sidebar = () => (
+    <aside className={`fixed z-50 flex flex-col transition-all duration-300 ${
+      isDarkMode ? 'bg-[#121212] border-r border-white/5' : 'bg-white border-r border-gray-100 shadow-sm'
+    } md:left-0 md:top-0 md:h-screen md:w-64 border-t md:border-t-0 bottom-0 w-full h-16 md:py-8 md:px-4 px-2`}>
+      {/* 桌面端 Logo */}
+      <div className="hidden md:flex items-center gap-3 px-4 mb-10">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+          <ShieldAlert size={20} />
         </div>
-
-        <nav className="flex items-center gap-1">
-          {[
-            { id: 'system',     icon: Settings2, label: at('tabSystem') },
-            { id: 'users',      icon: Users,     label: at('tabUsers') },
-            { id: 'filmstocks', icon: Film,       label: at('tabFilmStocks') },
-            { id: 'imgbed',     icon: ImageUp,    label: at('tabImgBed') },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === tab.id
-                  ? (isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600')
-                  : (isDarkMode ? 'text-white/50 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100')
-              }`}
-            >
-              <tab.icon size={14} />
-              <span className="hidden md:inline">{tab.label}</span>
-            </button>
-          ))}
-        </nav>
+        <div>
+          <h1 className="font-black tracking-wider text-sm uppercase">{at('title')}</h1>
+          <p className={`text-[10px] font-medium tracking-widest uppercase ${mutedText}`}>Workspace</p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        {/* 语言切换 */}
-        <button
-          onClick={toggleLanguage}
-          title={adminLang === 'zh-CN' ? 'Switch to English' : '切换到中文'}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all hover:scale-105 active:scale-95 ${
-            isDarkMode
-              ? 'border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-              : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Languages size={14} />
-          {adminLang === 'zh-CN' ? 'EN' : '中'}
-        </button>
-
-        {/* 主题切换 */}
-        <button
-          onClick={toggleTheme}
-          title={isDarkMode ? (adminLang === 'zh-CN' ? '切换至亮色模式' : 'Switch to Light') : (adminLang === 'zh-CN' ? '切换至暗色模式' : 'Switch to Dark')}
-          className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all hover:scale-105 active:scale-95 ${
-            isDarkMode
-              ? 'border-white/10 bg-white/5 hover:bg-white/10 text-amber-400'
-              : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-blue-600'
-          }`}
-        >
-          {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-
-        {/* 退出登录（仅登录后显示） */}
-        {token && (
+      {/* 导航菜单 */}
+      <nav className="flex md:flex-col items-center md:items-stretch justify-around md:justify-start h-full md:h-auto gap-1 md:gap-2">
+        {[
+          { id: 'system',     icon: Settings2, label: at('tabSystem') },
+          { id: 'users',      icon: Users,     label: at('tabUsers') },
+          { id: 'filmstocks', icon: Film,       label: at('tabFilmStocks') },
+          { id: 'imgbed',     icon: ImageUp,    label: at('tabImgBed') },
+        ].map(tab => (
           <button
-            onClick={handleLogout}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all hover:scale-105 active:scale-95 ${
-              isDarkMode
-                ? 'border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400'
-                : 'border-red-200 bg-red-50 hover:bg-red-100 text-red-600'
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 px-3 md:px-4 py-2 md:py-3.5 rounded-2xl text-[10px] md:text-sm font-bold transition-all duration-300 ${
+              activeTab === tab.id
+                ? (isDarkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600')
+                : (isDarkMode ? 'text-white/50 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')
             }`}
           >
-            <LogOut size={14} />
+            <tab.icon size={18} className={activeTab === tab.id ? "scale-110 transition-transform" : "transition-transform"} />
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* 底部操作区 (桌面端显示) */}
+      <div className="hidden md:flex flex-col gap-3 mt-auto pt-6 border-t border-inherit">
+        <div className="flex gap-3">
+          <button onClick={toggleLanguage} className={`flex-1 flex justify-center items-center h-12 rounded-2xl transition-all hover:scale-105 active:scale-95 ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-white/70' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'}`} title="Toggle Language">
+            <Languages size={18} />
+          </button>
+          <button onClick={toggleTheme} className={`flex-1 flex justify-center items-center h-12 rounded-2xl transition-all hover:scale-105 active:scale-95 ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-amber-400' : 'bg-gray-50 hover:bg-gray-100 text-blue-600'}`} title="Toggle Theme">
+            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </div>
+        {token && (
+          <button onClick={handleLogout} className="flex items-center justify-center gap-2 h-12 rounded-2xl text-xs font-bold bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+            <LogOut size={16} />
             {at('logout')}
           </button>
         )}
+      </div>
+    </aside>
+  );
+
+  // ── 移动端头部 (Mobile Header) ─────────────────────────────────
+  const MobileHeader = () => (
+    <header className={`md:hidden flex items-center justify-between px-4 h-14 sticky top-0 z-40 backdrop-blur-xl border-b ${isDarkMode ? 'bg-[#0a0a0a]/80 border-white/5' : 'bg-[#f8f9fa]/80 border-gray-100'}`}>
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 rounded-md bg-blue-500 flex items-center justify-center text-white">
+          <ShieldAlert size={12} />
+        </div>
+        <span className="font-bold text-xs uppercase tracking-widest">{at('title')}</span>
+      </div>
+      <div className="flex gap-1">
+        <button onClick={toggleLanguage} className="p-2 opacity-70 hover:opacity-100"><Languages size={16} /></button>
+        <button onClick={toggleTheme} className={`p-2 ${isDarkMode ? 'text-amber-400' : 'text-blue-600'}`}>{isDarkMode ? <Sun size={16} /> : <Moon size={16} />}</button>
+        {token && <button onClick={handleLogout} className="p-2 text-red-500"><LogOut size={16} /></button>}
       </div>
     </header>
   );
@@ -692,51 +690,59 @@ export default function Admin() {
   // ── 登录页 ────────────────────────────────────────────────
   if (!token) {
     return (
-      <div className={`min-h-screen ${bg} ${text} transition-colors duration-300`}>
-        <Topbar />
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <div className="w-full max-w-sm">
-            <div className="text-center mb-8">
-              <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${
-                isDarkMode ? 'bg-blue-500/15' : 'bg-blue-50'
-              }`}>
-                <ShieldAlert size={32} className="text-blue-500" />
-              </div>
-              <h1 className="text-2xl font-bold">{at('loginTitle')}</h1>
-              <p className={`text-sm mt-1 ${mutedText}`}>Film Album · Admin Portal</p>
-            </div>
+      <div className={`min-h-screen ${bg} ${text} transition-colors duration-500 relative flex items-center justify-center overflow-hidden`}>
+        {/* Decorative Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className={`absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full blur-[120px] opacity-30 animate-pulse ${isDarkMode ? 'bg-blue-600/30' : 'bg-blue-300/40'}`} style={{ animationDuration: '8s' }} />
+          <div className={`absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full blur-[100px] opacity-20 animate-pulse ${isDarkMode ? 'bg-indigo-600/30' : 'bg-indigo-300/40'}`} style={{ animationDuration: '10s' }} />
+        </div>
+        
+        <div className="absolute top-6 right-6 flex gap-3 z-10">
+           <button onClick={toggleLanguage} className={`p-3 rounded-2xl backdrop-blur-md transition-all hover:scale-110 ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-white/50 hover:bg-white shadow-sm'}`}><Languages size={18} /></button>
+           <button onClick={toggleTheme} className={`p-3 rounded-2xl backdrop-blur-md transition-all hover:scale-110 ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-amber-400' : 'bg-white/50 hover:bg-white shadow-sm text-blue-600'}`}>{isDarkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
+        </div>
 
-            <div className={`rounded-2xl border p-6 ${cardBg}`}>
-              {loginError && (
-                <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-                  {loginError}
-                </div>
-              )}
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className={`block text-xs font-semibold uppercase tracking-widest mb-1.5 ${mutedText}`}>
-                    {at('adminPassword')}
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    autoFocus
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={inputCls}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isLoggingIn}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isLoggingIn ? <RefreshCw size={16} className="animate-spin" /> : null}
-                  {isLoggingIn ? '...' : at('login')}
-                </button>
-              </form>
+        <div className="w-full max-w-sm px-4 relative z-10 animate-in fade-in zoom-in-95 duration-700">
+          <div className="text-center mb-10">
+            <div className={`inline-flex items-center justify-center w-20 h-20 rounded-[28px] mb-6 shadow-2xl rotate-3 ${
+              isDarkMode ? 'bg-gradient-to-br from-blue-500/20 to-indigo-500/5 shadow-blue-500/20 border border-blue-500/20' : 'bg-gradient-to-br from-blue-50 to-indigo-50 shadow-blue-500/10 border border-white'
+            }`}>
+              <ShieldAlert size={36} className="text-blue-500 -rotate-3" />
             </div>
+            <h1 className="text-3xl font-black tracking-tight">{at('loginTitle')}</h1>
+            <p className={`text-sm mt-2 font-medium tracking-wide uppercase ${mutedText}`}>Film Album Workspace</p>
+          </div>
+
+          <div className={`rounded-[32px] border p-8 backdrop-blur-2xl ${cardBg}`}>
+            {loginError && (
+              <div className="mb-6 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold animate-in slide-in-from-top-2">
+                {loginError}
+              </div>
+            )}
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>
+                  {at('adminPassword')}
+                </label>
+                <input
+                  type="password"
+                  required
+                  autoFocus
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`${inputCls} !py-3.5 !px-5 text-base shadow-inner`}
+                  placeholder="••••••••"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-[0.98] text-white text-sm font-bold rounded-2xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-blue-500/20"
+              >
+                {isLoggingIn ? <RefreshCw size={18} className="animate-spin" /> : null}
+                {isLoggingIn ? '...' : at('login')}
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -745,41 +751,54 @@ export default function Admin() {
 
   // ── 主控制台 ──────────────────────────────────────────────
   return (
-    <div className={`min-h-screen ${bg} ${text} transition-colors duration-300`}>
-      <Topbar />
+    <div className={`min-h-screen ${bg} ${text} transition-colors duration-500 flex`}>
+      <Sidebar />
 
-      <main className="pt-14 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 md:ml-64 pb-20 md:pb-0 min-h-screen flex flex-col relative">
+        {/* Decorative Background */}
+        <div className="absolute inset-0 pointer-events-none fixed">
+          <div className={`absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[150px] opacity-20 ${isDarkMode ? 'bg-blue-600/30' : 'bg-blue-300/40'}`} />
+        </div>
+
+        <MobileHeader />
+
+        <main className="flex-1 p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto w-full relative z-10">
 
 
           {/* 系统设置 TAB */}
           {activeTab === 'system' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className={`rounded-2xl border ${cardBg}`}>
-                  <div className="px-5 py-4 border-b border-inherit flex items-center gap-2">
-                    <Settings2 size={16} className="text-blue-500" />
-                    <h2 className="font-bold text-sm uppercase tracking-widest">{at('systemSettings')}</h2>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* 系统基础设置 */}
+                <div className={`rounded-[32px] border ${cardBg} overflow-hidden flex flex-col`}>
+                  <div className={`px-8 py-6 border-b ${dividerCls} flex items-center gap-4 ${isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}`}>
+                    <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500">
+                      <Settings2 size={24} />
+                    </div>
+                    <div>
+                      <h2 className="font-black text-lg tracking-tight">{at('systemSettings')}</h2>
+                      <p className={`text-xs font-medium mt-1 ${mutedText}`}>System Preferences</p>
+                    </div>
                   </div>
-                  <div className="p-5 space-y-5">
-                    <div className="flex items-center justify-between gap-4">
+                  <div className="p-8 space-y-8 flex-1">
+                    <div className="flex items-center justify-between gap-6 p-4 rounded-2xl bg-black/5 dark:bg-white/5 transition-colors hover:bg-black/10 dark:hover:bg-white/10">
                       <div>
-                        <p className="font-medium text-sm">{at('openRegistration')}</p>
-                        <p className={`text-xs mt-0.5 ${mutedText}`}>{at('openRegistrationDesc')}</p>
+                        <p className="font-bold text-base">{at('openRegistration')}</p>
+                        <p className={`text-xs mt-1 ${mutedText}`}>{at('openRegistrationDesc')}</p>
                       </div>
                       <button
                         onClick={() => handleUpdateSetting('open_registration', settings.open_registration === 'true' ? 'false' : 'true')}
-                        className={`relative inline-flex h-6 w-11 rounded-full transition-colors ${
-                          settings.open_registration === 'true' ? 'bg-blue-500' : 'bg-gray-300'
+                        className={`relative inline-flex h-8 w-14 rounded-full transition-all duration-300 ease-in-out shrink-0 shadow-inner ${
+                          settings.open_registration === 'true' ? 'bg-blue-500' : isDarkMode ? 'bg-white/20' : 'bg-gray-300'
                         }`}
                       >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 mt-1 ml-1 ${
-                          settings.open_registration === 'true' ? 'translate-x-5' : 'translate-x-0'
+                        <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition duration-300 ease-in-out mt-1 ml-1 ${
+                          settings.open_registration === 'true' ? 'translate-x-6' : 'translate-x-0'
                         }`} />
                       </button>
                     </div>
                     <div>
-                      <p className="font-medium text-sm mb-1.5">{at('defaultLanguage')}</p>
+                      <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>{at('defaultLanguage')}</label>
                       <select value={settings.default_language} onChange={(e) => handleUpdateSetting('default_language', e.target.value)} className={inputCls}>
                         <option value="zh-CN">简体中文</option>
                         <option value="en-US">English</option>
@@ -788,63 +807,81 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className={`rounded-2xl border ${cardBg}`}>
-                  <div className="px-5 py-4 border-b border-inherit flex items-center gap-2">
-                    <Mail size={16} className="text-violet-500" />
-                    <h2 className="font-bold text-sm uppercase tracking-widest">{at('smtpSettings')}</h2>
+                {/* SMTP 设置 */}
+                <div className={`rounded-[32px] border ${cardBg} overflow-hidden flex flex-col`}>
+                  <div className={`px-8 py-6 border-b ${dividerCls} flex items-center gap-4 ${isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}`}>
+                    <div className="p-3 rounded-2xl bg-violet-500/10 text-violet-500">
+                      <Mail size={24} />
+                    </div>
+                    <div>
+                      <h2 className="font-black text-lg tracking-tight">{at('smtpSettings')}</h2>
+                      <p className={`text-xs font-medium mt-1 ${mutedText}`}>Email Configuration</p>
+                    </div>
                   </div>
-                  <div className="p-5 space-y-4">
-                    <input type="text" placeholder={at('smtpFrom')} value={smtp.smtp_from} onChange={(e) => setSmtp(p => ({ ...p, smtp_from: e.target.value }))} className={inputCls} />
-                    <input type="password" placeholder={at('smtpPassword')} value={smtp.smtp_password} onChange={(e) => setSmtp(p => ({ ...p, smtp_password: e.target.value }))} className={inputCls} />
-                    <button onClick={handleSaveSmtp} className="w-full py-2 bg-violet-600 text-white rounded-lg text-sm font-bold">保存 SMTP</button>
-                    <div className="pt-4 border-t border-white/5">
-                      <div className="flex gap-2">
-                        <input type="email" placeholder="测试邮箱" value={testEmailTo} onChange={(e) => setTestEmailTo(e.target.value)} className={inputCls} />
-                        <button onClick={handleTestEmail} className="px-4 bg-white/5 border border-white/10 rounded-lg text-xs font-bold">测试</button>
+                  <div className="p-8 space-y-6 flex-1">
+                    <div>
+                      <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>{at('smtpFrom')}</label>
+                      <input type="text" placeholder={at('smtpFromPlaceholder')} value={smtp.smtp_from} onChange={(e) => setSmtp(p => ({ ...p, smtp_from: e.target.value }))} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>{at('smtpPassword')}</label>
+                      <input type="password" placeholder={at('smtpPasswordPlaceholder')} value={smtp.smtp_password} onChange={(e) => setSmtp(p => ({ ...p, smtp_password: e.target.value }))} className={inputCls} />
+                    </div>
+                    <button onClick={handleSaveSmtp} className="w-full py-3.5 bg-violet-600 hover:bg-violet-700 active:scale-[0.98] text-white rounded-2xl text-sm font-bold shadow-lg shadow-violet-500/20 transition-all">保存 SMTP 配置</button>
+                    
+                    <div className={`pt-6 mt-2 border-t ${dividerCls}`}>
+                      <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>发送测试邮件</label>
+                      <div className="flex gap-3">
+                        <input type="email" placeholder="输入测试收件人邮箱" value={testEmailTo} onChange={(e) => setTestEmailTo(e.target.value)} className={`${inputCls} flex-1`} />
+                        <button onClick={handleTestEmail} className={`px-6 rounded-2xl text-xs font-bold transition-all border shadow-sm ${isDarkMode ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>测试</button>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              {/* 等级设置区域 - 从用户管理移至此处 */}
-              <div className={`rounded-3xl border ${cardBg} p-6 shadow-sm`}>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500">
-                      <ShieldCheck size={20} />
+
+              {/* 等级设置区域 */}
+              <div className={`rounded-[32px] border ${cardBg} p-8 shadow-sm`}>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500">
+                      <ShieldCheck size={24} />
                     </div>
-                    <h2 className="font-bold text-sm uppercase tracking-widest">{at('levelSettings')}</h2>
+                    <div>
+                      <h2 className="font-black text-xl tracking-tight">{at('levelSettings')}</h2>
+                      <p className={`text-xs font-medium mt-1 ${mutedText}`}>User Roles & Permissions</p>
+                    </div>
                   </div>
                   <button 
                     onClick={() => {
                       const newLevel = { value: `lv${userLevels.length + 1}`, label: `LV${userLevels.length + 1}`, description: '', roll_limit: 10, gear_limit: 5, can_post: true, can_comment: true };
                       handleSaveUserLevels([...userLevels, newLevel]);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95"
                   >
-                    <Plus size={14} />
+                    <Plus size={18} />
                     {at('addLevel')}
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {userLevels.map((level, idx) => (
-                    <div key={level.value} className={`p-5 rounded-2xl border ${isDarkMode ? 'bg-white/2 border-white/5' : 'bg-gray-50 border-gray-100'} space-y-4 relative group`}>
+                    <div key={level.value} className={`p-6 rounded-[24px] border ${isDarkMode ? 'bg-white/[0.02] border-white/5 hover:border-blue-500/30' : 'bg-gray-50/50 border-gray-100 hover:border-blue-300'} transition-all duration-300 group relative flex flex-col`}>
                       <button 
                         onClick={() => {
                           const next = [...userLevels];
                           next.splice(idx, 1);
                           handleSaveUserLevels(next);
                         }}
-                        className="absolute top-4 right-4 p-1.5 rounded-lg bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20"
+                        className="absolute top-4 right-4 p-2 rounded-xl bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500/20 hover:scale-110 active:scale-95"
                         title={at('deleteLevel')}
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                       </button>
 
-                      <div className="flex gap-4">
+                      <div className="flex gap-4 mb-5">
                         <div className="flex-1">
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('levelName')}</label>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-50`}>{at('levelName')}</label>
                           <input 
                             value={level.label} 
                             onChange={(e) => {
@@ -853,11 +890,11 @@ export default function Admin() {
                               setUserLevels(next);
                             }}
                             onBlur={() => handleSaveUserLevels(userLevels)}
-                            className={inputCls} 
+                            className={`${inputCls} !py-2 !px-3 !bg-transparent border-none text-lg font-black focus:ring-0 px-0 -ml-3`} 
                           />
                         </div>
-                        <div className="w-20">
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('levelValue')}</label>
+                        <div className="w-24">
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-50`}>{at('levelValue')}</label>
                           <input 
                             value={level.value} 
                             onChange={(e) => {
@@ -866,13 +903,13 @@ export default function Admin() {
                               setUserLevels(next);
                             }}
                             onBlur={() => handleSaveUserLevels(userLevels)}
-                            className={inputCls} 
+                            className={`${inputCls} !py-2 !px-3 font-mono text-blue-500 font-bold bg-blue-500/5`} 
                           />
                         </div>
                       </div>
 
-                      <div>
-                        <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('levelDesc')}</label>
+                      <div className="mb-6">
+                        <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-50`}>{at('levelDesc')}</label>
                         <input 
                           value={level.description} 
                           onChange={(e) => {
@@ -882,12 +919,13 @@ export default function Admin() {
                           }}
                           onBlur={() => handleSaveUserLevels(userLevels)}
                           className={inputCls} 
+                          placeholder="e.g. Standard Member"
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('rollLimit')}</label>
+                      <div className="grid grid-cols-2 gap-4 mb-6 mt-auto">
+                        <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 opacity-50`}>{at('rollLimit')}</label>
                           <input 
                             type="number"
                             value={level.roll_limit} 
@@ -897,11 +935,11 @@ export default function Admin() {
                               setUserLevels(next);
                             }}
                             onBlur={() => handleSaveUserLevels(userLevels)}
-                            className={inputCls} 
+                            className="w-full bg-transparent border-none p-0 font-bold text-lg focus:ring-0 outline-none" 
                           />
                         </div>
-                        <div>
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('gearLimit')}</label>
+                        <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 opacity-50`}>{at('gearLimit')}</label>
                           <input 
                             type="number"
                             value={level.gear_limit} 
@@ -911,13 +949,17 @@ export default function Admin() {
                               setUserLevels(next);
                             }}
                             onBlur={() => handleSaveUserLevels(userLevels)}
-                            className={inputCls} 
+                            className="w-full bg-transparent border-none p-0 font-bold text-lg focus:ring-0 outline-none" 
                           />
                         </div>
                       </div>
 
-                      <div className="flex gap-4 pt-2">
-                        <label className="flex items-center gap-2 cursor-pointer">
+                      <div className={`flex flex-col gap-3 pt-5 border-t ${dividerCls}`}>
+                        <label className="flex items-center justify-between cursor-pointer group/toggle">
+                          <span className="text-xs font-bold">{at('canPost')}</span>
+                          <div className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${level.can_post ? 'bg-emerald-500' : isDarkMode ? 'bg-white/20' : 'bg-gray-300'}`}>
+                            <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform mt-1 ml-1 ${level.can_post ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </div>
                           <input 
                             type="checkbox" 
                             checked={level.can_post} 
@@ -926,11 +968,14 @@ export default function Admin() {
                               next[idx].can_post = e.target.checked;
                               handleSaveUserLevels(next);
                             }}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="sr-only"
                           />
-                          <span className="text-xs font-bold">{at('canPost')}</span>
                         </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
+                        <label className="flex items-center justify-between cursor-pointer group/toggle">
+                          <span className="text-xs font-bold">{at('canComment')}</span>
+                          <div className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${level.can_comment ? 'bg-emerald-500' : isDarkMode ? 'bg-white/20' : 'bg-gray-300'}`}>
+                            <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform mt-1 ml-1 ${level.can_comment ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </div>
                           <input 
                             type="checkbox" 
                             checked={level.can_comment} 
@@ -939,9 +984,8 @@ export default function Admin() {
                               next[idx].can_comment = e.target.checked;
                               handleSaveUserLevels(next);
                             }}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="sr-only"
                           />
-                          <span className="text-xs font-bold">{at('canComment')}</span>
                         </label>
                       </div>
                     </div>
@@ -953,31 +997,31 @@ export default function Admin() {
 
           {/* 用户管理 TAB */}
           {activeTab === 'users' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
               {/* 美化后的统计卡片 & 操作栏 */}
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <div className={`flex-1 p-5 rounded-3xl border ${isDarkMode ? 'bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20' : 'bg-gradient-to-br from-blue-50 to-white border-blue-100'} relative overflow-hidden group shadow-sm`}>
-                  <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-300/40'}`}></div>
-                  <div className="relative flex items-center gap-5">
-                    <div className={`p-4 rounded-2xl shadow-inner ${isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-white text-blue-600 shadow-blue-100/50'}`}>
-                      <Users size={28} />
+              <div className="flex flex-col md:flex-row gap-6 mb-8">
+                <div className={`flex-1 p-6 rounded-[32px] border ${isDarkMode ? 'bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20' : 'bg-gradient-to-br from-blue-50 to-white border-blue-100'} relative overflow-hidden group shadow-sm`}>
+                  <div className={`absolute -right-10 -top-10 w-40 h-40 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-300/40'}`}></div>
+                  <div className="relative flex items-center gap-6">
+                    <div className={`p-5 rounded-[24px] shadow-inner ${isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-white text-blue-600 shadow-blue-100/50'}`}>
+                      <Users size={32} />
                     </div>
                     <div>
-                      <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-blue-400/80' : 'text-blue-600/80'}`}>{at('totalUsers')}</p>
-                      <p className={`text-3xl font-black font-mono tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.users}</p>
+                      <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-blue-400/80' : 'text-blue-600/80'}`}>{at('totalUsers')}</p>
+                      <p className={`text-4xl font-black font-mono tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.users}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className={`flex-1 p-5 rounded-3xl border ${isDarkMode ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-100'} relative overflow-hidden group shadow-sm`}>
-                  <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-300/40'}`}></div>
-                  <div className="relative flex items-center gap-5">
-                    <div className={`p-4 rounded-2xl shadow-inner ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white text-emerald-600 shadow-emerald-100/50'}`}>
-                      <Film size={28} />
+                <div className={`flex-1 p-6 rounded-[32px] border ${isDarkMode ? 'bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/20' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-100'} relative overflow-hidden group shadow-sm`}>
+                  <div className={`absolute -right-10 -top-10 w-40 h-40 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-300/40'}`}></div>
+                  <div className="relative flex items-center gap-6">
+                    <div className={`p-5 rounded-[24px] shadow-inner ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white text-emerald-600 shadow-emerald-100/50'}`}>
+                      <Film size={32} />
                     </div>
                     <div>
-                      <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>{at('totalRolls')}</p>
-                      <p className={`text-3xl font-black font-mono tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.rolls}</p>
+                      <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>{at('totalRolls')}</p>
+                      <p className={`text-4xl font-black font-mono tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.rolls}</p>
                     </div>
                   </div>
                 </div>
@@ -986,60 +1030,63 @@ export default function Admin() {
                   <button
                     onClick={fetchDashboardData}
                     disabled={isLoading}
-                    className={`w-full h-full min-h-[96px] flex flex-col items-center justify-center gap-2 rounded-3xl border transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm group ${
+                    className={`w-full h-full min-h-[110px] flex flex-col items-center justify-center gap-3 rounded-[32px] border transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm group ${
                       isDarkMode 
                         ? 'border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white' 
                         : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-900 hover:border-gray-300 hover:shadow-md'
                     }`}
                   >
-                    <RefreshCw size={22} className={`${isLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                    <RefreshCw size={24} className={`${isLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
                     <span className="text-[10px] font-bold uppercase tracking-widest">{at('refresh')}</span>
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 <div className="lg:col-span-1">
-                  <div className={`rounded-2xl border ${cardBg} p-5 space-y-4`}>
-                    <h2 className="font-bold text-xs uppercase tracking-widest text-blue-500">{at('createUser')}</h2>
-                    <form onSubmit={handleCreateUser} className="space-y-3">
+                  <div className={`rounded-[32px] border ${cardBg} p-8 space-y-6 flex flex-col h-full`}>
+                    <div>
+                      <h2 className="font-black text-lg tracking-tight text-blue-500">{at('createUser')}</h2>
+                      <p className={`text-xs font-medium mt-1 ${mutedText}`}>Add new member</p>
+                    </div>
+                    <form onSubmit={handleCreateUser} className="space-y-4 flex-1 flex flex-col">
                       <input type="email" required placeholder={at('email')} value={newUser.email} onChange={(e) => setNewUser({...newUser, email: e.target.value})} className={inputCls} />
                       <input type="password" required placeholder={at('password')} value={newUser.password} onChange={(e) => setNewUser({...newUser, password: e.target.value})} className={inputCls} />
                       <input type="text" required placeholder={at('nickname')} value={newUser.nickname} onChange={(e) => setNewUser({...newUser, nickname: e.target.value})} className={inputCls} />
                       <select value={newUser.level} onChange={(e) => setNewUser({...newUser, level: e.target.value})} className={inputCls}>
                         {userLevels.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
                       </select>
-                      <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{at('create')}</button>
+                      <button type="submit" className="w-full py-3.5 mt-auto bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-500/20 transition-all">{at('create')}</button>
                     </form>
                   </div>
                 </div>
                 <div className="lg:col-span-3">
-                  <div className={`rounded-2xl border ${cardBg} overflow-hidden`}>
+                  <div className={`rounded-[32px] border ${cardBg} overflow-hidden`}>
                     <table className="w-full text-left text-sm">
-                      <thead className={isDarkMode ? 'bg-white/2' : 'bg-gray-50'}>
-                        <tr className={mutedText}>
-                          <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('id')}</th>
-                          <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('user')}</th>
-                          <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('level')}</th>
-                          <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('albums')}</th>
-                          <th className="px-6 py-3 text-[10px] uppercase font-bold">{at('joined')}</th>
+                      <thead className={isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}>
+                        <tr className={`border-b ${dividerCls}`}>
+                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('id')}</th>
+                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('user')}</th>
+                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('level')}</th>
+                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('albums')}</th>
+                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('joined')}</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5">
+                      <tbody className={dividerCls + " divide-y"}>
                         {users.map(user => (
-                          <tr key={user.id}>
-                            <td className="px-6 py-4 font-mono text-xs opacity-50">#{String(user.id).padStart(4, '0')}</td>
-                            <td className="px-6 py-4">
+                          <tr key={user.id} className={`transition-colors ${isDarkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50'}`}>
+                            <td className="px-8 py-5 font-mono text-xs opacity-50">#{String(user.id).padStart(4, '0')}</td>
+                            <td className="px-8 py-5">
                               <div className="font-bold">{user.nickname}</div>
                               <div className="text-xs opacity-50">{user.email}</div>
                             </td>
-                            <td className="px-6 py-4">
-                              <select value={user.level} onChange={(e) => handleUpdateUserLevel(String(user.id), e.target.value)} className="bg-transparent border-none text-xs font-bold text-blue-500 outline-none cursor-pointer">
+                            <td className="px-8 py-5">
+                              <select value={user.level} onChange={(e) => handleUpdateUserLevel(String(user.id), e.target.value)} className="bg-transparent border-none text-xs font-bold text-blue-500 outline-none cursor-pointer focus:ring-0 p-0">
                                 {userLevels.map(l => <option key={l.value} value={l.value} className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>{l.label}</option>)}
                               </select>
                             </td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                            <td className="px-8 py-5">
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
                                 user.rollCount > 0 
                                   ? (isDarkMode ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') 
                                   : (isDarkMode ? 'bg-white/5 text-white/30' : 'bg-gray-100 text-gray-400')
@@ -1047,7 +1094,7 @@ export default function Admin() {
                                 {user.rollCount || 0}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-xs opacity-50">{new Date(user.createdAt).toLocaleDateString()}</td>
+                            <td className="px-8 py-5 text-xs opacity-50 font-medium">{new Date(user.createdAt).toLocaleDateString()}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1060,16 +1107,16 @@ export default function Admin() {
 
           {/* 胶卷管理 TAB */}
           {activeTab === 'filmstocks' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
               {/* 筛选栏 + 操作按钮 */}
-              <div className={`rounded-2xl border ${cardBg} p-5 shadow-sm`}>
+              <div className={`rounded-[32px] border ${cardBg} p-6 shadow-sm`}>
                 <div className="flex flex-col md:flex-row gap-4 items-center">
-                  <div className={`flex items-center gap-3 flex-1 px-4 py-2.5 rounded-2xl border transition-all ${
+                  <div className={`flex items-center gap-3 flex-1 px-5 py-3 rounded-2xl border transition-all duration-300 ${
                     isDarkMode 
                       ? 'bg-[#242424] border-white/10 focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/10' 
-                      : 'bg-white border-gray-200 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-100'
+                      : 'bg-[#f4f4f5] border-transparent focus-within:bg-white focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-100'
                   }`}>
-                    <Search size={16} className={mutedText} />
+                    <Search size={18} className={mutedText} />
                     <input
                       type="text"
                       placeholder={at('filterSearch')}
@@ -1091,7 +1138,7 @@ export default function Admin() {
                     <select
                       value={filmFilter.format}
                       onChange={e => handleFilmFilter({ ...filmFilter, format: e.target.value })}
-                      className={`${inputCls} !w-full md:!w-40 !rounded-2xl !py-2.5 !px-4 cursor-pointer`}
+                      className={`${inputCls} !w-full md:!w-40 !rounded-2xl !py-3 !px-4 cursor-pointer`}
                     >
                       <option value="">{at('filterAll')} {at('filmFormat')}</option>
                       <option value="135">35mm (135)</option>
@@ -1101,7 +1148,7 @@ export default function Admin() {
                     <select
                       value={filmFilter.filmType}
                       onChange={e => handleFilmFilter({ ...filmFilter, filmType: e.target.value })}
-                      className={`${inputCls} !w-full md:!w-48 !rounded-2xl !py-2.5 !px-4 cursor-pointer`}
+                      className={`${inputCls} !w-full md:!w-48 !rounded-2xl !py-3 !px-4 cursor-pointer`}
                     >
                       <option value="">{at('filterAll')} {at('filmType')}</option>
                       <option value="COLOR_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_NEGATIVE']}</option>
@@ -1113,14 +1160,14 @@ export default function Admin() {
                     {(filmFilter.search || filmFilter.format || filmFilter.filmType) && (
                       <button
                         onClick={() => handleFilmFilter({ search: '', format: '', filmType: '' })}
-                        className={`flex items-center justify-center min-w-[44px] h-[42px] rounded-2xl border transition-all ${
+                        className={`flex items-center justify-center min-w-[48px] h-[46px] rounded-2xl border transition-all ${
                           isDarkMode 
-                            ? 'border-white/10 hover:bg-white/5 text-white/70' 
-                            : 'border-gray-200 hover:bg-gray-100 text-gray-500'
+                            ? 'border-white/10 hover:bg-white/5 text-white/70 hover:text-white' 
+                            : 'border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900'
                         }`}
                         title={at('resetFilter')}
                       >
-                        <RefreshCw size={16} className="rotate-90" />
+                        <RefreshCw size={18} className="rotate-90" />
                       </button>
                     )}
                   </div>
@@ -1132,9 +1179,9 @@ export default function Admin() {
                       setFilmSaveStatus({ type: '', message: '' });
                       setShowFilmModal(true);
                     }}
-                    className="flex items-center justify-center gap-2 h-[42px] px-6 bg-violet-600 hover:bg-violet-700 active:scale-95 text-white text-sm font-bold rounded-2xl transition-all whitespace-nowrap shadow-lg shadow-violet-500/20 w-full md:w-auto"
+                    className="flex items-center justify-center gap-2 h-[46px] px-6 bg-violet-600 hover:bg-violet-700 active:scale-[0.98] text-white text-sm font-bold rounded-2xl transition-all whitespace-nowrap shadow-lg shadow-violet-500/20 w-full md:w-auto"
                   >
-                    <Plus size={16} />
+                    <Plus size={18} />
                     {at('addFilmStock')}
                   </button>
                 </div>
@@ -1142,50 +1189,52 @@ export default function Admin() {
 
               {/* 胶卷卡片列表 */}
               {filmStocksLoading ? (
-                <div className="flex justify-center items-center py-24">
-                  <RefreshCw size={24} className="animate-spin opacity-40" />
+                <div className="flex justify-center items-center py-32">
+                  <RefreshCw size={32} className="animate-spin text-blue-500" />
                 </div>
               ) : filmStocks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-32 gap-4">
-                  <Film size={64} className="opacity-15" />
-                  <p className={`text-sm ${mutedText}`}>{at('noFilmStocks')}</p>
+                <div className="flex flex-col items-center justify-center py-40 gap-6">
+                  <div className="p-6 rounded-full bg-black/5 dark:bg-white/5">
+                    <Film size={48} className="opacity-20" />
+                  </div>
+                  <p className={`text-sm font-medium ${mutedText}`}>{at('noFilmStocks')}</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {filmStocks.map(stock => {
                     const typeLabel = FILM_TYPE_LABELS[adminLang][stock.filmType] || stock.filmType;
                     const typeColor: Record<string, string> = {
-                      COLOR_NEGATIVE: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
-                      BW_NEGATIVE:    'text-gray-400 bg-gray-400/10 border-gray-400/20',
-                      COLOR_POSITIVE: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
-                      BW_POSITIVE:    'text-blue-400 bg-blue-400/10 border-blue-400/20',
+                      COLOR_NEGATIVE: 'text-orange-500 bg-orange-500/10 border-orange-500/20',
+                      BW_NEGATIVE:    'text-gray-500 bg-gray-500/10 border-gray-500/20',
+                      COLOR_POSITIVE: 'text-teal-500 bg-teal-500/10 border-teal-500/20',
+                      BW_POSITIVE:    'text-blue-500 bg-blue-500/10 border-blue-500/20',
                     };
                     const is120 = stock.format === '120';
-                    const chipColor = typeColor[stock.filmType] || 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+                    const chipColor = typeColor[stock.filmType] || 'text-gray-500 bg-gray-500/10 border-gray-500/20';
                     const logoUrl = stock.brandLogo;
 
                     return (
                       <div
                         key={stock.id}
-                        className={`group relative rounded-2xl border ${cardBg} p-5 flex flex-col gap-3 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 ${
+                        className={`group relative rounded-[24px] border ${cardBg} p-6 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
                           is120 
-                            ? (isDarkMode ? 'border-amber-500/20 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/[0.02] to-transparent' : 'border-amber-200 hover:border-amber-300 bg-gradient-to-br from-amber-50/50 to-white')
-                            : (isDarkMode ? 'border-blue-500/20 hover:border-blue-500/50 bg-gradient-to-br from-blue-500/[0.02] to-transparent' : 'border-blue-200 hover:border-blue-300 bg-gradient-to-br from-blue-50/50 to-white')
+                            ? (isDarkMode ? 'border-amber-500/20 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/[0.03] to-transparent shadow-amber-500/10' : 'border-amber-200 hover:border-amber-400 bg-gradient-to-br from-amber-50/50 to-white shadow-amber-500/10')
+                            : (isDarkMode ? 'border-blue-500/20 hover:border-blue-500/50 bg-gradient-to-br from-blue-500/[0.03] to-transparent shadow-blue-500/10' : 'border-blue-200 hover:border-blue-400 bg-gradient-to-br from-blue-50/50 to-white shadow-blue-500/10')
                         }`}
                       >
                         {/* 规格角标 */}
-                        <div className={`absolute -right-1 -top-1 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm z-10 ${
-                          is120 ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'
+                        <div className={`absolute -right-2 -top-2 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg z-10 ${
+                          is120 ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' : 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
                         }`}>
                           {stock.format}
                         </div>
 
                         {/* 品牌区域 */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                           {logoUrl ? (
-                            <img src={logoUrl} alt={stock.brand} className="w-9 h-9 object-contain rounded-lg bg-white/5 p-1" />
+                            <img src={logoUrl} alt={stock.brand} className="w-12 h-12 object-contain rounded-xl bg-white/5 p-1 border border-white/5" />
                           ) : (
-                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-black ${isDarkMode ? 'bg-violet-500/20 text-violet-400' : 'bg-violet-50 text-violet-600'}`}>
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-black shadow-inner ${isDarkMode ? 'bg-violet-500/20 text-violet-400' : 'bg-violet-50 text-violet-600'}`}>
                               {stock.brand.slice(0, 2).toUpperCase()}
                             </div>
                           )}
@@ -1193,30 +1242,30 @@ export default function Admin() {
                             <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 truncate">
                               {stock.brand} {stock.brandZh && <span className="ml-1 opacity-70">/ {stock.brandZh}</span>}
                             </p>
-                            <p className="font-bold text-sm leading-tight truncate">{stock.model}</p>
+                            <p className="font-black text-lg leading-tight truncate">{stock.model}</p>
                           </div>
                         </div>
 
                         {/* 信息 chips */}
-                        <div className="flex flex-wrap gap-1.5">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${chipColor}`}>
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold border ${chipColor}`}>
                             {typeLabel}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${isDarkMode ? 'border-white/10 text-white/60' : 'border-gray-200 text-gray-500'}`}>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold border ${isDarkMode ? 'border-white/10 text-white/60 bg-white/5' : 'border-gray-200 text-gray-500 bg-gray-50'}`}>
                             ISO {stock.iso}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                            is120 ? 'text-amber-500 bg-amber-500/10 border-amber-500/20' : 'text-blue-500 bg-blue-500/10 border-blue-500/20'
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold border ${
+                            is120 ? 'text-amber-600 bg-amber-500/10 border-amber-500/20' : 'text-blue-600 bg-blue-500/10 border-blue-500/20'
                           }`}>
                             {stock.format}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${isDarkMode ? 'border-white/10 text-white/60' : 'border-gray-200 text-gray-500'}`}>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold border ${isDarkMode ? 'border-white/10 text-white/60 bg-white/5' : 'border-gray-200 text-gray-500 bg-gray-50'}`}>
                             {stock.process}
                           </span>
                         </div>
 
                         {/* 操作按钮 */}
-                        <div className="flex gap-2 mt-auto pt-4 border-t border-white/5 transition-all duration-300">
+                        <div className="flex gap-3 mt-auto pt-5 border-t border-inherit transition-all duration-300">
                           <button
                             onClick={() => {
                               setEditingFilm(stock);
@@ -1229,24 +1278,24 @@ export default function Admin() {
                               setFilmSaveStatus({ type: '', message: '' });
                               setShowFilmModal(true);
                             }}
-                            className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl font-bold transition-all ${
+                            className={`flex-1 flex items-center justify-center gap-2 text-xs py-2.5 rounded-xl font-bold transition-all ${
                               isDarkMode 
-                                ? 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/5' 
-                                : 'bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 border border-gray-100'
+                                ? 'bg-white/5 hover:bg-white/10 text-white/80 hover:text-white' 
+                                : 'bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900'
                             }`}
                           >
-                            <Pencil size={12} />
+                            <Pencil size={14} />
                             {at('editFilmStock')}
                           </button>
                           <button
                             onClick={() => handleDeleteFilmStock(stock.id, `${stock.brand} ${stock.model}`)}
-                            className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl font-bold transition-all ${
+                            className={`flex-1 flex items-center justify-center gap-2 text-xs py-2.5 rounded-xl font-bold transition-all ${
                               isDarkMode
-                                ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20'
-                                : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-100'
+                                ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400'
+                                : 'bg-red-50 hover:bg-red-100 text-red-600'
                             }`}
                           >
-                            <Trash2 size={12} />
+                            <Trash2 size={14} />
                             {at('deleteFilmStock')}
                           </button>
                         </div>
@@ -1258,19 +1307,19 @@ export default function Admin() {
 
               {/* 新增/编辑 Modal */}
               {showFilmModal && (
-                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowFilmModal(false)}>
-                  <div className={`rounded-2xl border ${cardBg} p-6 w-full max-w-md shadow-2xl`} onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="font-bold text-base">{editingFilm ? at('editFilmStock') : at('addFilmStock')}</h2>
-                      <button onClick={() => setShowFilmModal(false)} className="opacity-50 hover:opacity-100 transition-opacity">
-                        <X size={20} />
+                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setShowFilmModal(false)}>
+                  <div className={`rounded-[32px] border ${cardBg} p-8 w-full max-w-lg shadow-2xl scale-in-center animate-in zoom-in-95 duration-300`} onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-8">
+                      <h2 className="font-black text-xl tracking-tight">{editingFilm ? at('editFilmStock') : at('addFilmStock')}</h2>
+                      <button onClick={() => setShowFilmModal(false)} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                        <X size={24} />
                       </button>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-5">
                         <div>
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmBrand')}</label>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-60`}>{at('filmBrand')}</label>
                           <input
                             type="text"
                             value={filmForm.brand}
@@ -1280,7 +1329,7 @@ export default function Admin() {
                           />
                         </div>
                         <div>
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmBrandZh')}</label>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-60`}>{at('filmBrandZh')}</label>
                           <input
                             type="text"
                             value={filmForm.brandZh}
@@ -1290,9 +1339,9 @@ export default function Admin() {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 gap-4">
+                      <div className="grid grid-cols-1 gap-5">
                         <div>
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmModel')}</label>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-60`}>{at('filmModel')}</label>
                           <input
                             type="text"
                             value={filmForm.model}
@@ -1304,7 +1353,7 @@ export default function Admin() {
                       </div>
 
                       <div>
-                        <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmBrandLogo')}</label>
+                        <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-60`}>{at('filmBrandLogo')}</label>
                         <input
                           type="url"
                           value={filmForm.brandLogo}
@@ -1314,9 +1363,9 @@ export default function Admin() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-5">
                         <div>
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmIso')}</label>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-60`}>{at('filmIso')}</label>
                           <input
                             type="number"
                             min="1"
@@ -1327,16 +1376,16 @@ export default function Admin() {
                           />
                         </div>
                         <div>
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmFormat')}</label>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-60`}>{at('filmFormat')}</label>
                           <select value={filmForm.format} onChange={e => setFilmForm(p => ({ ...p, format: e.target.value }))} className={inputCls}>
                             <option value="135">35mm (135)</option>
                             <option value="120">{adminLang === 'zh-CN' ? '中画幅 (120)' : 'Medium (120)'}</option>
                           </select>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-5">
                         <div>
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmType')}</label>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-60`}>{at('filmType')}</label>
                           <select value={filmForm.filmType} onChange={e => setFilmForm(p => ({ ...p, filmType: e.target.value }))} className={inputCls}>
                             <option value="COLOR_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['COLOR_NEGATIVE']}</option>
                             <option value="BW_NEGATIVE">{FILM_TYPE_LABELS[adminLang]['BW_NEGATIVE']}</option>
@@ -1345,7 +1394,7 @@ export default function Admin() {
                           </select>
                         </div>
                         <div>
-                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${mutedText}`}>{at('filmProcess')}</label>
+                          <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ml-1 opacity-60`}>{at('filmProcess')}</label>
                           <select value={filmForm.process} onChange={e => setFilmForm(p => ({ ...p, process: e.target.value }))} className={inputCls}>
                             <option value="C-41">C-41</option>
                             <option value="E-6">E-6</option>
@@ -1357,24 +1406,24 @@ export default function Admin() {
                       </div>
 
                       {filmSaveStatus.message && (
-                        <p className={`text-xs font-bold ${filmSaveStatus.type === 'error' ? 'text-red-400' : filmSaveStatus.type === 'success' ? 'text-green-400' : 'opacity-50'}`}>
+                        <div className={`p-4 rounded-2xl text-sm font-bold ${filmSaveStatus.type === 'error' ? 'bg-red-500/10 text-red-500' : filmSaveStatus.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-blue-500/10 text-blue-500'}`}>
                           {filmSaveStatus.message}
-                        </p>
+                        </div>
                       )}
 
-                      <div className="flex gap-3 pt-2">
+                      <div className="flex gap-4 pt-4 mt-8 border-t border-inherit">
                         <button
                           onClick={() => setShowFilmModal(false)}
-                          className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-100'}`}
+                          className={`flex-1 py-3.5 rounded-2xl text-sm font-bold transition-all border ${isDarkMode ? 'border-white/10 hover:bg-white/5 text-white' : 'border-gray-200 hover:bg-gray-50 text-gray-900'}`}
                         >
                           {adminLang === 'zh-CN' ? '取消' : 'Cancel'}
                         </button>
                         <button
                           onClick={handleSaveFilmStock}
                           disabled={filmSaveStatus.type === 'loading'}
-                          className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold transition-all"
+                          className="flex-1 py-3.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white rounded-2xl text-sm font-bold transition-all shadow-lg shadow-violet-500/20 active:scale-95"
                         >
-                          {filmSaveStatus.type === 'loading' ? at('saving') : (editingFilm ? (adminLang === 'zh-CN' ? '保存修改' : 'Save') : (adminLang === 'zh-CN' ? '添加' : 'Add'))}
+                          {filmSaveStatus.type === 'loading' ? at('saving') : (editingFilm ? (adminLang === 'zh-CN' ? '保存修改' : 'Save') : (adminLang === 'zh-CN' ? '添加胶卷' : 'Add'))}
                         </button>
                       </div>
                     </div>
@@ -1386,48 +1435,55 @@ export default function Admin() {
 
           {/* 图床配置 TAB */}
           {activeTab === 'imgbed' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
-              <div className={`rounded-2xl border ${cardBg} p-6 space-y-8`}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+              <div className={`rounded-[32px] border ${cardBg} p-8 space-y-10`}>
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500 mb-4 flex items-center gap-2">
-                    <ImageUp size={16} />
-                    基础配置
+                  <h3 className="text-sm font-black uppercase tracking-widest text-amber-500 mb-6 flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-amber-500/10">
+                      <ImageUp size={20} />
+                    </div>
+                    基础配置 / Basic Setup
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
-                      <label className="block text-[10px] font-bold uppercase mb-1 opacity-50">{at('imgBedUrl')}</label>
+                      <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">{at('imgBedUrl')}</label>
                       <input type="url" value={imgBed.img_bed_url} onChange={(e) => setImgBed(p => ({ ...p, img_bed_url: e.target.value }))} className={inputCls} placeholder="https://img.example.com" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase mb-1 opacity-50">{at('imgBedToken')}</label>
-                      <input type="password" value={imgBed.img_bed_token} onChange={(e) => setImgBed(p => ({ ...p, img_bed_token: e.target.value }))} className={inputCls} />
+                      <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">{at('imgBedToken')}</label>
+                      <input type="password" value={imgBed.img_bed_token} onChange={(e) => setImgBed(p => ({ ...p, img_bed_token: e.target.value }))} className={inputCls} placeholder="••••••••••••••••" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase mb-1 opacity-50">{at('imgBedChannel')}</label>
+                      <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">{at('imgBedChannel')}</label>
                       <select value={imgBed.img_bed_channel} onChange={(e) => setImgBed(p => ({ ...p, img_bed_channel: e.target.value }))} className={inputCls}>
-                        <option value="telegram">Telegram（大文件）</option>
-                        <option value="cfr2">CloudFlare R2（大文件，私密）</option>
-                        <option value="s3">S3（大文件，私密，收费）</option>
-                        <option value="discord">Discord（大文件分片存储）</option>
-                        <option value="huggingface">HuggingFace（大文件直传）</option>
+                        <option value="telegram">Telegram (大文件)</option>
+                        <option value="cfr2">CloudFlare R2 (大文件，私密)</option>
+                        <option value="s3">S3 (大文件，私密，收费)</option>
+                        <option value="discord">Discord (大文件分片存储)</option>
+                        <option value="huggingface">HuggingFace (大文件直传)</option>
                       </select>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-white/5">
-                  <h3 className="text-xs font-bold text-amber-500 mb-4 uppercase tracking-widest">上传策略 (Upload Strategies)</h3>
-                  <div className="overflow-x-auto border border-white/5 rounded-xl">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead className={isDarkMode ? 'bg-white/5' : 'bg-gray-50'}>
-                        <tr className="opacity-50">
-                          <th className="px-4 py-3 font-bold uppercase text-[9px]">{at('user')}</th>
-                          <th className="px-4 py-3 font-bold uppercase text-[9px]">路径模板 (Path)</th>
-                          <th className="px-4 py-3 font-bold uppercase text-[9px]">渠道 (Channel)</th>
-                          <th className="px-4 py-3 font-bold uppercase text-[9px] text-center">压缩</th>
+                <div className={`pt-10 border-t ${dividerCls}`}>
+                  <h3 className="text-sm font-black text-amber-500 mb-6 uppercase tracking-widest flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-amber-500/10">
+                      <Settings2 size={20} />
+                    </div>
+                    上传策略 / Upload Strategies
+                  </h3>
+                  <div className={`overflow-hidden border rounded-[24px] ${isDarkMode ? 'border-white/5 bg-[#1a1a1a]/50' : 'border-gray-100 bg-gray-50/50'}`}>
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead className={isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-100/50'}>
+                        <tr className={`border-b ${dividerCls}`}>
+                          <th className={`px-6 py-4 font-bold uppercase tracking-widest text-[10px] ${mutedText}`}>{at('user')}</th>
+                          <th className={`px-6 py-4 font-bold uppercase tracking-widest text-[10px] ${mutedText}`}>路径模板 (Path)</th>
+                          <th className={`px-6 py-4 font-bold uppercase tracking-widest text-[10px] ${mutedText}`}>渠道 (Channel)</th>
+                          <th className={`px-6 py-4 font-bold uppercase tracking-widest text-[10px] ${mutedText} text-center`}>压缩</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5">
+                      <tbody className={dividerCls + " divide-y"}>
                         {[
                           { key: 'avatar', label: '用户头像' },
                           { key: 'roll', label: '影集原图' },
@@ -1435,43 +1491,54 @@ export default function Admin() {
                           { key: 'gear', label: '设备图像' },
                           { key: 'film_stock', label: '胶卷型号' },
                         ].map((item) => (
-                          <tr key={item.key} className={isDarkMode ? 'hover:bg-white/2' : 'hover:bg-gray-50'}>
-                            <td className="px-4 py-3 font-bold">{item.label}</td>
-                            <td className="px-4 py-3">
-                              <input type="text" value={(imgBed as any)[`${item.key}_path`]} onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_path`]: e.target.value }))} className="w-full bg-transparent border-none p-0 text-[11px] focus:ring-0" />
+                          <tr key={item.key} className={`transition-colors ${isDarkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-white'}`}>
+                            <td className="px-6 py-4 font-bold text-xs">{item.label}</td>
+                            <td className="px-6 py-4">
+                              <input type="text" value={(imgBed as any)[`${item.key}_path`]} onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_path`]: e.target.value }))} className={`w-full bg-transparent border-none p-2 rounded-xl text-xs font-mono focus:ring-2 focus:ring-amber-500/30 ${isDarkMode ? 'focus:bg-white/5' : 'focus:bg-gray-100'}`} />
                             </td>
-                            <td className="px-4 py-3">
-                              <select value={(imgBed as any)[`${item.key}_channel`]} onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_channel`]: e.target.value }))} className="bg-transparent border-none p-0 text-[11px] focus:ring-0">
-                                <option value="">默认全局</option>
-                                <option value="telegram">Telegram（大文件）</option>
-                                <option value="cfr2">CloudFlare R2（大文件，私密）</option>
-                                <option value="s3">S3（大文件，私密，收费）</option>
-                                <option value="discord">Discord（大文件分片存储）</option>
-                                <option value="huggingface">HuggingFace（大文件直传）</option>
+                            <td className="px-6 py-4">
+                              <select value={(imgBed as any)[`${item.key}_channel`]} onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_channel`]: e.target.value }))} className={`w-full bg-transparent border-none p-2 rounded-xl text-xs focus:ring-2 focus:ring-amber-500/30 cursor-pointer ${isDarkMode ? 'focus:bg-white/5' : 'focus:bg-gray-100'}`}>
+                                <option value="" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>跟随全局</option>
+                                <option value="telegram" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>Telegram</option>
+                                <option value="cfr2" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>CloudFlare R2</option>
+                                <option value="s3" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>S3</option>
+                                <option value="discord" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>Discord</option>
+                                <option value="huggingface" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>HuggingFace</option>
                               </select>
                             </td>
-                            <td className="px-4 py-3 text-center">
-                              <input type="checkbox" checked={(imgBed as any)[`${item.key}_compress`] === 'true'} onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_compress`]: String(e.target.checked) }))} className="rounded bg-transparent border-white/20 text-amber-500 focus:ring-0" />
+                            <td className="px-6 py-4">
+                              <div className="flex justify-center">
+                                <button
+                                  onClick={(e) => setImgBed(p => ({ ...p, [`${item.key}_compress`]: (imgBed as any)[`${item.key}_compress`] === 'true' ? 'false' : 'true' }))}
+                                  className={`relative inline-flex h-6 w-11 rounded-full transition-all duration-300 ease-in-out shadow-inner ${
+                                    (imgBed as any)[`${item.key}_compress`] === 'true' ? 'bg-amber-500' : isDarkMode ? 'bg-white/20' : 'bg-gray-300'
+                                  }`}
+                                >
+                                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition duration-300 ease-in-out mt-1 ml-1 ${
+                                    (imgBed as any)[`${item.key}_compress`] === 'true' ? 'translate-x-5' : 'translate-x-0'
+                                  }`} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <p className={`mt-3 text-[10px] italic ${mutedText}`}>{at('imgBedPathDesc')}</p>
+                  <p className={`mt-4 ml-2 text-[10px] font-medium tracking-wide opacity-50`}>{at('imgBedPathDesc')}</p>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4 pt-4">
                   {imgBedSaveStatus.message && (
-                    <div className={`text-xs font-bold px-4 py-2 rounded-lg border transition-all animate-in fade-in slide-in-from-top-1 ${
+                    <div className={`text-sm font-bold px-6 py-4 rounded-2xl border transition-all animate-in fade-in slide-in-from-top-2 ${
                       imgBedSaveStatus.type === 'success' 
                         ? 'bg-green-500/10 border-green-500/20 text-green-500' 
                         : imgBedSaveStatus.type === 'error'
                           ? 'bg-red-500/10 border-red-500/20 text-red-500'
                           : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
                     }`}>
-                      <div className="flex items-center gap-2">
-                        {imgBedSaveStatus.type === 'loading' && <RefreshCw size={12} className="animate-spin" />}
+                      <div className="flex items-center gap-3">
+                        {imgBedSaveStatus.type === 'loading' ? <RefreshCw size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
                         {imgBedSaveStatus.message}
                       </div>
                     </div>
@@ -1480,17 +1547,17 @@ export default function Admin() {
                   <button 
                     onClick={handleSaveImgBed} 
                     disabled={imgBedSaveStatus.type === 'loading'}
-                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-60 text-white font-bold rounded-2xl shadow-xl shadow-amber-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
                   >
-                    {imgBedSaveStatus.type === 'loading' ? <RefreshCw size={18} className="animate-spin" /> : null}
+                    {imgBedSaveStatus.type === 'loading' ? <RefreshCw size={20} className="animate-spin" /> : <ImageUp size={20} />}
                     {imgBedSaveStatus.type === 'loading' ? at('saving') : '保存并应用图床策略'}
                   </button>
                 </div>
               </div>
             </div>
           )}
-        </div>
-      </main>
+        </main>
+      </div>
 
       {/* 全局确认弹窗 */}
       {confirmModal?.show && (
@@ -1504,8 +1571,8 @@ export default function Admin() {
                 <Trash2 size={32} />
               </div>
               <div>
-                <h3 className="text-lg font-bold">{confirmModal.title}</h3>
-                <p className={`mt-2 text-sm ${mutedText}`}>{confirmModal.message}</p>
+                <h3 className="text-lg font-bold">{confirmModal?.title}</h3>
+                <p className={`mt-2 text-sm ${mutedText}`}>{confirmModal?.message}</p>
               </div>
             </div>
             <div className="flex gap-3 mt-8">
@@ -1518,7 +1585,7 @@ export default function Admin() {
                 {at('cancel')}
               </button>
               <button
-                onClick={confirmModal.onConfirm}
+                onClick={confirmModal?.onConfirm}
                 className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-red-500/20 transition-all active:scale-95"
               >
                 {at('confirm')}

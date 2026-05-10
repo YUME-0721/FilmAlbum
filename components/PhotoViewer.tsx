@@ -42,6 +42,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
   const [editingField, setEditingField] = useState<{frameId: string, field: string} | null>(null);
   const [editValue, setEditValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [lastAspectRatio, setLastAspectRatio] = useState<number>(1.5);
   const tagInputRef = useRef<HTMLInputElement>(null);
 
   // 同步外部 frames 变化
@@ -255,6 +256,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
 
         {/* 图片显示区 */}
         <motion.div
+          layout
           initial={{ opacity: 0, scale: 0.9, x: 0 }}
           animate={{ opacity: 1, scale: 1, x: showSidebar && isDesktop ? -116 : 0 }}
           transition={{ duration: 0.2 }}
@@ -276,12 +278,17 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                 exit="exit"
                 transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
-                <div className={`w-full transition-all duration-300 ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-8' : 'bg-black p-8'}`}>
+                <motion.div 
+                  layout
+                  className={`w-full transition-all duration-300 ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-8' : 'bg-black p-8'}`}
+                >
                   <div className="flex justify-center">
                     <img
                       src={frames[currentFrame].imageUrl}
                       alt={frames[currentFrame].frameNumber}
-                      className={`object-contain shadow-2xl ${borderType === 'none' ? 'max-w-full max-h-[80vh]' : 'max-w-[90%] max-h-[70vh]'}`}
+                      onLoad={(e) => setLastAspectRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
+                      style={{ aspectRatio: lastAspectRatio }}
+                      className={`object-contain shadow-2xl transition-all duration-500 ${borderType === 'none' ? 'max-w-full max-h-[80vh]' : 'max-w-[90%] max-h-[70vh]'}`}
                     />
                   </div>
                   {/* 边框信息层 */}
@@ -314,7 +321,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                       </div>
                     </div>
                   )}
-                </div>
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -335,7 +342,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
             initial={{ x: 320, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 320, opacity: 0 }}
-            className="absolute right-0 top-0 bottom-0 w-[320px] bg-surface-container-lowest/80 backdrop-blur-3xl border-l border-white/5 flex flex-col z-20 shadow-2xl overflow-y-auto no-scrollbar"
+            className="absolute right-0 top-0 bottom-0 w-[320px] bg-surface-container-lowest/80 backdrop-blur-3xl border-l border-white/5 flex flex-col z-20 shadow-2xl overflow-y-auto scrollbar-hide"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 侧边栏头部 */}
@@ -352,7 +359,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
             </div>
 
               {/* 侧边栏内容 */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
+              <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide">
                 {/* 胶片档案 */}
                 <div className="space-y-4">
                   <h4 className="text-sm font-medium text-on-surface-variant/80 pl-1">{t('roll.archive')}</h4>
@@ -389,8 +396,9 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                             })()}
                           </div>
                           <div className="flex flex-col justify-center">
-                            <h5 className="text-[#f4f4f5] font-lingxun text-[28px] leading-[1.1] tracking-wide lining-nums">{filmStockData?.brand || roll.filmStock.split(' ')[0]}</h5>
-                            <h6 className="text-[#f4f4f5] font-lingxun text-[28px] leading-[1.1] tracking-wide lining-nums mt-1">{filmStockData?.model || roll.filmStock.split(' ').slice(1).join(' ')}</h6>
+                            <h5 className="text-[#f4f4f5] font-lingxun text-[32px] leading-tight tracking-wide lining-nums">
+                              {filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock)}
+                            </h5>
                           </div>
                         </div>
                         {/* 卡片下半部分 - 类型和画幅 */}
