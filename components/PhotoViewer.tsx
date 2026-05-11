@@ -189,9 +189,9 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       const textColor = borderType === 'white' ? '#1a1a1a' : '#ffffff';
       ctx.fillStyle = textColor;
       
-      const fontSizeLarge = Math.round(baseSize * 0.024);
-      const fontSizeMedium = Math.round(baseSize * 0.018);
-      const fontSizeSmall = Math.round(baseSize * 0.014);
+      const fontSizeLarge = Math.round(baseSize * 0.026);
+      const fontSizeMedium = Math.round(baseSize * 0.020);
+      const fontSizeSmall = Math.round(baseSize * 0.016);
       const infoYCenter = canvas.height - bottomArea / 2; // 底部信息区的中轴线
 
       // 移除左下角顺序数字
@@ -214,7 +214,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
               logo.onload = res;
               logo.onerror = res;
             });
-            const logoSize = Math.round(baseSize * 0.045);
+            const logoSize = Math.round(baseSize * 0.052);
             ctx.drawImage(logo, sidePadding, infoYCenter - logoSize / 2, logoSize, logoSize);
             textX += logoSize + sidePadding * 0.2;
           } catch (e) {}
@@ -272,10 +272,11 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
 
         // 绘制分隔线
         if (hasLeft && hasRight) {
-          const dividerX = canvas.width - rightMargin - rightColWidth - fontSizeMedium * 0.8;
-          ctx.globalAlpha = 0.2;
-          ctx.fillRect(dividerX, infoYCenter - fontSizeMedium * 0.8, 2, fontSizeMedium * 1.6);
-          currentX = dividerX - fontSizeMedium * 0.8;
+          const dividerX = canvas.width - rightMargin - rightColWidth - fontSizeMedium * 1.0;
+          ctx.globalAlpha = 0.25;
+          const dividerWidth = Math.max(2, Math.round(baseSize * 0.0015));
+          ctx.fillRect(dividerX, infoYCenter - fontSizeMedium * 0.8, dividerWidth, fontSizeMedium * 1.6);
+          currentX = dividerX - fontSizeMedium * 1.0;
         }
 
         // 绘制左列
@@ -284,10 +285,10 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
           if (camera && lens) {
             ctx.font = `600 ${fontSizeMedium}px ${infoFont}`;
             ctx.globalAlpha = 0.9;
-            ctx.fillText(camera, currentX, infoYCenter - fontSizeMedium * 0.2);
+            ctx.fillText(camera, currentX, infoYCenter - fontSizeMedium * 0.25);
             ctx.font = `400 ${fontSizeSmall}px ${infoFont}`;
             ctx.globalAlpha = 0.6;
-            ctx.fillText(lens, currentX, infoYCenter + fontSizeMedium * 0.8);
+            ctx.fillText(lens, currentX, infoYCenter + fontSizeMedium * 0.9);
           } else {
             ctx.font = `600 ${fontSizeLarge * 0.8}px ${infoFont}`;
             ctx.globalAlpha = 0.9;
@@ -324,7 +325,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       </button>
 
       {/* 主内容区 */}
-      <div className="absolute inset-0 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 flex items-center justify-center p-4">
         <button
           onClick={(e) => { e.stopPropagation(); goToFrame(currentFrame > 0 ? currentFrame - 1 : frames.length - 1); }}
           className={`absolute left-8 top-1/2 -translate-y-1/2 p-2 z-10 transition-colors ${
@@ -368,7 +369,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                 transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
                 <motion.div 
-                  className={`mx-auto w-fit max-w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-[5%] pb-[10%]' : 'bg-black p-[5%] pb-[10%]'} shadow-2xl transition-colors duration-500`}
+                  className={`mx-auto w-fit max-w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-[5%] pb-[8%]' : 'bg-black p-[5%] pb-[8%]'} shadow-2xl transition-colors duration-500`}
                 >
                   <div className="flex justify-center relative overflow-hidden" style={{ minHeight: '200px' }}>
                     {isImageLoading && (
@@ -399,7 +400,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                   </div>
                   {/* 边框信息层 */}
                   {borderType !== 'none' && (
-                    <div className={`mt-6 flex justify-between items-center ${borderType === 'white' ? 'text-gray-800' : 'text-white'}`}>
+                    <div className={`mt-10 flex justify-between items-center ${borderType === 'white' ? 'text-gray-800' : 'text-white'}`}>
                       {borderOptions.showFilmStock && (
                         <div className="flex items-center gap-4">
                            {(() => {
@@ -407,11 +408,11 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                                 const brandName = roll.filmStock.split(' ')[0];
                                 return commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase())?.logoUrl;
                               })();
-                              return logo ? <img src={logo} className="w-10 h-10 object-contain" referrerPolicy="no-referrer" /> : <div className="w-10 h-10 bg-yellow-500 flex items-center justify-center font-bold text-black">{roll.filmStock.charAt(0)}</div>;
+                              return logo ? <img src={logo} className="w-12 h-12 object-contain" referrerPolicy="no-referrer" /> : <div className="w-12 h-12 bg-yellow-500 flex items-center justify-center font-bold text-black">{roll.filmStock.charAt(0)}</div>;
                            })()}
                            <div>
-                             <h5 className="font-bold text-lg leading-tight font-caslon">{filmStockData?.brand || roll.filmStock.split(' ')[0]}</h5>
-                             <h6 className="font-medium text-sm opacity-80 font-caslon">
+                             <h5 className="font-bold text-xl leading-tight font-caslon">{filmStockData?.brand || roll.filmStock.split(' ')[0]}</h5>
+                             <h6 className="font-medium text-base opacity-80 font-caslon">
                                {(() => {
                                  const fullModel = filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock);
                                  const brand = filmStockData?.brand || roll.filmStock.split(' ')[0];
@@ -430,11 +431,11 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                           <div className="flex flex-col items-end">
                             {borderOptions.showCamera && (frames[currentFrame].camera || roll.camera) && borderOptions.showLens && (frames[currentFrame].lens || roll.lens) ? (
                               <>
-                                <span className="text-sm font-semibold tracking-tight leading-tight">{frames[currentFrame].camera || roll.camera}</span>
-                                <span className="text-[11px] opacity-60 font-medium tracking-tight leading-tight">{frames[currentFrame].lens || roll.lens}</span>
+                                <span className="text-base font-semibold tracking-tight leading-tight">{frames[currentFrame].camera || roll.camera}</span>
+                                <span className="text-xs opacity-60 font-medium tracking-tight leading-tight">{frames[currentFrame].lens || roll.lens}</span>
                               </>
                             ) : (
-                              <span className="text-base font-semibold tracking-tight leading-none">
+                              <span className="text-lg font-semibold tracking-tight leading-none">
                                 {(borderOptions.showCamera && (frames[currentFrame].camera || roll.camera)) || (borderOptions.showLens && (frames[currentFrame].lens || roll.lens))}
                               </span>
                             )}
@@ -451,13 +452,13 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                           <div className="flex flex-col items-start text-left">
                             {borderOptions.showDate && (frames[currentFrame].shotDate || roll.shotDate) && borderOptions.showExposure && (frames[currentFrame].aperture || frames[currentFrame].shutterSpeed || frames[currentFrame].iso) ? (
                               <>
-                                <span className="text-sm font-semibold tracking-tight leading-tight">{frames[currentFrame].shotDate || roll.shotDate}</span>
-                                <span className="text-[11px] opacity-60 font-medium tracking-tight leading-tight">
+                                <span className="text-base font-semibold tracking-tight leading-tight">{frames[currentFrame].shotDate || roll.shotDate}</span>
+                                <span className="text-xs opacity-60 font-medium tracking-tight leading-tight">
                                   {[frames[currentFrame].aperture, frames[currentFrame].shutterSpeed, frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : ''].filter(Boolean).join('  ')}
                                 </span>
                               </>
                             ) : (
-                              <span className="text-base font-semibold tracking-tight leading-none">
+                              <span className="text-lg font-semibold tracking-tight leading-none">
                                 {(borderOptions.showDate && (frames[currentFrame].shotDate || roll.shotDate)) || 
                                  (borderOptions.showExposure && [frames[currentFrame].aperture, frames[currentFrame].shutterSpeed, frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : ''].filter(Boolean).join('  '))}
                               </span>
