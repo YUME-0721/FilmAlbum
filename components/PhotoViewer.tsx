@@ -173,15 +173,27 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+      setExportProgress(25);
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const blob = await response.blob();
+      setExportProgress(40);
+      const blobUrl = URL.createObjectURL(blob);
+
       const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = imageUrl;
-      await new Promise((res, rej) => {
-        img.onload = res;
-        img.onerror = rej;
+      img.src = blobUrl;
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          URL.revokeObjectURL(blobUrl);
+          resolve(null);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(blobUrl);
+          reject(new Error('Failed to load image into canvas'));
+        };
       });
 
-      setExportProgress(40);
+      setExportProgress(50);
 
       const isVertical = img.height > img.width;
       const baseSize = isVertical ? img.height : img.width;
@@ -189,7 +201,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       // 模仿网页端的比例：max-w-[90%] 带来的 5% 边距 + p-8 带来的约 3% 边距
       const sidePadding = baseSize * 0.08;
       const topPadding = baseSize * 0.08;
-      const bottomArea = baseSize * 0.14; // 底部信息区高度
+      const bottomArea = baseSize * 0.11; // 底部信息区高度
       
       canvas.width = img.width + sidePadding * 2;
       canvas.height = img.height + topPadding + bottomArea;
@@ -221,17 +233,26 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
         let textX = sidePadding;
         if (logoUrl) {
           try {
-            const logo = new Image();
-            logo.crossOrigin = 'anonymous';
-            logo.src = logoUrl;
-            await new Promise((res) => {
-              logo.onload = res;
-              logo.onerror = res;
-            });
-            const logoSize = Math.round(baseSize * 0.052);
-            ctx.drawImage(logo, sidePadding, infoYCenter - logoSize / 2, logoSize, logoSize);
-            textX += logoSize + sidePadding * 0.2;
-          } catch (e) {}
+            const logoRes = await fetch(logoUrl);
+            if (logoRes.ok) {
+              const logoBlob = await logoRes.blob();
+              const logoBlobUrl = URL.createObjectURL(logoBlob);
+              const logo = new Image();
+              logo.src = logoBlobUrl;
+              await new Promise((res) => {
+                logo.onload = () => {
+                  URL.revokeObjectURL(logoBlobUrl);
+                  res(null);
+                };
+                logo.onerror = res;
+              });
+              const logoSize = Math.round(baseSize * 0.052);
+              ctx.drawImage(logo, sidePadding, infoYCenter - logoSize / 2, logoSize, logoSize);
+              textX += logoSize + sidePadding * 0.2;
+            }
+          } catch (e) {
+            console.warn('Failed to load logo:', e);
+          }
         }
         
         ctx.textAlign = 'left';
@@ -415,7 +436,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                 transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
                 <motion.div 
-                  className={`mx-auto w-fit max-w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-[5%] pb-[8%]' : 'bg-black p-[5%] pb-[8%]'} shadow-2xl transition-colors duration-500`}
+                  className={`mx-auto w-fit max-w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-[5%] pb-[6%]' : 'bg-black p-[5%] pb-[6%]'} shadow-2xl transition-colors duration-500`}
                 >
                   <div className="flex justify-center relative overflow-hidden" style={{ minHeight: '200px' }}>
                     {isImageLoading && (
@@ -446,7 +467,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                   </div>
                   {/* 边框信息层 */}
                   {borderType !== 'none' && (
-                    <div className={`mt-10 flex justify-between items-center ${borderType === 'white' ? 'text-gray-800' : 'text-white'}`}>
+                    <div className={`mt-7 flex justify-between items-center ${borderType === 'white' ? 'text-gray-800' : 'text-white'}`}>
                       {borderOptions.showFilmStock && (
                         <div className="flex items-center gap-4">
                            {(() => {
@@ -556,11 +577,11 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                 {/* 胶片档案 */}
                 <div className="space-y-4">
                   <h4 className="text-sm font-medium text-on-surface-variant/80 pl-1">{t('roll.archive')}</h4>
-                  <div className="bg-[#151515] rounded-xl p-6 shadow-sm">
+                  <div className="bg-[#151515] rounded-xl p-5 shadow-sm">
                     {roll.filmStock ? (
                       <>
                         {/* 卡片上半部分 - LOGO和型号 */}
-                         <div className="flex items-center gap-10 mb-8">
+                         <div className="flex items-center gap-8 mb-5">
                           <div className="shrink-0">
                             {(() => {
                               const logo = filmStockData?.brandLogo || (() => {
@@ -570,7 +591,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
 
                               if (logo) {
                                 return (
-                                  <div className="w-[72px] h-[72px] rounded-[24px] overflow-hidden bg-transparent">
+                                  <div className="w-[60px] h-[60px] rounded-[20px] overflow-hidden bg-transparent">
                                     <img 
                                       src={logo} 
                                       alt={roll.filmStock} 
@@ -582,25 +603,28 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                               } else {
                                 const brandName = filmStockData?.brand || roll.filmStock.split(' ')[0];
                                 return (
-                                  <div className="w-[72px] h-[72px] bg-yellow-500 rounded-[24px] flex items-center justify-center">
-                                    <span className="text-black font-serif font-bold text-3xl">{brandName.charAt(0).toUpperCase()}</span>
+                                  <div className="w-[60px] h-[60px] bg-yellow-500 rounded-[20px] flex items-center justify-center">
+                                    <span className="text-black font-slab font-bold text-2xl">{brandName.charAt(0).toUpperCase()}</span>
                                   </div>
                                 );
                               }
                             })()}
                           </div>
-                          <div className="flex flex-col justify-center">
-                            <h5 className="text-[#f4f4f5] font-caslon text-[32px] font-bold leading-tight tracking-wide lining-nums">
-                              {(() => {
-                                const fullModel = filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock);
-                                const brand = filmStockData?.brand || roll.filmStock.split(' ')[0];
-                                // 如果 model 中已经包含了 brand，则去掉 brand
-                                if (fullModel.toLowerCase().startsWith(brand.toLowerCase())) {
-                                  return fullModel.slice(brand.length).trim();
-                                }
-                                return fullModel;
-                              })()}
-                            </h5>
+                          <div className="flex flex-col justify-center font-slab text-[#f4f4f5]">
+                            {(() => {
+                              const brand = filmStockData?.brand || roll.filmStock.split(' ')[0];
+                              const fullModel = filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock);
+                              let model = fullModel;
+                              if (fullModel.toLowerCase().startsWith(brand.toLowerCase())) {
+                                model = fullModel.slice(brand.length).trim();
+                              }
+                              return (
+                                <>
+                                  <h5 className="text-lg opacity-80 leading-tight tracking-tight">{brand}</h5>
+                                  <h6 className="text-[26px] font-bold leading-tight tracking-tight mt-0.5">{model}</h6>
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                         {/* 卡片下半部分 - 类型和画幅 */}
