@@ -48,11 +48,24 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
   const [downloadQuality, setDownloadQuality] = useState<'original' | 'preview'>('original');
   const tagInputRef = useRef<HTMLInputElement>(null);
 
-  // 当当前帧改变时，重置图片加载状态
+  // 当当前帧改变时，重置图片加载状态，并预加载相邻图片
   useEffect(() => {
     setIsImageLoading(true);
     setIsShowingOriginal(false);
-  }, [currentFrame]);
+
+    // 预加载上一张和下一张
+    const preloadIndices = [
+      currentFrame === 0 ? frames.length - 1 : currentFrame - 1,
+      currentFrame === frames.length - 1 ? 0 : currentFrame + 1
+    ];
+
+    preloadIndices.forEach(idx => {
+      if (frames[idx]) {
+        const img = new Image();
+        img.src = frames[idx].previewUrl || frames[idx].imageUrl;
+      }
+    });
+  }, [currentFrame, frames]);
 
   // 同步外部 frames 变化
   useEffect(() => {
@@ -153,31 +166,44 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
 
       const isVertical = img.height > img.width;
       const baseSize = isVertical ? img.height : img.width;
-      const padding = baseSize * 0.05;
-      const bottomArea = baseSize * 0.12;
       
-      canvas.width = img.width + padding * 2;
-      canvas.height = img.height + padding * 2 + bottomArea;
+      // 模仿网页端的比例：max-w-[90%] 带来的 5% 边距 + p-8 带来的约 3% 边距
+      const sidePadding = baseSize * 0.08;
+      const topPadding = baseSize * 0.08;
+      const bottomArea = baseSize * 0.14; // 底部信息区高度
+      
+      canvas.width = img.width + sidePadding * 2;
+      canvas.height = img.height + topPadding + bottomArea;
 
       ctx.fillStyle = borderType === 'white' ? '#ffffff' : '#000000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, padding, padding);
+      ctx.drawImage(img, sidePadding, topPadding);
 
       const textColor = borderType === 'white' ? '#1a1a1a' : '#ffffff';
       ctx.fillStyle = textColor;
       
-      const fontSizeLarge = Math.round(baseSize * 0.022);
-      const fontSizeSmall = Math.round(baseSize * 0.016);
-      
+      const fontSizeLarge = Math.round(baseSize * 0.024);
+      const fontSizeMedium = Math.round(baseSize * 0.018);
+      const fontSizeSmall = Math.round(baseSize * 0.014);
+      const infoYCenter = canvas.height - bottomArea / 2; // 底部信息区的中轴线
+
+      // 绘制左下角顺序数字 (如 01)
+      const frameNum = (currentFrame + 1).toString().padStart(2, '0');
+      ctx.textAlign = 'left';
+      ctx.font = `bold ${fontSizeSmall}px sans-serif`;
+      ctx.globalAlpha = 0.3;
+      ctx.fillText(frameNum, sidePadding, canvas.height - bottomArea * 0.15);
+      ctx.globalAlpha = 1.0;
+
       if (borderOptions.showFilmStock) {
         const brand = filmStockData?.brand || roll.filmStock.split(' ')[0];
-        const model = filmStockData?.model || roll.filmStock.split(' ').slice(1).join(' ');
+        const model = filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock);
         const logoUrl = filmStockData?.brandLogo || (() => {
           const brandName = roll.filmStock.split(' ')[0];
           return commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase())?.logoUrl;
         })();
 
-        let textX = padding;
+        let textX = sidePadding;
         if (logoUrl) {
           try {
             const logo = new Image();
@@ -187,38 +213,49 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
               logo.onload = res;
               logo.onerror = res;
             });
-            const logoSize = fontSizeLarge * 2.2;
-            ctx.drawImage(logo, padding, canvas.height - bottomArea + (bottomArea - logoSize) / 2, logoSize, logoSize);
-            textX += logoSize + padding * 0.3;
+            const logoSize = Math.round(baseSize * 0.045);
+            ctx.drawImage(logo, sidePadding, infoYCenter - logoSize / 2, logoSize, logoSize);
+            textX += logoSize + sidePadding * 0.2;
           } catch (e) {}
         }
-        ctx.font = `bold ${fontSizeLarge}px sans-serif`;
-        ctx.fillText(brand, textX, canvas.height - bottomArea + bottomArea * 0.45);
-        ctx.fillText(model, textX, canvas.height - bottomArea + bottomArea * 0.75);
+        
+        ctx.textAlign = 'left';
+        ctx.font = `bold ${fontSizeLarge}px "Libre Caslon Text", serif`;
+        ctx.fillText(brand, textX, infoYCenter - fontSizeLarge * 0.1);
+        ctx.font = `500 ${fontSizeMedium}px "Libre Caslon Text", serif`;
+        ctx.globalAlpha = 0.7;
+        ctx.fillText(model, textX, infoYCenter + fontSizeMedium * 1.0);
+        ctx.globalAlpha = 1.0;
       }
 
       ctx.textAlign = 'right';
-      let currentY = canvas.height - bottomArea + bottomArea * 0.4;
+      let currentY = infoYCenter - fontSizeMedium * 0.8;
       
       if (borderOptions.showCamera && (frame.camera || roll.camera)) {
-        ctx.font = `${fontSizeSmall}px sans-serif`;
-        ctx.fillText(frame.camera || roll.camera, canvas.width - padding, currentY);
-        currentY += fontSizeSmall * 1.3;
+        ctx.font = `bold ${fontSizeMedium}px sans-serif`;
+        ctx.fillText(frame.camera || roll.camera, canvas.width - sidePadding, currentY);
+        currentY += fontSizeMedium * 1.1;
       }
       if (borderOptions.showLens && (frame.lens || roll.lens)) {
         ctx.font = `${fontSizeSmall}px sans-serif`;
-        ctx.fillText(frame.lens || roll.lens, canvas.width - padding, currentY);
-        currentY += fontSizeSmall * 1.3;
+        ctx.globalAlpha = 0.7;
+        ctx.fillText(frame.lens || roll.lens, canvas.width - sidePadding, currentY);
+        ctx.globalAlpha = 1.0;
+        currentY += fontSizeSmall * 1.2;
       }
       if (borderOptions.showDate && (frame.shotDate || roll.shotDate)) {
         ctx.font = `${fontSizeSmall}px sans-serif`;
-        ctx.fillText(frame.shotDate || roll.shotDate, canvas.width - padding, currentY);
-        currentY += fontSizeSmall * 1.3;
+        ctx.globalAlpha = 0.5;
+        ctx.fillText(frame.shotDate || roll.shotDate, canvas.width - sidePadding, currentY);
+        ctx.globalAlpha = 1.0;
+        currentY += fontSizeSmall * 1.2;
       }
       if (borderOptions.showExposure && (frame.aperture || frame.shutterSpeed || frame.iso)) {
-        const expStr = [frame.aperture, frame.shutterSpeed, frame.iso ? `ISO ${frame.iso}` : ''].filter(Boolean).join(' ');
+        const expStr = [frame.aperture, frame.shutterSpeed, frame.iso ? `ISO ${frame.iso}` : ''].filter(Boolean).join('  ');
         ctx.font = `${fontSizeSmall}px sans-serif`;
-        ctx.fillText(expStr, canvas.width - padding, currentY);
+        ctx.globalAlpha = 0.5;
+        ctx.fillText(expStr, canvas.width - sidePadding, currentY);
+        ctx.globalAlpha = 1.0;
       }
 
       const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
@@ -270,13 +307,13 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
         {/* 图片显示区 */}
         <motion.div
           layout
-          initial={{ opacity: 0, scale: 0.9, x: 0 }}
-          animate={{ opacity: 1, scale: 1, x: showSidebar && isDesktop ? -116 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="relative max-w-[70vw] max-h-[80vh] flex flex-col items-center"
+          initial={{ opacity: 0, x: 0 }}
+          animate={{ opacity: 1, x: showSidebar && isDesktop ? -116 : 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="relative max-w-[75vw] max-h-[85vh] flex flex-col items-center"
           onClick={(e) => e.stopPropagation()}
         >
-          <AnimatePresence mode="popLayout" custom={slideDirection} initial={false}>
+          <AnimatePresence mode="wait" custom={slideDirection} initial={false}>
             {frames[currentFrame] && (
               <motion.div
                 key={currentFrame}
@@ -292,10 +329,9 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                 transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
                 <motion.div 
-                  layout
-                  className={`w-full transition-all duration-300 ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-8' : 'bg-black p-8'}`}
+                  className={`w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-8' : 'bg-black p-8'} shadow-2xl transition-colors duration-500`}
                 >
-                  <div className="flex justify-center relative overflow-hidden" style={{ minHeight: isImageLoading ? '300px' : 'auto' }}>
+                  <div className="flex justify-center relative overflow-hidden" style={{ minHeight: '200px' }}>
                     {isImageLoading && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-sm z-10">
                         <div className="animate-pulse text-white/20 text-xs font-bold uppercase tracking-widest">Loading...</div>
@@ -304,6 +340,8 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                     <img
                       src={isShowingOriginal ? frames[currentFrame].imageUrl : (frames[currentFrame].previewUrl || frames[currentFrame].imageUrl)}
                       alt={frames[currentFrame].frameNumber}
+                      fetchPriority="high"
+                      referrerPolicy="no-referrer"
                       onLoad={(e) => {
                         setLastAspectRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight);
                         setIsImageLoading(false);
@@ -313,7 +351,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                         opacity: isImageLoading ? 0 : 1,
                         transition: 'opacity 0.3s ease-in-out'
                       }}
-                      className={`object-contain shadow-2xl ${borderType === 'none' ? 'max-w-full max-h-[80vh]' : 'max-w-[90%] max-h-[70vh]'}`}
+                      className={`object-contain shadow-2xl ${borderType === 'none' ? 'max-w-full max-h-[85vh]' : 'max-w-[90%] max-h-[75vh]'}`}
                     />
                   </div>
                   {/* 边框信息层 */}
@@ -326,11 +364,11 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                                 const brandName = roll.filmStock.split(' ')[0];
                                 return commonBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase())?.logoUrl;
                               })();
-                              return logo ? <img src={logo} className="w-10 h-10 object-contain" /> : <div className="w-10 h-10 bg-yellow-500 flex items-center justify-center font-bold text-black">{roll.filmStock.charAt(0)}</div>;
+                              return logo ? <img src={logo} className="w-10 h-10 object-contain" referrerPolicy="no-referrer" /> : <div className="w-10 h-10 bg-yellow-500 flex items-center justify-center font-bold text-black">{roll.filmStock.charAt(0)}</div>;
                            })()}
                            <div>
-                             <h5 className="font-bold text-lg leading-tight">{filmStockData?.brand || roll.filmStock.split(' ')[0]}</h5>
-                             <h6 className="font-medium text-sm opacity-80">
+                             <h5 className="font-bold text-lg leading-tight font-caslon">{filmStockData?.brand || roll.filmStock.split(' ')[0]}</h5>
+                             <h6 className="font-medium text-sm opacity-80 font-caslon">
                                {(() => {
                                  const fullModel = filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock);
                                  const brand = filmStockData?.brand || roll.filmStock.split(' ')[0];
@@ -365,7 +403,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
         <div className={`absolute bottom-4 left-4 text-sm z-10 transition-colors ${
           borderType === 'black' ? 'text-black/60 font-bold' : 'text-white/80'
         }`}>
-          {currentFrame + 1} / {frames.length}
+          {(currentFrame + 1).toString().padStart(2, '0')} / {frames.length.toString().padStart(2, '0')}
         </div>
       </div>
 
@@ -416,6 +454,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                                       src={logo} 
                                       alt={roll.filmStock} 
                                       className="w-full h-full object-cover" 
+                                      referrerPolicy="no-referrer"
                                     />
                                   </div>
                                 );
@@ -430,7 +469,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                             })()}
                           </div>
                           <div className="flex flex-col justify-center">
-                            <h5 className="text-[#f4f4f5] font-lingxun text-[32px] leading-tight tracking-wide lining-nums">
+                            <h5 className="text-[#f4f4f5] font-caslon text-[32px] leading-tight tracking-wide lining-nums">
                               {(() => {
                                 const fullModel = filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock);
                                 const brand = filmStockData?.brand || roll.filmStock.split(' ')[0];

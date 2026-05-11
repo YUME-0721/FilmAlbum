@@ -300,7 +300,9 @@ export default function FilmRoll() {
                 {/* 底部信息 */}
                 <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
                   <div className="flex justify-between items-center text-white font-medium text-xs">
-                    <span>{frame.frameNumber}</span>
+                    <span className="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-mono tracking-tighter">
+                      {(index + 1).toString().padStart(2, '0')}
+                    </span>
                     <div className="flex gap-2 opacity-80">
                       {frame.aperture && <span>{frame.aperture}</span>}
                       {frame.shutterSpeed && <span>{frame.shutterSpeed}</span>}
