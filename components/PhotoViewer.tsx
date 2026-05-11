@@ -232,24 +232,68 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       ctx.textAlign = 'right';
       const infoFont = '"Space Grotesk", sans-serif';
       
-      // 第一行：相机 | 日期
       const camera = borderOptions.showCamera ? (frame.camera || roll.camera) : '';
-      const date = borderOptions.showDate ? (frame.shotDate || roll.shotDate) : '';
-      const line1Parts = [camera, date].filter(Boolean);
-      if (line1Parts.length > 0) {
-        ctx.font = `600 ${fontSizeMedium}px ${infoFont}`;
-        ctx.globalAlpha = 0.9;
-        ctx.fillText(line1Parts.join('  |  '), canvas.width - sidePadding, infoYCenter - fontSizeMedium * 0.2);
-      }
-
-      // 第二行：镜头 | 曝光参数
       const lens = borderOptions.showLens ? (frame.lens || roll.lens) : '';
-      const expStr = borderOptions.showExposure ? [frame.aperture, frame.shutterSpeed, frame.iso ? `ISO ${frame.iso}` : ''].filter(Boolean).join('  ') : '';
-      const line2Parts = [lens, expStr].filter(Boolean);
-      if (line2Parts.length > 0) {
+      const date = borderOptions.showDate ? (frame.shotDate || roll.shotDate) : '';
+      const exposure = borderOptions.showExposure ? [frame.aperture, frame.shutterSpeed, frame.iso ? `ISO ${frame.iso}` : ''].filter(Boolean).join('  ') : '';
+
+      const hasLeft = !!(camera || lens);
+      const hasRight = !!(date || exposure);
+      
+      if (hasLeft || hasRight) {
+        ctx.textAlign = 'right';
+        const rightMargin = sidePadding;
+        let currentX = canvas.width - rightMargin;
+
+        // 计算右列宽度
+        ctx.font = `600 ${fontSizeMedium}px ${infoFont}`;
+        const dateWidth = date ? ctx.measureText(date).width : 0;
         ctx.font = `400 ${fontSizeSmall}px ${infoFont}`;
-        ctx.globalAlpha = 0.6;
-        ctx.fillText(line2Parts.join('  |  '), canvas.width - sidePadding, infoYCenter + fontSizeMedium * 0.8);
+        const expWidth = exposure ? ctx.measureText(exposure).width : 0;
+        const rightColWidth = Math.max(dateWidth, expWidth);
+
+        // 绘制右列
+        if (hasRight) {
+          if (date && exposure) {
+            ctx.textAlign = 'left';
+            ctx.font = `600 ${fontSizeMedium}px ${infoFont}`;
+            ctx.globalAlpha = 0.9;
+            ctx.fillText(date, canvas.width - rightMargin - rightColWidth, infoYCenter - fontSizeMedium * 0.2);
+            ctx.font = `400 ${fontSizeSmall}px ${infoFont}`;
+            ctx.globalAlpha = 0.6;
+            ctx.fillText(exposure, canvas.width - rightMargin - rightColWidth, infoYCenter + fontSizeMedium * 0.8);
+          } else {
+            ctx.textAlign = 'right';
+            ctx.font = `600 ${fontSizeLarge * 0.8}px ${infoFont}`;
+            ctx.globalAlpha = 0.9;
+            ctx.fillText(date || exposure, canvas.width - rightMargin, infoYCenter + fontSizeLarge * 0.25);
+          }
+        }
+
+        // 绘制分隔线
+        if (hasLeft && hasRight) {
+          const dividerX = canvas.width - rightMargin - rightColWidth - fontSizeMedium * 0.8;
+          ctx.globalAlpha = 0.2;
+          ctx.fillRect(dividerX, infoYCenter - fontSizeMedium * 0.8, 2, fontSizeMedium * 1.6);
+          currentX = dividerX - fontSizeMedium * 0.8;
+        }
+
+        // 绘制左列
+        if (hasLeft) {
+          ctx.textAlign = 'right';
+          if (camera && lens) {
+            ctx.font = `600 ${fontSizeMedium}px ${infoFont}`;
+            ctx.globalAlpha = 0.9;
+            ctx.fillText(camera, currentX, infoYCenter - fontSizeMedium * 0.2);
+            ctx.font = `400 ${fontSizeSmall}px ${infoFont}`;
+            ctx.globalAlpha = 0.6;
+            ctx.fillText(lens, currentX, infoYCenter + fontSizeMedium * 0.8);
+          } else {
+            ctx.font = `600 ${fontSizeLarge * 0.8}px ${infoFont}`;
+            ctx.globalAlpha = 0.9;
+            ctx.fillText(camera || lens, currentX, infoYCenter + fontSizeLarge * 0.25);
+          }
+        }
       }
       ctx.globalAlpha = 1.0;
 
@@ -324,7 +368,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                 transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
                 <motion.div 
-                  className={`w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-8' : 'bg-black p-8'} shadow-2xl transition-colors duration-500`}
+                  className={`mx-auto w-fit max-w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-[5%] pb-[10%]' : 'bg-black p-[5%] pb-[10%]'} shadow-2xl transition-colors duration-500`}
                 >
                   <div className="flex justify-center relative overflow-hidden" style={{ minHeight: '200px' }}>
                     {isImageLoading && (
@@ -350,7 +394,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                         opacity: isImageLoading ? 0 : 1,
                         transition: 'opacity 0.3s ease-in-out'
                       }}
-                      className={`object-contain shadow-2xl ${borderType === 'none' ? 'max-w-full max-h-[85vh]' : 'max-w-[90%] max-h-[75vh]'}`}
+                      className={`object-contain shadow-2xl ${borderType === 'none' ? 'max-w-full max-h-[85vh]' : 'max-h-[72vh] w-auto'}`}
                     />
                   </div>
                   {/* 边框信息层 */}
@@ -380,19 +424,46 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                            </div>
                         </div>
                       )}
-                      <div className="text-right space-y-1 font-label">
-                        <p className="text-sm font-semibold tracking-tight">
-                          {[
-                            borderOptions.showCamera && (frames[currentFrame].camera || roll.camera),
-                            borderOptions.showDate && (frames[currentFrame].shotDate || roll.shotDate)
-                          ].filter(Boolean).join('  |  ')}
-                        </p>
-                        <p className="text-[11px] opacity-60 font-medium tracking-tight">
-                          {[
-                            borderOptions.showLens && (frames[currentFrame].lens || roll.lens),
-                            borderOptions.showExposure && [frames[currentFrame].aperture, frames[currentFrame].shutterSpeed, frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : ''].filter(Boolean).join('  ')
-                          ].filter(Boolean).join('  |  ')}
-                        </p>
+                      <div className="flex items-center gap-4 justify-end font-label text-right">
+                        {/* 左列：相机与镜头 */}
+                        {(borderOptions.showCamera || borderOptions.showLens) && (
+                          <div className="flex flex-col items-end">
+                            {borderOptions.showCamera && (frames[currentFrame].camera || roll.camera) && borderOptions.showLens && (frames[currentFrame].lens || roll.lens) ? (
+                              <>
+                                <span className="text-sm font-semibold tracking-tight leading-tight">{frames[currentFrame].camera || roll.camera}</span>
+                                <span className="text-[11px] opacity-60 font-medium tracking-tight leading-tight">{frames[currentFrame].lens || roll.lens}</span>
+                              </>
+                            ) : (
+                              <span className="text-base font-semibold tracking-tight leading-none">
+                                {(borderOptions.showCamera && (frames[currentFrame].camera || roll.camera)) || (borderOptions.showLens && (frames[currentFrame].lens || roll.lens))}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* 分隔线 */}
+                        {(borderOptions.showCamera || borderOptions.showLens) && (borderOptions.showDate || borderOptions.showExposure) && (
+                          <div className="h-7 w-[1.5px] bg-current opacity-20" />
+                        )}
+
+                        {/* 右列：日期与曝光 */}
+                        {(borderOptions.showDate || borderOptions.showExposure) && (
+                          <div className="flex flex-col items-start text-left">
+                            {borderOptions.showDate && (frames[currentFrame].shotDate || roll.shotDate) && borderOptions.showExposure && (frames[currentFrame].aperture || frames[currentFrame].shutterSpeed || frames[currentFrame].iso) ? (
+                              <>
+                                <span className="text-sm font-semibold tracking-tight leading-tight">{frames[currentFrame].shotDate || roll.shotDate}</span>
+                                <span className="text-[11px] opacity-60 font-medium tracking-tight leading-tight">
+                                  {[frames[currentFrame].aperture, frames[currentFrame].shutterSpeed, frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : ''].filter(Boolean).join('  ')}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-base font-semibold tracking-tight leading-none">
+                                {(borderOptions.showDate && (frames[currentFrame].shotDate || roll.shotDate)) || 
+                                 (borderOptions.showExposure && [frames[currentFrame].aperture, frames[currentFrame].shutterSpeed, frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : ''].filter(Boolean).join('  '))}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
