@@ -199,13 +199,12 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       // 彻底解决比例不一：完全对齐网页 CSS 逻辑，所有边距和尺寸均以图片宽度为基准
       const refWidth = img.width;
       
-      const sidePadding = refWidth * 0.056; // 模拟网页 p-[5%] 在 w-fit 容器下的实际占比 (5/90)
+      const sidePadding = refWidth * 0.056; 
       const topPadding = refWidth * 0.056;
-      const bottomPadding = refWidth * 0.066; // 模拟网页 pb-[6%] 的实际占比 (6/90)
-      const infoGap = refWidth * 0.04; // 模拟网页 mt-7 的视觉高度占比
       const infoHeight = refWidth * 0.06; // 信息块内容高度
+      const vPadding = refWidth * 0.04; // 上下对等边距以实现垂直居中
       
-      const bottomArea = infoGap + infoHeight + bottomPadding;
+      const bottomArea = infoHeight + vPadding * 2;
       
       canvas.width = img.width + sidePadding * 2;
       canvas.height = img.height + topPadding + bottomArea;
@@ -223,8 +222,8 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       const fontSizeMedium = Math.round(refWidth * 0.024);
       const fontSizeSmall = Math.round(refWidth * 0.018);
       
-      // 信息层垂直位置：基于底部区域，模拟 mt-7 和 pb-[6%] 的相对位置
-      const infoYCenter = canvas.height - bottomPadding - infoHeight / 2;
+      // 信息层垂直位置：在底部区域绝对垂直居中
+      const infoYCenter = canvas.height - bottomArea / 2;
 
       // 移除左下角顺序数字
 
@@ -271,7 +270,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       }
 
       ctx.textAlign = 'right';
-      const infoFont = '"Space Grotesk", sans-serif';
+      const infoFont = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       
       const camera = borderOptions.showCamera ? (frame.camera || roll.camera) : '';
       const lens = borderOptions.showLens ? (frame.lens || roll.lens) : '';
@@ -442,7 +441,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                 transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
                 <motion.div 
-                  className={`mx-auto w-fit max-w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-[5%] pb-[6%]' : 'bg-black p-[5%] pb-[6%]'} shadow-2xl transition-colors duration-500`}
+                  className={`mx-auto w-fit max-w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-[5%] pb-[5%]' : 'bg-black p-[5%] pb-[5%]'} shadow-2xl transition-colors duration-500`}
                 >
                   <div className="flex justify-center relative overflow-hidden" style={{ minHeight: '200px' }}>
                     {isImageLoading && (
@@ -473,7 +472,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                   </div>
                   {/* 边框信息层 */}
                   {borderType !== 'none' && (
-                    <div className={`mt-7 flex justify-between items-center ${borderType === 'white' ? 'text-gray-800' : 'text-white'}`}>
+                    <div className={`mt-6 flex justify-between items-center ${borderType === 'white' ? 'text-gray-800' : 'text-white'}`}>
                       {borderOptions.showFilmStock && (
                         <div className="flex items-center gap-4">
                            {(() => {
@@ -498,7 +497,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                            </div>
                         </div>
                       )}
-                      <div className="flex items-center gap-4 justify-end font-label text-right">
+                      <div className="flex items-center gap-4 justify-end font-inter text-right">
                         {/* 左列：相机与镜头 */}
                         {(borderOptions.showCamera || borderOptions.showLens) && (
                           <div className="flex flex-col items-end">
