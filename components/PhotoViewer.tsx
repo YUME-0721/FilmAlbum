@@ -47,10 +47,17 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
   const [isShowingOriginal, setIsShowingOriginal] = useState(false);
   const [downloadQuality, setDownloadQuality] = useState<'original' | 'preview'>('original');
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   // 当当前帧改变时，重置图片加载状态，并预加载相邻图片
   useEffect(() => {
-    setIsImageLoading(true);
+    // 检查当前图片是否已经加载完成（特别是预加载过的情况）
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setIsImageLoading(false);
+    } else {
+      setIsImageLoading(true);
+    }
+    
     setIsShowingOriginal(false);
 
     // 预加载上一张和下一张
@@ -187,13 +194,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       const fontSizeSmall = Math.round(baseSize * 0.014);
       const infoYCenter = canvas.height - bottomArea / 2; // 底部信息区的中轴线
 
-      // 绘制左下角顺序数字 (如 01)
-      const frameNum = (currentFrame + 1).toString().padStart(2, '0');
-      ctx.textAlign = 'left';
-      ctx.font = `bold ${fontSizeSmall}px sans-serif`;
-      ctx.globalAlpha = 0.3;
-      ctx.fillText(frameNum, sidePadding, canvas.height - bottomArea * 0.15);
-      ctx.globalAlpha = 1.0;
+      // 移除左下角顺序数字
 
       if (borderOptions.showFilmStock) {
         const brand = filmStockData?.brand || roll.filmStock.split(' ')[0];
@@ -229,34 +230,28 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       }
 
       ctx.textAlign = 'right';
-      let currentY = infoYCenter - fontSizeMedium * 0.8;
+      const infoFont = '"Space Grotesk", sans-serif';
       
-      if (borderOptions.showCamera && (frame.camera || roll.camera)) {
-        ctx.font = `bold ${fontSizeMedium}px sans-serif`;
-        ctx.fillText(frame.camera || roll.camera, canvas.width - sidePadding, currentY);
-        currentY += fontSizeMedium * 1.1;
+      // 第一行：相机 | 日期
+      const camera = borderOptions.showCamera ? (frame.camera || roll.camera) : '';
+      const date = borderOptions.showDate ? (frame.shotDate || roll.shotDate) : '';
+      const line1Parts = [camera, date].filter(Boolean);
+      if (line1Parts.length > 0) {
+        ctx.font = `600 ${fontSizeMedium}px ${infoFont}`;
+        ctx.globalAlpha = 0.9;
+        ctx.fillText(line1Parts.join('  |  '), canvas.width - sidePadding, infoYCenter - fontSizeMedium * 0.2);
       }
-      if (borderOptions.showLens && (frame.lens || roll.lens)) {
-        ctx.font = `${fontSizeSmall}px sans-serif`;
-        ctx.globalAlpha = 0.7;
-        ctx.fillText(frame.lens || roll.lens, canvas.width - sidePadding, currentY);
-        ctx.globalAlpha = 1.0;
-        currentY += fontSizeSmall * 1.2;
+
+      // 第二行：镜头 | 曝光参数
+      const lens = borderOptions.showLens ? (frame.lens || roll.lens) : '';
+      const expStr = borderOptions.showExposure ? [frame.aperture, frame.shutterSpeed, frame.iso ? `ISO ${frame.iso}` : ''].filter(Boolean).join('  ') : '';
+      const line2Parts = [lens, expStr].filter(Boolean);
+      if (line2Parts.length > 0) {
+        ctx.font = `400 ${fontSizeSmall}px ${infoFont}`;
+        ctx.globalAlpha = 0.6;
+        ctx.fillText(line2Parts.join('  |  '), canvas.width - sidePadding, infoYCenter + fontSizeMedium * 0.8);
       }
-      if (borderOptions.showDate && (frame.shotDate || roll.shotDate)) {
-        ctx.font = `${fontSizeSmall}px sans-serif`;
-        ctx.globalAlpha = 0.5;
-        ctx.fillText(frame.shotDate || roll.shotDate, canvas.width - sidePadding, currentY);
-        ctx.globalAlpha = 1.0;
-        currentY += fontSizeSmall * 1.2;
-      }
-      if (borderOptions.showExposure && (frame.aperture || frame.shutterSpeed || frame.iso)) {
-        const expStr = [frame.aperture, frame.shutterSpeed, frame.iso ? `ISO ${frame.iso}` : ''].filter(Boolean).join('  ');
-        ctx.font = `${fontSizeSmall}px sans-serif`;
-        ctx.globalAlpha = 0.5;
-        ctx.fillText(expStr, canvas.width - sidePadding, currentY);
-        ctx.globalAlpha = 1.0;
-      }
+      ctx.globalAlpha = 1.0;
 
       const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
       const link = document.createElement('a');
@@ -338,12 +333,16 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                       </div>
                     )}
                     <img
+                      ref={imgRef}
                       src={isShowingOriginal ? frames[currentFrame].imageUrl : (frames[currentFrame].previewUrl || frames[currentFrame].imageUrl)}
                       alt={frames[currentFrame].frameNumber}
                       fetchPriority="high"
                       referrerPolicy="no-referrer"
                       onLoad={(e) => {
                         setLastAspectRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight);
+                        setIsImageLoading(false);
+                      }}
+                      onError={() => {
                         setIsImageLoading(false);
                       }}
                       style={{ 
@@ -381,15 +380,19 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                            </div>
                         </div>
                       )}
-                      <div className="text-right space-y-0.5">
-                        {borderOptions.showCamera && (frames[currentFrame].camera || roll.camera) && <p className="text-sm font-medium">{frames[currentFrame].camera || roll.camera}</p>}
-                        {borderOptions.showLens && (frames[currentFrame].lens || roll.lens) && <p className="text-sm opacity-80">{frames[currentFrame].lens || roll.lens}</p>}
-                        {borderOptions.showDate && (frames[currentFrame].shotDate || roll.shotDate) && <p className="text-xs opacity-60">{frames[currentFrame].shotDate || roll.shotDate}</p>}
-                        {borderOptions.showExposure && (
-                          <p className="text-xs opacity-60 font-mono">
-                            {[frames[currentFrame].aperture, frames[currentFrame].shutterSpeed, frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : ''].filter(Boolean).join('  ')}
-                          </p>
-                        )}
+                      <div className="text-right space-y-1 font-label">
+                        <p className="text-sm font-semibold tracking-tight">
+                          {[
+                            borderOptions.showCamera && (frames[currentFrame].camera || roll.camera),
+                            borderOptions.showDate && (frames[currentFrame].shotDate || roll.shotDate)
+                          ].filter(Boolean).join('  |  ')}
+                        </p>
+                        <p className="text-[11px] opacity-60 font-medium tracking-tight">
+                          {[
+                            borderOptions.showLens && (frames[currentFrame].lens || roll.lens),
+                            borderOptions.showExposure && [frames[currentFrame].aperture, frames[currentFrame].shutterSpeed, frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : ''].filter(Boolean).join('  ')
+                          ].filter(Boolean).join('  |  ')}
+                        </p>
                       </div>
                     </div>
                   )}
