@@ -199,9 +199,9 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       const baseSize = isVertical ? img.height : img.width;
       
       // 模仿网页端的比例：max-w-[90%] 带来的 5% 边距 + p-8 带来的约 3% 边距
-      const sidePadding = baseSize * 0.08;
-      const topPadding = baseSize * 0.08;
-      const bottomArea = baseSize * 0.11; // 底部信息区高度
+      const sidePadding = baseSize * 0.05;
+      const topPadding = baseSize * 0.05;
+      const bottomArea = baseSize * 0.10; // 底部信息区高度
       
       canvas.width = img.width + sidePadding * 2;
       canvas.height = img.height + topPadding + bottomArea;
@@ -215,9 +215,9 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       const textColor = borderType === 'white' ? '#1a1a1a' : '#ffffff';
       ctx.fillStyle = textColor;
       
-      const fontSizeLarge = Math.round(baseSize * 0.026);
-      const fontSizeMedium = Math.round(baseSize * 0.020);
-      const fontSizeSmall = Math.round(baseSize * 0.016);
+      const fontSizeLarge = Math.round(baseSize * 0.024);
+      const fontSizeMedium = Math.round(baseSize * 0.018);
+      const fontSizeSmall = Math.round(baseSize * 0.014);
       const infoYCenter = canvas.height - bottomArea / 2; // 底部信息区的中轴线
 
       // 移除左下角顺序数字
@@ -246,7 +246,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                 };
                 logo.onerror = res;
               });
-              const logoSize = Math.round(baseSize * 0.052);
+              const logoSize = Math.round(baseSize * 0.048);
               ctx.drawImage(logo, sidePadding, infoYCenter - logoSize / 2, logoSize, logoSize);
               textX += logoSize + sidePadding * 0.2;
             }
