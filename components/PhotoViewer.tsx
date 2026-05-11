@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Download, Share2, X, Info, ChevronLeft, ChevronRight,
-  Camera, Calendar, MapPin
+  Camera, Calendar, MapPin, Eye, Check
 } from 'lucide-react';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { updateFrame, type RollDetail, type FrameItem } from '../src/api/rolls.ts';
@@ -44,11 +44,14 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
   const [editValue, setEditValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [lastAspectRatio, setLastAspectRatio] = useState<number>(1.5);
+  const [isShowingOriginal, setIsShowingOriginal] = useState(false);
+  const [downloadQuality, setDownloadQuality] = useState<'original' | 'preview'>('original');
   const tagInputRef = useRef<HTMLInputElement>(null);
 
   // 当当前帧改变时，重置图片加载状态
   useEffect(() => {
     setIsImageLoading(true);
+    setIsShowingOriginal(false);
   }, [currentFrame]);
 
   // 同步外部 frames 变化
@@ -111,18 +114,22 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
     setEditingField(null);
   };
 
-  const handleDownloadCurrentFrame = async () => {
+  const handleDownloadCurrentFrame = async (forceQuality?: 'original' | 'preview') => {
     const frame = frames[currentFrame];
     if (!frame || !roll) return;
 
+    const quality = forceQuality || downloadQuality;
+    const imageUrl = quality === 'original' ? frame.imageUrl : (frame.previewUrl || frame.imageUrl);
+    const isOriginal = quality === 'original' || !frame.previewUrl;
+
     try {
       if (!isExportWithBorder || borderType === 'none') {
-        const response = await fetch(frame.imageUrl);
+        const response = await fetch(imageUrl);
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${roll.title}_${frame.frameNumber}.jpg`;
+        link.download = `${roll.title}_${frame.frameNumber}${isOriginal ? '' : '_preview'}.jpg`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -138,7 +145,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
 
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      img.src = frame.imageUrl;
+      img.src = imageUrl;
       await new Promise((res, rej) => {
         img.onload = res;
         img.onerror = rej;
@@ -217,7 +224,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `${roll.title}_${frame.frameNumber}_bordered.jpg`;
+      link.download = `${roll.title}_${frame.frameNumber}_bordered${isOriginal ? '' : '_preview'}.jpg`;
       link.click();
       showToast('图片下载成功');
     } catch (error) {
@@ -295,7 +302,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                       </div>
                     )}
                     <img
-                      src={frames[currentFrame].imageUrl}
+                      src={isShowingOriginal ? frames[currentFrame].imageUrl : (frames[currentFrame].previewUrl || frames[currentFrame].imageUrl)}
                       alt={frames[currentFrame].frameNumber}
                       onLoad={(e) => {
                         setLastAspectRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight);
@@ -376,7 +383,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
             <div className="px-6 py-5 border-b border-white/5 flex justify-between items-center sticky top-0 bg-transparent backdrop-blur-xl z-10">
               <h3 className="text-xl font-bold text-on-surface">{t('roll.info')}</h3>
               <div className="flex gap-1">
-                <button className="p-2 hover:bg-white/10 rounded-full transition-colors text-on-surface-variant" onClick={handleDownloadCurrentFrame} title={t('common.download')}>
+                <button className="p-2 hover:bg-white/10 rounded-full transition-colors text-on-surface-variant" onClick={() => handleDownloadCurrentFrame()} title={t('common.download')}>
                   <Download size={20} />
                 </button>
                 <button className="p-2 hover:bg-white/10 rounded-full transition-colors text-on-surface-variant" onClick={() => setShowSidebar(false)}>
@@ -543,6 +550,26 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                           : '-'}
                       </span>
                     </div>
+                    {frames[currentFrame].previewUrl && (
+                      <div className="mt-2 px-1.5 pb-1.5">
+                        <button
+                          onClick={() => {
+                            if (!isShowingOriginal) {
+                              setIsImageLoading(true);
+                              setIsShowingOriginal(true);
+                            }
+                          }}
+                          className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all ${
+                            isShowingOriginal 
+                              ? 'bg-success/20 text-success cursor-default' 
+                              : 'bg-primary/10 text-primary hover:bg-primary/20'
+                          }`}
+                        >
+                          {isShowingOriginal ? <Check size={14} /> : <Eye size={14} />}
+                          {isShowingOriginal ? t('roll.originalLoaded') : t('roll.viewOriginal')}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -675,13 +702,24 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                           />
                           <span className="text-xs text-white/60">{t('roll.exportWithBorder')}</span>
                        </label>
-                       <button 
-                          onClick={handleDownloadCurrentFrame}
-                          className="w-full bg-primary text-on-primary py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                       >
-                          {t('roll.exportImage')}
-                       </button>
-                    </div>
+                        <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5">
+                           {(['original', 'preview'] as const).map(q => (
+                              <button 
+                                 key={q}
+                                 onClick={() => setDownloadQuality(q)}
+                                 className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${downloadQuality === q ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'}`}
+                              >
+                                 {t(`roll.download${q.charAt(0).toUpperCase() + q.slice(1)}`)}
+                              </button>
+                           ))}
+                        </div>
+                        <button 
+                           onClick={() => handleDownloadCurrentFrame()}
+                           className="w-full bg-primary text-on-primary py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        >
+                           {t('roll.exportImage')}
+                        </button>
+                     </div>
                   </div>
                </div>
           </motion.div>

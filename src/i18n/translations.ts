@@ -201,7 +201,11 @@ export const translations = {
         shutterSpeed: '例如: 1/60s',
         iso: '例如: 400',
         emptyDesc: '可在影集设置中添加'
-      }
+      },
+      viewOriginal: '查看原图',
+      originalLoaded: '已加载原图',
+      downloadOriginal: '下载原图',
+      downloadPreview: '下载压缩图'
     },
     post: {
       new: '发布动态',
@@ -534,7 +538,11 @@ export const translations = {
         shutterSpeed: 'e.g.: 1/60s',
         iso: 'e.g.: 400',
         emptyDesc: 'Can be added in album settings'
-      }
+      },
+      viewOriginal: 'View Original',
+      originalLoaded: 'Original Loaded',
+      downloadOriginal: 'Download Original',
+      downloadPreview: 'Download Preview'
     },
     post: {
       new: 'Post',

@@ -330,7 +330,7 @@ export default function Admin() {
   const [testEmailStatus, setTestEmailStatus] = useState({ type: '', message: '' });
 
   // 选项卡状态
-  const [activeTab, setActiveTab] = useState<'system' | 'users' | 'imgbed' | 'filmstocks'>('system');
+  const [activeTab, setActiveTab] = useState<'system' | 'users' | 'imgbed' | 'filmstocks' | 'maintenance'>('system');
 
   // 胶卷模块状态
   const [filmStocks, setFilmStocks] = useState<any[]>([]);
@@ -726,6 +726,7 @@ export default function Admin() {
           { id: 'users',      icon: Users,     label: at('tabUsers') },
           { id: 'filmstocks', icon: Film,       label: at('tabFilmStocks') },
           { id: 'imgbed',     icon: ImageUp,    label: at('tabImgBed') },
+          { id: 'maintenance', icon: RefreshCw, label: at('maintenance') },
         ].map(tab => (
           <button
             key={tab.id}
@@ -1229,62 +1230,73 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* 系统维护（备份与还原） */}
-              <div className={`rounded-[32px] border ${cardBg} p-8 shadow-sm`}>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-500">
-                    <RefreshCw size={24} />
-                  </div>
-                  <div>
-                    <h2 className="font-black text-xl tracking-tight">{at('backupAndRestore')}</h2>
-                    <p className={`text-xs font-medium mt-1 ${mutedText}`}>Backup & Restore System Data</p>
-                  </div>
+          {/* ── 系统维护 (Maintenance) ───────────────────────────────── */}
+          {activeTab === 'maintenance' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3.5 rounded-[24px] bg-indigo-500 shadow-lg shadow-indigo-500/20 text-white">
+                  <RefreshCw size={28} />
                 </div>
-                
+                <div>
+                  <h1 className="text-3xl font-black tracking-tight">{at('backupAndRestore')}</h1>
+                  <p className={`text-sm font-medium mt-1 ${mutedText}`}>System Maintenance & Data Protection</p>
+                </div>
+              </div>
+
+              <div className={`rounded-[32px] border ${cardBg} p-8 shadow-sm`}>
                 <div className="flex flex-col gap-6">
-                  <div className={`p-6 rounded-2xl ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'} border border-inherit`}>
-                    <p className="text-sm leading-relaxed opacity-70">
-                      {at('backupDesc')}
-                    </p>
+                  <div className={`p-8 rounded-[24px] ${isDarkMode ? 'bg-white/[0.02] border-white/5' : 'bg-gray-50 border-gray-100'} border`}>
+                    <div className="flex items-start gap-4 mb-8">
+                      <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500">
+                        <ShieldAlert size={20} />
+                      </div>
+                      <p className="text-sm leading-relaxed opacity-70">
+                        {at('backupDesc')}
+                      </p>
+                    </div>
                     
-                    <div className="mt-8 flex flex-col md:flex-row items-center gap-8">
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <div 
-                          className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                            includeContentBackup 
-                              ? 'bg-indigo-500 border-indigo-500 shadow-lg shadow-indigo-500/20' 
-                              : 'border-current opacity-30 group-hover:opacity-60'
-                          }`}
-                          onClick={() => setIncludeContentBackup(!includeContentBackup)}
-                        >
-                          {includeContentBackup && <div className="w-2 h-2 bg-white rounded-sm" />}
+                    <div className="mt-8 p-6 rounded-2xl bg-black/5 dark:bg-white/5 border border-inherit">
+                      <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                        <label className="flex items-center gap-4 cursor-pointer group">
+                          <div 
+                            className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${
+                              includeContentBackup 
+                                ? 'bg-indigo-500 border-indigo-500 shadow-lg shadow-indigo-500/20' 
+                                : 'border-current opacity-30 group-hover:opacity-60'
+                            }`}
+                            onClick={() => setIncludeContentBackup(!includeContentBackup)}
+                          >
+                            {includeContentBackup && <div className="w-2.5 h-2.5 bg-white rounded-sm" />}
+                          </div>
+                          <span className="text-base font-bold">{at('includeContent')}</span>
+                        </label>
+                        
+                        <div className="flex gap-4 w-full md:w-auto">
+                          <button 
+                            onClick={handleBackup} 
+                            className="flex-1 md:flex-none px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-bold shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                          >
+                            {at('backupNow')}
+                          </button>
+                          <button 
+                            onClick={() => fileInputRef.current?.click()} 
+                            className={`flex-1 md:flex-none px-10 py-4 border rounded-2xl text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                              isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            {at('restoreData')}
+                          </button>
+                          <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept=".json" 
+                            onChange={handleRestore} 
+                          />
                         </div>
-                        <span className="text-sm font-bold">{at('includeContent')}</span>
-                      </label>
-                      
-                      <div className="flex gap-4 w-full md:w-auto ml-auto">
-                        <button 
-                          onClick={handleBackup} 
-                          className="flex-1 md:flex-none px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                          {at('backupNow')}
-                        </button>
-                        <button 
-                          onClick={() => fileInputRef.current?.click()} 
-                          className={`flex-1 md:flex-none px-8 py-3 border rounded-2xl text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                            isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-100'
-                          }`}
-                        >
-                          {at('restoreData')}
-                        </button>
-                        <input 
-                          type="file" 
-                          ref={fileInputRef} 
-                          className="hidden" 
-                          accept=".json" 
-                          onChange={handleRestore} 
-                        />
                       </div>
                     </div>
                   </div>
