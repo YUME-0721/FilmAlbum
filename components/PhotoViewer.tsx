@@ -46,6 +46,8 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
   const [lastAspectRatio, setLastAspectRatio] = useState<number>(1.5);
   const [isShowingOriginal, setIsShowingOriginal] = useState(false);
   const [downloadQuality, setDownloadQuality] = useState<'original' | 'preview'>('original');
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
   const tagInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -142,10 +144,15 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
     const imageUrl = quality === 'original' ? frame.imageUrl : (frame.previewUrl || frame.imageUrl);
     const isOriginal = quality === 'original' || !frame.previewUrl;
 
+    setIsExporting(true);
+    setExportProgress(10);
+
     try {
       if (!isExportWithBorder || borderType === 'none') {
+        setExportProgress(40);
         const response = await fetch(imageUrl);
         const blob = await response.blob();
+        setExportProgress(80);
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -154,10 +161,13 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
+        setExportProgress(100);
+        setTimeout(() => setIsExporting(false), 500);
+        showToast('图片下载成功');
         return;
       }
 
-      showToast('正在生成图片...', 'success');
+      setExportProgress(20);
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -171,6 +181,8 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
         img.onerror = rej;
       });
 
+      setExportProgress(40);
+
       const isVertical = img.height > img.width;
       const baseSize = isVertical ? img.height : img.width;
       
@@ -181,6 +193,8 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       
       canvas.width = img.width + sidePadding * 2;
       canvas.height = img.height + topPadding + bottomArea;
+
+      setExportProgress(60);
 
       ctx.fillStyle = borderType === 'white' ? '#ffffff' : '#000000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -298,14 +312,18 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       }
       ctx.globalAlpha = 1.0;
 
+      setExportProgress(90);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
       const link = document.createElement('a');
       link.href = dataUrl;
       link.download = `${roll.title}_${frame.frameNumber}_bordered${isOriginal ? '' : '_preview'}.jpg`;
       link.click();
+      setExportProgress(100);
+      setTimeout(() => setIsExporting(false), 500);
       showToast('图片下载成功');
     } catch (error) {
       console.error('Download failed:', error);
+      setIsExporting(false);
       showToast('图片处理失败', 'error');
     }
   };
@@ -314,6 +332,34 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
     <div className={`fixed inset-0 z-50 overflow-hidden transition-colors duration-500 ${
       borderType === 'black' ? 'bg-white/95' : 'bg-black/90'
     } backdrop-blur-2xl`}>
+      {/* 导出进度提示 */}
+      <AnimatePresence>
+        {isExporting && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm"
+          >
+            <div className="w-64 space-y-4">
+              <div className="flex justify-between items-center text-white/90 text-sm font-medium">
+                <span>{exportProgress < 100 ? '正在导出图片...' : '导出完成'}</span>
+                <span>{exportProgress}%</span>
+              </div>
+              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${exportProgress}%` }}
+                  className="h-full bg-primary"
+                  transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+                />
+              </div>
+              <p className="text-white/40 text-[11px] text-center">正在处理高分辨率渲染，请稍候</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 顶部返回按钮 */}
       <button
         onClick={onClose}
@@ -514,7 +560,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                     {roll.filmStock ? (
                       <>
                         {/* 卡片上半部分 - LOGO和型号 */}
-                         <div className="flex items-center gap-6 mb-8">
+                         <div className="flex items-center gap-10 mb-8">
                           <div className="shrink-0">
                             {(() => {
                               const logo = filmStockData?.brandLogo || (() => {
@@ -544,7 +590,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                             })()}
                           </div>
                           <div className="flex flex-col justify-center">
-                            <h5 className="text-[#f4f4f5] font-caslon text-[32px] leading-tight tracking-wide lining-nums">
+                            <h5 className="text-[#f4f4f5] font-caslon text-[32px] font-bold leading-tight tracking-wide lining-nums">
                               {(() => {
                                 const fullModel = filmStockData?.model || (roll.filmStock.includes(' ') ? roll.filmStock.split(' ').slice(1).join(' ') : roll.filmStock);
                                 const brand = filmStockData?.brand || roll.filmStock.split(' ')[0];
