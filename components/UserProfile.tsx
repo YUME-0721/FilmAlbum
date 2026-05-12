@@ -67,8 +67,17 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   const [allRolls, setAllRolls] = useState<RollListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [yearFilter, setYearFilter] = useState('');
   const [filmFilter, setFilmFilter] = useState('');
+
+  // 搜索去抖处理
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // NOTE: 从全量相册中动态提取年份，避免写死固定选项
   const availableYears = React.useMemo(() => {
@@ -383,19 +392,20 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   };
 
   /** 获取胶卷列表 */
-  const fetchRolls = useCallback(async () => {
+  const fetchRolls = useCallback(async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     try {
       const params: Record<string, string | number | undefined> = {};
       if (targetUserId) params.userId = targetUserId;
       if (yearFilter) params.year = yearFilter;
       if (filmFilter) params.filmType = filmFilter;
-      if (searchQuery) params.tag = searchQuery;
+      if (debouncedSearchQuery) params.tag = debouncedSearchQuery;
 
       const result = await getRolls(params as Record<string, string>);
       if (result.success && result.data) {
         setRolls(result.data);
         // NOTE: 只有在无筛选条件时才更新全量数据，保证年份下拉型始终显示所有年份
-        if (!yearFilter && !filmFilter && !searchQuery) {
+        if (!yearFilter && !filmFilter && !debouncedSearchQuery) {
           setAllRolls(result.data);
         }
       } else {
@@ -404,9 +414,9 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     } catch {
       setRolls([]);
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
-  }, [targetUserId, yearFilter, filmFilter, searchQuery]);
+  }, [targetUserId, yearFilter, filmFilter, debouncedSearchQuery]);
 
   /** 获取用户动态 */
   const fetchUserPosts = useCallback(async (pageNum: number) => {
@@ -454,10 +464,15 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   // 初始化数据
   React.useEffect(() => {
     fetchProfile();
-    fetchRolls();
+    fetchRolls(true);
     fetchFilmStocks();
     fetchGear();
-  }, [fetchProfile, fetchRolls, fetchFilmStocks, fetchGear]);
+  }, [fetchProfile, fetchFilmStocks, fetchGear]); // 去掉 fetchRolls，由下面的 effect 单独处理
+
+  // 处理相册筛选与搜索
+  React.useEffect(() => {
+    fetchRolls();
+  }, [fetchRolls]);
 
   // 当切换到动态页时加载动态数据
   React.useEffect(() => {
@@ -642,10 +657,10 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   return (
     <main className="max-w-7xl mx-auto px-8 pt-12 pb-24">
       {/* Profile Header */}
-      <header className="flex flex-col md:flex-row items-center md:items-start gap-12 mb-20">
+      <header className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-12 mb-12 md:mb-20">
         {/* Left: Avatar */}
         <div className="relative group shrink-0">
-          <div className="w-48 h-48 overflow-hidden bg-surface-container-highest flex items-center justify-center">
+          <div className="w-32 h-32 md:w-48 md:h-48 overflow-hidden bg-surface-container-highest flex items-center justify-center">
             {profile?.avatarUrl ? (
               <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             ) : (
@@ -658,13 +673,13 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         </div>
 
         {/* Center-Left: Name & Bio & Buttons */}
-        <div className="flex-1 flex flex-col gap-6 text-center md:text-left">
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row md:items-end gap-3">
-              <h1 className="font-headline text-5xl font-bold text-on-surface">{profile?.nickname || '用户'}</h1>
-              <span className="text-on-surface-variant font-label text-xs tracking-widest mb-1">ID: {profile?.id}</span>
+        <div className="flex-1 flex flex-col gap-4 md:gap-6 text-center md:text-left w-full max-w-full overflow-hidden">
+          <div className="space-y-3 md:space-y-4">
+            <div className="flex flex-col md:flex-row md:items-end gap-1 md:gap-3 justify-center md:justify-start">
+              <h1 className="font-headline text-2xl md:text-5xl font-bold text-on-surface break-words leading-tight">{profile?.nickname || '用户'}</h1>
+              <span className="text-on-surface-variant font-label text-[10px] md:text-xs tracking-widest mb-1 opacity-60">ID: {profile?.id}</span>
             </div>
-            <p className="font-body text-on-surface-variant max-w-xl leading-relaxed text-sm md:text-base">
+            <p className="font-body text-on-surface-variant max-w-xl leading-relaxed text-xs md:text-base px-4 md:px-0">
               {profile?.bio || '这个人很懒，什么都没写。'}
             </p>
           </div>
@@ -702,8 +717,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         </div>
 
         {/* Right: Stats */}
-        <div className="flex md:flex-col justify-center gap-12 md:gap-8 md:pl-12 md:border-l border-outline-variant/20 font-label">
-          <div className="flex md:flex-row gap-12 items-center">
+        <div className="flex md:flex-col justify-center gap-8 md:gap-8 md:pl-12 md:border-l border-outline-variant/20 font-label w-full md:w-auto">
+          <div className="flex flex-row gap-8 md:gap-12 items-center justify-center md:justify-start">
             <div 
               className="flex flex-col md:items-start items-center gap-1 cursor-pointer hover:bg-surface-container-highest/20 p-2 -m-2 rounded-xl transition-all active:scale-95 group"
               onClick={() => {
@@ -733,8 +748,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       </header>
 
       {/* Functional Tabs */}
-      <div className="mb-8 border-b border-outline-variant/15 overflow-x-auto overflow-y-hidden scrollbar-hide">
-        <div className="flex gap-12 min-w-max px-px">
+      <div className="mb-6 md:mb-8 border-b border-outline-variant/15 overflow-x-auto overflow-y-hidden scrollbar-hide">
+        <div className="flex gap-8 md:gap-12 min-w-max px-4 md:px-px justify-center md:justify-start">
           {/* 只对自己显示相册标签 */}
           {profile?.isOwner && (
             <button 
@@ -770,27 +785,27 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
 
       {/* Filters & Actions Row */}
       {activeTab === 'album' && profile?.isOwner && (
-        <div className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={16} />
+        <div className="mb-8 md:mb-12 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+          <div className="flex flex-row flex-wrap items-center gap-2 md:gap-4 w-full md:w-auto">
+            <div className="relative group flex-1 md:flex-none">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={14} />
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="搜索标签..." 
-                className="bg-surface-container-low border border-outline-variant/10 focus:border-primary/50 focus:bg-surface-container-low/50 text-sm py-2 pl-10 pr-4 w-64 placeholder:text-on-surface-variant/30 transition-all outline-none rounded-sm text-on-surface"
+                placeholder="搜索标题或标签..." 
+                className="bg-surface-container-low border border-outline-variant/10 focus:border-primary/50 focus:bg-surface-container-low/50 text-xs md:text-sm py-2 pl-9 pr-4 w-full md:w-64 placeholder:text-on-surface-variant/30 transition-all outline-none rounded-sm text-on-surface"
               />
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 border border-outline-variant/10 rounded-sm hover:border-outline-variant/30 transition-colors">
-                <Calendar size={14} className="text-on-surface-variant/40" />
+            <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
+              <div className="flex flex-1 md:flex-none items-center gap-2 bg-surface-container-low px-2 md:px-3 py-2 border border-outline-variant/10 rounded-sm hover:border-outline-variant/30 transition-colors">
+                <Calendar size={12} className="text-on-surface-variant/40" />
                 <select 
                   aria-label={t('roll.year')}
                   value={yearFilter}
                   onChange={(e) => setYearFilter(e.target.value)}
-                  className="bg-transparent border-none text-[10px] font-label font-bold focus:ring-0 cursor-pointer pr-8 uppercase tracking-[0.1em] text-on-surface-variant outline-none"
+                  className="bg-transparent border-none text-[10px] font-label font-bold focus:ring-0 cursor-pointer pr-4 md:pr-8 uppercase tracking-[0.1em] text-on-surface-variant outline-none"
                 >
                   <option value="">{t('roll.year')}: {t('common.all')}</option>
                   {availableYears.map(year => (
@@ -799,13 +814,13 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 border border-outline-variant/10 rounded-sm hover:border-outline-variant/30 transition-colors">
-                <Filter size={14} className="text-on-surface-variant/40" />
+              <div className="flex flex-1 md:flex-none items-center gap-2 bg-surface-container-low px-2 md:px-3 py-2 border border-outline-variant/10 rounded-sm hover:border-outline-variant/30 transition-colors">
+                <Filter size={12} className="text-on-surface-variant/40" />
                 <select 
                   aria-label={t('roll.type')}
                   value={filmFilter}
                   onChange={(e) => setFilmFilter(e.target.value)}
-                  className="bg-transparent border-none text-[10px] font-label font-bold focus:ring-0 cursor-pointer pr-8 uppercase tracking-[0.1em] text-on-surface-variant outline-none"
+                  className="bg-transparent border-none text-[10px] font-label font-bold focus:ring-0 cursor-pointer pr-4 md:pr-8 uppercase tracking-[0.1em] text-on-surface-variant outline-none"
                 >
                   <option value="">{t('roll.type')}: {t('common.all')}</option>
                   {filmTypes.map(type => (
@@ -825,7 +840,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                 }
                 setShowCreateModal(true);
               }}
-              className="bg-primary text-on-primary px-6 py-2.5 text-xs font-bold hover:bg-primary-dim transition-all shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-[0.2em] rounded-sm active:scale-95"
+              className="bg-primary text-on-primary px-6 py-2.5 text-xs font-bold hover:bg-primary-dim transition-all shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-[0.2em] rounded-sm active:scale-95 w-full md:w-auto mt-2 md:mt-0"
             >
               <FolderPlus size={16} />
               {t('roll.new')}

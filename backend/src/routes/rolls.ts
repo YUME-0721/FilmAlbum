@@ -50,8 +50,8 @@ rolls.get('/', authOptional(), async (c) => {
   }
 
   if (tag) {
-    whereClause += ' AND r.tags LIKE ?';
-    params.push(`%${tag}%`);
+    whereClause += ' AND (r.tags LIKE ? OR r.title LIKE ?)';
+    params.push(`%${tag}%`, `%${tag}%`);
   }
 
   const totalQuery = `SELECT COUNT(*) as count FROM rolls r ${whereClause}`;
