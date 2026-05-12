@@ -9,6 +9,18 @@ import { getUploadStrategy } from '../utils/upload-helper';
 
 const rolls = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
+/** 安全解析 JSON */
+function safeParseJSON(str: any, fallback: any = []) {
+  if (!str) return fallback;
+  if (typeof str !== 'string') return str;
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    console.error('JSON parse error:', e, 'Content:', str);
+    return fallback;
+  }
+}
+
 /** GET /api/rolls - 获取胶卷列表（支持筛选） */
 rolls.get('/', authOptional(), async (c) => {
   const userId = c.req.query('userId');
@@ -87,6 +99,7 @@ rolls.get('/', authOptional(), async (c) => {
       status: row.status,
       tags: JSON.parse((row.tags as string) || '[]'),
       frameCount: row.frame_count,
+      sortOrder: row.sort_order,
       frames: frames,
       author: {
         id: row.user_id,
@@ -141,7 +154,8 @@ rolls.get('/:id', authOptional(), async (c) => {
       format: roll.format,
       filmType: roll.film_type,
       status: roll.status,
-      tags: JSON.parse((roll.tags as string) || '[]'),
+      tags: safeParseJSON(roll.tags),
+      sortOrder: roll.sort_order,
       author: {
         id: roll.user_id,
         nickname: roll.author_name,
@@ -163,7 +177,7 @@ rolls.get('/:id', authOptional(), async (c) => {
         lens: f.lens,
         fileSize: f.file_size,
         fileFormat: f.file_format,
-        tags: JSON.parse((f.tags as string) || '[]')
+        tags: safeParseJSON(f.tags)
       })) ?? [],
       isOwner: String(currentUserId) === String(roll.user_id),
       createdAt: roll.created_at
@@ -213,7 +227,7 @@ rolls.get('/frame/:frameId', authOptional(), async (c) => {
       format: roll.format,
       filmType: roll.film_type,
       status: roll.status,
-      tags: JSON.parse((roll.tags as string) || '[]'),
+      tags: safeParseJSON(roll.tags),
       author: {
         id: roll.user_id,
         nickname: roll.author_name,
@@ -235,7 +249,7 @@ rolls.get('/frame/:frameId', authOptional(), async (c) => {
         lens: f.lens,
         fileSize: f.file_size,
         fileFormat: f.file_format,
-        tags: JSON.parse((f.tags as string) || '[]')
+        tags: safeParseJSON(f.tags)
       })) ?? [],
       isOwner: String(currentUserId) === String(roll.user_id),
       createdAt: roll.created_at
@@ -309,6 +323,28 @@ rolls.post('/', authRequired(), async (c) => {
   ).run();
 
   return c.json({ success: true, data: { id: rollId } }, 201);
+});
+
+/** 批量更新相册排序 */
+rolls.put('/reorder', authRequired(), requireLevel('lv2'), async (c) => {
+  const userId = c.get('userId');
+  const { rollIds } = await c.req.json<{ rollIds: string[] }>();
+
+  if (!rollIds?.length) return c.json({ success: false, error: '未提供相册 ID 列表' }, 400);
+
+  // 批量更新 sort_order
+  const statements = rollIds.map((rollId, index) => {
+    return c.env.DB.prepare('UPDATE rolls SET sort_order = ? WHERE id = ? AND user_id = ?')
+      .bind(index, rollId, userId);
+  });
+
+  try {
+    await c.env.DB.batch(statements);
+    return c.json({ success: true });
+  } catch (err: any) {
+    console.error('Roll reorder error:', err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
 });
 
 /** PUT /api/rolls/:id - 更新胶卷信息 */
@@ -749,26 +785,5 @@ rolls.put('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async
   return c.json({ success: true });
 });
 
-/** 批量更新相册排序 */
-rolls.put('/reorder', authRequired(), async (c) => {
-  const userId = c.get('userId');
-  const { rollIds } = await c.req.json<{ rollIds: string[] }>();
-
-  if (!rollIds?.length) return c.json({ success: false, error: '未提供相册 ID 列表' }, 400);
-
-  // 批量更新 sort_order
-  const statements = rollIds.map((rollId, index) => {
-    return c.env.DB.prepare('UPDATE rolls SET sort_order = ? WHERE id = ? AND user_id = ?')
-      .bind(index, rollId, userId);
-  });
-
-  try {
-    await c.env.DB.batch(statements);
-    return c.json({ success: true });
-  } catch (err: any) {
-    console.error('Roll reorder error:', err);
-    return c.json({ success: false, error: err.message }, 500);
-  }
-});
 
 export default rolls;

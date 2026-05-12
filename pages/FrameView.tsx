@@ -13,10 +13,11 @@ export default function FrameView() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchFrameDetail = async () => {
       if (!frameId) return;
       
-      // 如果已经有当前 roll 且 frames 中包含该 frameId，则不需要重新加载数据和显示 Loading
+      // 检查当前状态，避免重复加载
       if (roll && frames.some(f => f.id === frameId)) {
         return;
       }
@@ -24,18 +25,23 @@ export default function FrameView() {
       setIsLoading(true);
       try {
         const response = await getFrameDetail(frameId);
-        if (response.success && response.data) {
-          setRoll(response.data);
-          setFrames(response.data.frames || []);
+        if (isMounted) {
+          if (response.success && response.data) {
+            setRoll(response.data);
+            setFrames(response.data.frames || []);
+          } else {
+            console.error('Failed to load frame detail:', response.error);
+          }
         }
       } catch (error) {
-        console.error('加载底片详情失败:', error);
+        console.error('加载底片详情异常:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
     fetchFrameDetail();
-  }, [frameId, roll, frames]);
+    return () => { isMounted = false; };
+  }, [frameId]); // 仅在 frameId 变化时触发，内部通过状态判断是否需要请求
 
   if (isLoading) {
     return (

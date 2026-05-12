@@ -22,6 +22,7 @@ export interface RollListItem {
   status: string;
   tags: string[];
   frameCount: number;
+  sortOrder: number;
   frames?: FrameItem[];
   author: RollAuthor;
   createdAt: string;
@@ -60,6 +61,7 @@ export interface RollDetail {
   tags: string[];
   author: RollAuthor;
   frames: FrameItem[];
+  sortOrder: number;
   isOwner: boolean;
   createdAt: string;
 }

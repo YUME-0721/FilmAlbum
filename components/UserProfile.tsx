@@ -860,6 +860,9 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                         className="text-xl md:text-2xl font-headline font-bold text-on-surface cursor-pointer hover:text-primary transition-colors leading-tight"
                         onClick={() => navigate(`/roll/${roll.id}`)}
                       >
+                        <span className="text-primary/40 mr-2 font-mono text-lg md:text-xl">
+                          卷号#{String((roll.sortOrder ?? 0) + 1).padStart(3, '0')}
+                        </span>
                         {roll.title}
                       </h2>
                       <span className="px-2 py-0.5 bg-secondary-container text-secondary text-[10px] font-label rounded-sm tracking-widest whitespace-nowrap">{roll.filmStock}</span>
