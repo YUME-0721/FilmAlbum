@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getRoll, addFrames, deleteFrame, deleteRoll, updateRoll, reorderFrames, type RollDetail, type FrameItem } from '../src/api/rolls.ts';
+import { getRoll, addFrames, deleteFrame, deleteFrames, deleteRoll, updateRoll, reorderFrames, type RollDetail, type FrameItem } from '../src/api/rolls.ts';
 import { uploadImage } from '../src/api/upload.ts';
 import { getFilmStocks, type FilmStock } from '../src/api/film-stocks.ts';
 import { getGear, type Gear } from '../src/api/gear.ts';
@@ -16,7 +16,7 @@ import FilmStockManager from '../components/FilmStockManager';
 import RollForm from '../components/RollForm';
 import { 
   ArrowLeft, ImagePlus, Pencil, Download, Trash2, Camera, Calendar, 
-  MapPin, Maximize, ArrowUp, ArrowDown, CloudUpload, Info
+  MapPin, ArrowUp, ArrowDown, CloudUpload, Info, CheckCircle2, Circle, X
 } from 'lucide-react';
 
 const FALLBACK_FRAMES: FrameItem[] = [];
@@ -57,6 +57,8 @@ export default function FilmRoll() {
   const [isLoadingGear, setIsLoadingGear] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedFrameIds, setSelectedFrameIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -129,6 +131,33 @@ export default function FilmRoll() {
     });
   };
 
+  const handleBatchDelete = async () => {
+    if (!id || selectedFrameIds.length === 0) return;
+    setConfirmDialog({
+      message: `确定要删除选中的 ${selectedFrameIds.length} 张照片吗？`,
+      onConfirm: async () => {
+        try {
+          await deleteFrames(id, selectedFrameIds);
+          setFrames(prev => prev.filter(f => !selectedFrameIds.includes(f.id)));
+          setSelectedFrameIds([]);
+          setIsSelectionMode(false);
+          showToast('照片已批量删除');
+        } catch (error) {
+          showToast('批量删除失败', 'error');
+        }
+        setConfirmDialog(null);
+      }
+    });
+  };
+
+  const toggleSelection = (frameId: string) => {
+    setSelectedFrameIds(prev => 
+      prev.includes(frameId) 
+        ? prev.filter(i => i !== frameId) 
+        : [...prev, frameId]
+    );
+  };
+
   // 加载型号和设备数据
   useEffect(() => {
     const fetchData = async () => {
@@ -194,12 +223,23 @@ export default function FilmRoll() {
     }
   };
 
-  const handleMoveFrame = (index: number, direction: 'up' | 'down') => {
+  const handleMoveFrame = async (index: number, direction: 'up' | 'down') => {
     const newFrames = [...frames];
     const target = direction === 'up' ? index - 1 : index + 1;
     if (target < 0 || target >= frames.length) return;
+    
+    // 乐观更新：先改变本地状态，实现即时反馈
     [newFrames[index], newFrames[target]] = [newFrames[target], newFrames[index]];
-    handleReorderFrames(newFrames);
+    setFrames(newFrames);
+    
+    // 然后再进行后端同步
+    try {
+      await reorderFrames(id!, newFrames.map(f => f.id));
+    } catch (error) {
+      // 失败则回滚（可选，但通常为了用户体验不做生硬回滚，或者提示重试）
+      console.error('排序同步失败:', error);
+      showToast('顺序保存失败', 'error');
+    }
   };
 
   if (isLoading) {
@@ -236,27 +276,58 @@ export default function FilmRoll() {
           </div>
           
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => fileInputRef.current?.click()} 
-              disabled={!!sessions[id!] && !sessions[id!].isCompleted} 
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20"
-            >
-              <ImagePlus size={20} />
-              <span>
-                {sessions[id!] && !sessions[id!].isCompleted 
-                  ? `${sessions[id!].current}/${sessions[id!].total}` 
-                  : t('common.upload')}
-              </span>
-            </button>
-            <button onClick={() => {/* TODO: Implement roll export */}} className="p-2.5 hover:bg-surface-variant rounded-xl transition-colors border border-outline-variant/30" title="Export Roll">
-              <Download size={20} />
-            </button>
-            <button onClick={() => setShowEditModal(true)} className="p-2.5 hover:bg-surface-variant rounded-xl transition-colors border border-outline-variant/30">
-              <Pencil size={20} />
-            </button>
-            <button onClick={handleDeleteRoll} className="p-2.5 hover:bg-error/10 text-error rounded-xl transition-colors border border-error/20">
-              <Trash2 size={20} />
-            </button>
+            {!isSelectionMode ? (
+              <>
+                <button 
+                  onClick={() => fileInputRef.current?.click()} 
+                  disabled={!!sessions[id!] && !sessions[id!].isCompleted} 
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20"
+                >
+                  <ImagePlus size={20} />
+                  <span>
+                    {sessions[id!] && !sessions[id!].isCompleted 
+                      ? `${sessions[id!].current}/${sessions[id!].total}` 
+                      : t('common.upload')}
+                  </span>
+                </button>
+                <button onClick={() => {/* TODO: Implement roll export */}} className="p-2.5 hover:bg-surface-variant rounded-xl transition-colors border border-outline-variant/30" title="Export Roll">
+                  <Download size={20} />
+                </button>
+                <button onClick={() => setShowEditModal(true)} className="p-2.5 hover:bg-surface-variant rounded-xl transition-colors border border-outline-variant/30">
+                  <Pencil size={20} />
+                </button>
+                <button onClick={() => setIsSelectionMode(true)} className="p-2.5 hover:bg-error/10 text-error rounded-xl transition-colors border border-error/20">
+                  <Trash2 size={20} />
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-3 bg-surface-variant/50 p-1.5 rounded-2xl animate-in fade-in slide-in-from-right-4 duration-300">
+                <span className="px-3 text-sm font-bold text-on-surface-variant">
+                  {selectedFrameIds.length === 0 ? '选择照片' : `已选 ${selectedFrameIds.length} 张`}
+                </span>
+                <button 
+                  onClick={handleBatchDelete} 
+                  disabled={selectedFrameIds.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-xl font-bold hover:bg-error/90 transition-all disabled:opacity-50"
+                >
+                  <Trash2 size={18} />
+                  <span>删除选中</span>
+                </button>
+                <button 
+                  onClick={handleDeleteRoll} 
+                  className="flex items-center gap-2 px-4 py-2 bg-error/10 text-error rounded-xl font-bold hover:bg-error/20 transition-all"
+                >
+                  <X size={18} />
+                  <span>删除整卷</span>
+                </button>
+                <button 
+                  onClick={() => { setIsSelectionMode(false); setSelectedFrameIds([]); }} 
+                  className="p-2 hover:bg-surface-variant rounded-xl transition-colors"
+                >
+                  取消
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -276,41 +347,75 @@ export default function FilmRoll() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-6">
-            {frames.map((frame, index) => (
-              <div
-                key={frame.id}
-                className="group relative aspect-[3/2] bg-surface-container rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500"
-                onClick={() => navigate(`/frame/${frame.id}`)}
-              >
-                <img
-                  src={frame.previewUrl || frame.imageUrl}
-                  alt={frame.frameNumber}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                />
-                
-                {/* 操作浮层 */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                  <button onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'up'); }} disabled={index === 0} className="p-2 bg-white/20 hover:bg-white/40 rounded-lg text-white disabled:opacity-20"><ArrowUp size={20} /></button>
-                  <button onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'down'); }} disabled={index === frames.length - 1} className="p-2 bg-white/20 hover:bg-white/40 rounded-lg text-white disabled:opacity-20"><ArrowDown size={20} /></button>
-                  <button onClick={(e) => { e.stopPropagation(); handleDeleteFrame(frame.id); }} className="p-2 bg-error/80 hover:bg-error rounded-lg text-white"><Trash2 size={20} /></button>
-                </div>
-
-                {/* 底部信息 */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                  <div className="flex justify-between items-center text-white font-medium text-xs">
-                    <span className="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-mono tracking-tighter">
-                      {(index + 1).toString().padStart(2, '0')}
-                    </span>
-                    <div className="flex gap-2 opacity-80">
-                      {frame.aperture && <span>{frame.aperture}</span>}
-                      {frame.shutterSpeed && <span>{frame.shutterSpeed}</span>}
+            <AnimatePresence mode="popLayout">
+              {frames.map((frame, index) => (
+                <motion.div
+                  key={frame.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{
+                    layout: { type: "spring", stiffness: 300, damping: 30 },
+                    opacity: { duration: 0.2 }
+                  }}
+                  className={`group relative aspect-[3/2] bg-surface-container rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-500 ${isSelectionMode && selectedFrameIds.includes(frame.id) ? 'ring-4 ring-primary ring-inset' : ''}`}
+                  onClick={() => isSelectionMode ? toggleSelection(frame.id) : navigate(`/frame/${frame.id}`)}
+                >
+                  <img
+                    src={frame.previewUrl || frame.imageUrl}
+                    alt={frame.frameNumber}
+                    className={`w-full h-full object-cover transition-transform duration-700 ${isSelectionMode ? '' : 'group-hover:scale-110'}`}
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                  />
+                  
+                  {/* 选择模式指示器 */}
+                  {isSelectionMode && (
+                    <div className="absolute top-3 right-3 z-10">
+                      {selectedFrameIds.includes(frame.id) ? (
+                        <CheckCircle2 className="text-primary bg-white rounded-full" size={24} />
+                      ) : (
+                        <Circle className="text-white/50" size={24} />
+                      )}
+                    </div>
+                  )}
+  
+                  {/* 操作浮层 */}
+                  {!isSelectionMode && (
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'up'); }} 
+                        disabled={index === 0} 
+                        className="p-2 bg-white/20 hover:bg-white/40 rounded-lg text-white disabled:opacity-20 transition-all hover:scale-110 active:scale-95"
+                      >
+                        <ArrowUp size={20} />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'down'); }} 
+                        disabled={index === frames.length - 1} 
+                        className="p-2 bg-white/20 hover:bg-white/40 rounded-lg text-white disabled:opacity-20 transition-all hover:scale-110 active:scale-95"
+                      >
+                        <ArrowDown size={20} />
+                      </button>
+                    </div>
+                  )}
+  
+                  {/* 底部信息 */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                    <div className="flex justify-between items-center text-white font-medium text-xs">
+                      <span className="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-mono tracking-tighter">
+                        {(index + 1).toString().padStart(2, '0')}
+                      </span>
+                      <div className="flex gap-2 opacity-80">
+                        {frame.aperture && <span>{frame.aperture}</span>}
+                        {frame.shutterSpeed && <span>{frame.shutterSpeed}</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>

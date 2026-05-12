@@ -58,7 +58,7 @@ rolls.get('/', authOptional(), async (c) => {
     FROM rolls r
     JOIN users u ON r.user_id = u.id
     ${whereClause}
-    ORDER BY r.created_at DESC
+    ORDER BY r.sort_order ASC, r.created_at DESC
     LIMIT ? OFFSET ?
   `;
 
@@ -291,14 +291,21 @@ rolls.post('/', authRequired(), async (c) => {
 
   const rollId = generateId();
 
+  // 获取当前用户相册的最大排序号
+  const maxOrder = await c.env.DB.prepare(
+    'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM rolls WHERE user_id = ?'
+  ).bind(userId).first<{ max_order: number }>();
+  const nextOrder = (maxOrder?.max_order ?? -1) + 1;
+
   await c.env.DB.prepare(
-    `INSERT INTO rolls (id, user_id, title, film_stock, camera, lens, location, shot_date, end_date, format, film_type, tags)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO rolls (id, user_id, title, film_stock, camera, lens, location, shot_date, end_date, format, film_type, tags, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     rollId, userId, body.title,
     body.filmStock ?? '', body.camera ?? '', body.lens ?? '',
     body.location ?? '', body.shotDate ?? '', body.endDate ?? '',
-    body.format ?? '135', body.filmType ?? 'COLOR_NEGATIVE', JSON.stringify(body.tags ?? [])
+    body.format ?? '135', body.filmType ?? 'COLOR_NEGATIVE', JSON.stringify(body.tags ?? []),
+    nextOrder
   ).run();
 
   return c.json({ success: true, data: { id: rollId } }, 201);
@@ -618,6 +625,63 @@ rolls.put('/:id/frames/reorder', authRequired(), async (c) => {
   }
 });
 
+/** POST /api/rolls/:id/frames/batch-delete - 批量删除底片 */
+rolls.post('/:id/frames/batch-delete', authRequired(), requireLevel('lv2'), async (c) => {
+  const rollId = c.req.param('id');
+  const userId = c.get('userId');
+  const { frameIds } = await c.req.json<{ frameIds: string[] }>();
+
+  if (!frameIds?.length) return c.json({ success: false, error: '未提供底片ID' }, 400);
+
+  // 1. 权限校验
+  const roll = await c.env.DB.prepare('SELECT user_id FROM rolls WHERE id = ?').bind(rollId).first<{ user_id: number }>();
+  if (!roll) return c.json({ success: false, error: '相册不存在' }, 404);
+  if (String(roll.user_id) !== String(userId)) return c.json({ success: false, error: '无权操作' }, 403);
+
+  // 2. 获取图片信息以同步删除图床
+  const placeholders = frameIds.map(() => '?').join(',');
+  const frames = await c.env.DB.prepare(
+    `SELECT image_url, preview_url FROM frames WHERE roll_id = ? AND id IN (${placeholders})`
+  ).bind(rollId, ...frameIds).all<{ image_url: string; preview_url: string }>();
+
+  const settings = await c.env.DB.prepare(
+    "SELECT key, value FROM system_settings WHERE key IN ('img_bed_url', 'img_bed_token')"
+  ).all<{ key: string; value: string }>();
+  const config = settings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
+  
+  const imgBedUrl = config['img_bed_url'] || c.env.IMG_BED_URL;
+  const imgBedToken = config['img_bed_token'] || c.env.IMG_BED_TOKEN;
+
+  if (imgBedUrl && imgBedToken) {
+    for (const frame of frames.results || []) {
+      const urlsToDelete = [frame.image_url, frame.preview_url].filter(Boolean);
+      for (const imageUrl of urlsToDelete) {
+        try {
+          const url = new URL(imageUrl);
+          let path = url.pathname;
+          if (path.startsWith('/file/')) path = path.slice(6);
+          else if (path.startsWith('/')) path = path.slice(1);
+          
+          const deleteUrl = `${imgBedUrl.replace(/\/$/, '')}/api/manage/delete/${path}`;
+          await fetch(deleteUrl, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${imgBedToken}` }
+          });
+        } catch (e) {
+          console.error('[Rolls] Batch delete sync failed:', e);
+        }
+      }
+    }
+  }
+
+  // 3. 批量删除数据库记录
+  await c.env.DB.prepare(`DELETE FROM frames WHERE roll_id = ? AND id IN (${placeholders})`)
+    .bind(rollId, ...frameIds)
+    .run();
+
+  return c.json({ success: true });
+});
+
 /** PUT /api/rolls/:rollId/frames/:frameId - 更新单张底片信息 */
 rolls.put('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async (c) => {
   const rollId = c.req.param('rollId');
@@ -683,6 +747,28 @@ rolls.put('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async
   ).bind(...values).run();
 
   return c.json({ success: true });
+});
+
+/** 批量更新相册排序 */
+rolls.put('/reorder', authRequired(), async (c) => {
+  const userId = c.get('userId');
+  const { rollIds } = await c.req.json<{ rollIds: string[] }>();
+
+  if (!rollIds?.length) return c.json({ success: false, error: '未提供相册 ID 列表' }, 400);
+
+  // 批量更新 sort_order
+  const statements = rollIds.map((rollId, index) => {
+    return c.env.DB.prepare('UPDATE rolls SET sort_order = ? WHERE id = ? AND user_id = ?')
+      .bind(index, rollId, userId);
+  });
+
+  try {
+    await c.env.DB.batch(statements);
+    return c.json({ success: true });
+  } catch (err: any) {
+    console.error('Roll reorder error:', err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
 });
 
 export default rolls;

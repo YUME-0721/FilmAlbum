@@ -202,10 +202,17 @@ function extractToken(c: Context): string | null {
 
 /**
  * 生成唯一 ID
- * 使用 crypto.randomUUID() 兼容 Workers 运行时
+ * 改为 8 位随机字符串以缩短 URL 长度，适用于相册、底片等 ID
  */
-export function generateId(): string {
-  return crypto.randomUUID();
+export function generateId(length: number = 8): string {
+  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let result = '';
+  const randomValues = new Uint8Array(length);
+  crypto.getRandomValues(randomValues);
+  for (let i = 0; i < length; i++) {
+    result += chars[randomValues[i] % chars.length];
+  }
+  return result;
 }
 
 /**

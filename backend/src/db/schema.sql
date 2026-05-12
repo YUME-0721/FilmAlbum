@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS rolls (
   film_type TEXT DEFAULT 'COLOR_NEGATIVE', /* COLOR_NEGATIVE, BW_NEGATIVE, COLOR_POSITIVE, BW_POSITIVE */
   status TEXT DEFAULT 'DRAFT',
   tags TEXT DEFAULT '[]',
+  sort_order INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

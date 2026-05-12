@@ -131,9 +131,17 @@ export function addFrames(rollId: string, frames: Array<{
 export function deleteFrame(rollId: string, frameId: string) {
   return del(`/rolls/${rollId}/frames/${frameId}`);
 }
+/** 批量删除帧 */
+export function deleteFrames(rollId: string, frameIds: string[]) {
+  return post(`/rolls/${rollId}/frames/batch-delete`, { frameIds });
+}
 /** 重新排序底片 */
 export function reorderFrames(rollId: string, frameIds: string[]) {
   return put(`/rolls/${rollId}/frames/reorder`, { frameIds });
+}
+/** 重新排序相册 */
+export function reorderRolls(rollIds: string[]) {
+  return put('/rolls/reorder', { rollIds });
 }
 
 /** 更新帧信息 */

@@ -6,7 +6,7 @@
 import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext';
-import { getRolls, type RollListItem } from '../src/api/rolls';
+import { getRolls, reorderRolls, type RollListItem } from '../src/api/rolls';
 import { getFilmStocks, type FilmStock } from '../src/api/film-stocks.ts';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { useSettings } from '../src/context/SettingsContext';
@@ -25,7 +25,8 @@ import { commonBrands, brandMap, getBrandDisplayName, filterFilmStocks } from '.
 import { 
   User, UserX, UserPlus, UserMinus, Pencil, Library, History, Camera, 
   Search, Calendar, Filter, FolderPlus, ChevronRight, PlusCircle, 
-  ChevronDown, Maximize, Circle, Timer, Star, MessageSquare, Trash2 
+  ChevronDown, Maximize, Circle, Timer, Star, MessageSquare, Trash2,
+  ArrowUp, ArrowDown
 } from 'lucide-react';
 
 /** 用户资料类型 */
@@ -598,6 +599,24 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     setShowEditModal(true);
   };
 
+  /** 处理相册排序移动 */
+  const handleMoveRoll = async (index: number, direction: 'up' | 'down') => {
+    const newRolls = [...rolls];
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= rolls.length) return;
+    
+    // 乐观更新
+    [newRolls[index], newRolls[target]] = [newRolls[target], newRolls[index]];
+    setRolls(newRolls);
+    
+    try {
+      await reorderRolls(newRolls.map(r => r.id));
+    } catch (error) {
+      console.error('Failed to reorder rolls:', error);
+      showToast('排序更新失败', 'error');
+    }
+  };
+
   if (isLoading || authLoading) {
     return (
       <main className="max-w-7xl mx-auto px-8 pt-12 pb-24 flex items-center justify-center min-h-[60vh]">
@@ -819,105 +838,139 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       {activeTab === 'album' && (
         rolls.length > 0 ? (
           <div className="space-y-16">
-            {rolls.map((roll, index) => (
-              <div key={roll.id} id={`roll-${roll.id}`} className="group">
-                {/* Roll Header: Responsive layout */}
-                <div className="flex flex-col md:flex-row md:items-baseline justify-between mb-4 px-2 gap-3">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h2 
-                      className="text-xl md:text-2xl font-headline font-bold text-on-surface cursor-pointer hover:text-primary transition-colors leading-tight"
-                      onClick={() => navigate(`/roll/${roll.id}`)}
-                    >
-                      {t('profile.roll.number')} #{String(rolls.length - index).padStart(3, '0')}: {roll.title}
-                    </h2>
-                    <span className="px-2 py-0.5 bg-secondary-container text-secondary text-[10px] font-label rounded-sm tracking-widest whitespace-nowrap">{roll.filmStock}</span>
-                      {profile?.isOwner && (
-                        <button
-                          onClick={() => handleEditRoll(roll)}
-                          className="text-on-surface-variant hover:text-primary transition-colors"
-                          title={t('roll.edit')}
-                        >
-                          <Pencil size={14} />
-                        </button>
+            <AnimatePresence mode="popLayout">
+              {rolls.map((roll, index) => (
+                <motion.div 
+                  key={roll.id} 
+                  id={`roll-${roll.id}`} 
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{
+                    layout: { type: "spring", stiffness: 300, damping: 30 },
+                    opacity: { duration: 0.3 }
+                  }}
+                  className="group"
+                >
+                  {/* Roll Header: Responsive layout */}
+                  <div className="flex flex-col md:flex-row md:items-baseline justify-between mb-4 px-2 gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h2 
+                        className="text-xl md:text-2xl font-headline font-bold text-on-surface cursor-pointer hover:text-primary transition-colors leading-tight"
+                        onClick={() => navigate(`/roll/${roll.id}`)}
+                      >
+                        {roll.title}
+                      </h2>
+                      <span className="px-2 py-0.5 bg-secondary-container text-secondary text-[10px] font-label rounded-sm tracking-widest whitespace-nowrap">{roll.filmStock}</span>
+                        {profile?.isOwner && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleEditRoll(roll)}
+                              className="p-1 text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-highest rounded"
+                              title={t('roll.edit')}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <div className="flex items-center bg-surface-container-highest/50 rounded p-0.5 ml-1">
+                              <button
+                                onClick={() => handleMoveRoll(index, 'up')}
+                                disabled={index === 0}
+                                className="p-1 text-on-surface-variant hover:text-primary disabled:opacity-20 transition-all hover:scale-110 active:scale-95"
+                                title="上移"
+                              >
+                                <ArrowUp size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleMoveRoll(index, 'down')}
+                                disabled={index === rolls.length - 1}
+                                className="p-1 text-on-surface-variant hover:text-primary disabled:opacity-20 transition-all hover:scale-110 active:scale-95"
+                                title="下移"
+                              >
+                                <ArrowDown size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2 text-on-surface-variant font-label text-xs md:text-sm tracking-tighter opacity-70 group-hover:opacity-100 transition-opacity">
+                      <Calendar size={14} />
+                      {roll.shotDate} — {roll.location}
+                    </div>
+                  </div>
+  
+                  <div className="relative overflow-hidden bg-surface-container-lowest p-3 md:p-6 group-hover:bg-surface-container-low transition-colors duration-500 rounded-sm">
+                    <div className="absolute top-2 left-0 w-full h-3 perforation-pattern opacity-10"></div>
+                    
+                    {/* Mobile Layout: Single Cover Photo */}
+                    <div className="block md:hidden w-full aspect-[4/3] bg-surface-container overflow-hidden relative cursor-pointer" onClick={() => navigate(`/roll/${roll.id}`)}>
+                      {roll.frames && roll.frames.length > 0 ? (
+                        <>
+                          <img 
+                            src={roll.frames[0].previewUrl || roll.frames[0].imageUrl} 
+                            alt={roll.title} 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                            <div className="flex items-center gap-2 text-white/90 text-[10px] font-label tracking-widest uppercase">
+                              <Library size={14} />
+                              {t('profile.roll.viewFrames', { count: roll.frames.length })}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-on-surface-variant text-xs font-label">{t('profile.roll.noPhoto')}</div>
                       )}
-                  </div>
-                  <div className="flex items-center gap-2 text-on-surface-variant font-label text-xs md:text-sm tracking-tighter opacity-70 group-hover:opacity-100 transition-opacity">
-                    <Calendar size={14} />
-                    {roll.shotDate} — {roll.location}
-                  </div>
-                </div>
-
-                <div className="relative overflow-hidden bg-surface-container-lowest p-3 md:p-6 group-hover:bg-surface-container-low transition-colors duration-500 rounded-sm">
-                  <div className="absolute top-2 left-0 w-full h-3 perforation-pattern opacity-10"></div>
-                  
-                  {/* Mobile Layout: Single Cover Photo */}
-                  <div className="block md:hidden w-full aspect-[4/3] bg-surface-container overflow-hidden relative cursor-pointer" onClick={() => navigate(`/roll/${roll.id}`)}>
-                    {roll.frames && roll.frames.length > 0 ? (
-                      <>
-                        <img 
-                          src={roll.frames[0].previewUrl || roll.frames[0].imageUrl} 
-                          alt={roll.title} 
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                          <div className="flex items-center gap-2 text-white/90 text-[10px] font-label tracking-widest uppercase">
-                            <Library size={14} />
-                            {t('profile.roll.viewFrames', { count: roll.frames.length })}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-on-surface-variant text-xs font-label">{t('profile.roll.noPhoto')}</div>
-                    )}
-                  </div>
-
-                  {/* Desktop Layout: Film Strip (Current Style) */}
-                  <div className="hidden md:flex gap-4 items-center">
-                    {roll.frames && roll.frames.length > 0 ? (
-                      <>
-                        {roll.frames.slice(0, 4).map((frame) => (
+                    </div>
+  
+                    {/* Desktop Layout: Film Strip (Current Style) */}
+                    <div className="hidden md:flex gap-4 items-center">
+                      {roll.frames && roll.frames.length > 0 ? (
+                        <>
+                          {roll.frames.slice(0, 4).map((frame) => (
+                            <div 
+                              key={frame.id} 
+                              className="flex-1 aspect-[3/2] bg-surface-container border border-outline-variant/15 relative group/frame cursor-pointer overflow-hidden"
+                              onClick={() => navigate(`/roll/${roll.id}`)}
+                            >
+                              <img 
+                                src={frame.previewUrl || frame.imageUrl} 
+                                alt={`Frame ${frame.frameNumber}`} 
+                                className="w-full h-full object-cover transition-all duration-700 hover:scale-110"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="absolute bottom-2 right-2 text-[10px] font-label text-white/50">{frame.frameNumber}</div>
+                            </div>
+                          ))}
+                          {/* 添加占位元素以保持高度一致 */}
+                          {Array.from({ length: Math.max(0, 4 - roll.frames.length) }).map((_, index) => (
+                            <div 
+                              key={`placeholder-${index}`} 
+                              className="flex-1 aspect-[3/2] bg-surface-container/50 border border-outline-variant/30"
+                            ></div>
+                          ))}
                           <div 
-                            key={frame.id} 
-                            className="flex-1 aspect-[3/2] bg-surface-container border border-outline-variant/15 relative group/frame cursor-pointer overflow-hidden"
+                            className="flex-none w-10 flex items-center justify-center cursor-pointer group/more hover:translate-x-0.5 transition-transform"
                             onClick={() => navigate(`/roll/${roll.id}`)}
+                            title={t('profile.roll.viewFull')}
                           >
-                            <img 
-                              src={frame.previewUrl || frame.imageUrl} 
-                              alt={`Frame ${frame.frameNumber}`} 
-                              className="w-full h-full object-cover transition-all duration-700 hover:scale-110"
-                              referrerPolicy="no-referrer"
-                            />
-                            <div className="absolute bottom-2 right-2 text-[10px] font-label text-white/50">{frame.frameNumber}</div>
+                            <ChevronRight size={24} className="text-on-surface-variant group-hover/more:text-primary transition-colors" />
                           </div>
-                        ))}
-                        {/* 添加占位元素以保持高度一致 */}
-                        {Array.from({ length: Math.max(0, 4 - roll.frames.length) }).map((_, index) => (
-                          <div 
-                            key={`placeholder-${index}`} 
-                            className="flex-1 aspect-[3/2] bg-surface-container/50 border border-outline-variant/30"
-                          ></div>
-                        ))}
-                        <div 
-                          className="flex-none w-10 flex items-center justify-center cursor-pointer group/more hover:translate-x-0.5 transition-transform"
-                          onClick={() => navigate(`/roll/${roll.id}`)}
-                          title={t('profile.roll.viewFull')}
-                        >
-                          <ChevronRight size={24} className="text-on-surface-variant group-hover/more:text-primary transition-colors" />
+                        </>
+                      ) : (
+                        <div className="w-full h-48 flex items-center justify-center text-on-surface-variant text-sm font-label cursor-pointer hover:text-primary transition-colors"
+                             onClick={() => navigate(`/roll/${roll.id}`)}>
+                          {t('profile.roll.noPhotoDesc')}
                         </div>
-                      </>
-                    ) : (
-                      <div className="w-full h-48 flex items-center justify-center text-on-surface-variant text-sm font-label cursor-pointer hover:text-primary transition-colors"
-                           onClick={() => navigate(`/roll/${roll.id}`)}>
-                        {t('profile.roll.noPhotoDesc')}
-                      </div>
-                    )}
+                      )}
+                    </div>
+  
+                    <div className="absolute bottom-2 left-0 w-full h-3 perforation-pattern opacity-10"></div>
                   </div>
-
-                  <div className="absolute bottom-2 left-0 w-full h-3 perforation-pattern opacity-10"></div>
-                </div>
-              </div>
-            ))}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         ) : (
           <div 
