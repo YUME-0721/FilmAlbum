@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import { getPost, likePost, unlikePost, getComments, createComment, type PostDetail, type CommentItem } from '../src/api/posts.ts';
 import { post as apiPost, del } from '../src/api/client.ts';
-import { ArrowLeft, User, Heart, MessageSquare, Share2, X } from 'lucide-react';
+import { ArrowLeft, User, Heart, MessageSquare, Share2, X, Lock, EyeOff } from 'lucide-react';
 
 /** 回退 MOCK 数据 */
 const FALLBACK_POST: PostDetail = {
@@ -34,7 +34,8 @@ const FALLBACK_POST: PostDetail = {
   isLiked: false,
   isFollowing: false,
   isOwner: false,
-  createdAt: ''
+  createdAt: '',
+  visibility: 'public'
 };
 
 /** 计算相对时间 */
@@ -192,7 +193,21 @@ export default function Post() {
             </div>
             <div>
               <h2 className="font-headline font-bold text-lg text-on-surface cursor-pointer hover:text-primary transition-colors" onClick={() => post.author.id && navigate(`/space/${post.author.id}`)}>{post.author.nickname}</h2>
-              <p className="font-label text-xs text-on-surface-variant">{formatRelativeTime(post.createdAt)}发布</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="font-label text-xs text-on-surface-variant">{formatRelativeTime(post.createdAt)}发布</p>
+                {post.visibility === 'private' && (
+                  <span className="flex items-center gap-1 text-on-surface-variant text-[10px]" title="私密动态">
+                    <Lock size={10} />
+                    <span>私密</span>
+                  </span>
+                )}
+                {post.visibility === 'feed_only' && (
+                  <span className="flex items-center gap-1 text-on-surface-variant text-[10px]" title="仅动态">
+                    <EyeOff size={10} />
+                    <span>仅动态</span>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           {!post.isOwner && (

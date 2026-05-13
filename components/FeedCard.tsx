@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../src/context/AuthContext';
 import { deletePost, type PostListItem } from '../src/api/posts';
-import { User, Pencil, Trash2, Heart, MessageSquare, Share2 } from 'lucide-react';
+import { User, Pencil, Trash2, Heart, MessageSquare, Share2, Lock, EyeOff } from 'lucide-react';
 import { useTranslation } from '../src/hooks/useTranslation';
 
 /** 相对时间格式化 */
@@ -80,7 +80,19 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[#e7e5e5] font-semibold text-sm leading-tight">{post.author.nickname}</p>
-          <p className="text-[#666] text-xs mt-0.5">{formatRelativeTime(post.createdAt, language)}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-[#666] text-xs">{formatRelativeTime(post.createdAt, language)}</p>
+            {post.visibility === 'private' && (
+              <span className="flex items-center text-[#666]" title={t('post.visibilityPrivate')}>
+                <Lock size={12} />
+              </span>
+            )}
+            {post.visibility === 'feed_only' && (
+              <span className="flex items-center text-[#666]" title={t('post.visibilityFeed')}>
+                <EyeOff size={12} />
+              </span>
+            )}
+          </div>
         </div>
         
         {/* 操作按钮 (Owner Only) */}

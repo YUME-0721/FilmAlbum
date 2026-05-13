@@ -8,7 +8,7 @@ import { getPosts, type PostListItem } from '../src/api/posts.ts';
 import CreatePostModal from '../components/CreatePostModal.tsx';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import FeedCard from '../components/FeedCard';
-import { User, Heart, MessageSquare, ChevronDown, Plus } from 'lucide-react';
+import { User, Heart, MessageSquare, ChevronDown, Plus, Lock, EyeOff } from 'lucide-react';
 import { useTranslation } from '../src/hooks/useTranslation';
 
 /** 后端无数据时的回退 MOCK 数据 */
@@ -23,7 +23,8 @@ const FALLBACK_POSTS: PostListItem[] = [
     commentsCount: 42,
     coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBCwt7mg2GUd2T8Heu_e0WDLsGU9vuWUugHOah2k3jtVRpIVKIld_ViCW95v56-38MELSzUUyQP_9UCmA9rkVEHmz-afONtZHnwCE4guyEG87kPKa51VphaLvTT380plwctDeo2AtpXTU8cOWcFaA_5EaHBCqn9T8nXXrAbX1gEdeai6GLml0bxd67hU3oP1xwIs1JE6SwxbVtv68jhnHywEXd3Pcr7oduT39yfIy5QzO-GnXPqNhxkfJrDwjpPtdaaLbxss_1umia7',
     images: [{ url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBCwt7mg2GUd2T8Heu_e0WDLsGU9vuWUugHOah2k3jtVRpIVKIld_ViCW95v56-38MELSzUUyQP_9UCmA9rkVEHmz-afONtZHnwCE4guyEG87kPKa51VphaLvTT380plwctDeo2AtpXTU8cOWcFaA_5EaHBCqn9T8nXXrAbX1gEdeai6GLml0bxd67hU3oP1xwIs1JE6SwxbVtv68jhnHywEXd3Pcr7oduT39yfIy5QzO-GnXPqNhxkfJrDwjpPtdaaLbxss_1umia7' }],
-    createdAt: ''
+    createdAt: '',
+    visibility: 'public'
   },
   {
     id: 'mock-2',
@@ -35,7 +36,8 @@ const FALLBACK_POSTS: PostListItem[] = [
     commentsCount: 18,
     coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBgGvl9j3WKbySaekhXLRbteD4ruUyMgaVnpfJFkFlH4F97Qn5kXToCTIouyerLaz4ZIHoKZvrlV3uvI2_yS9uxYSDOTMylSiSIrfflJzIQDvF_254PueQJBwFdA_NPlgsE2M9RPN3ytxWxiZayoNfAb2S8-ufSrVuXWyu6-B07DhpFI7mMefbfJKeLqcvszNutZkpZWQHnAH_tN0-FxPprHfBRraA4Dy6ZuFDfWQ4aggjaVw8R8w_b94eA-Ia74KE0_KmJdvnfTWzY',
     images: [{ url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBgGvl9j3WKbySaekhXLRbteD4ruUyMgaVnpfJFkFlH4F97Qn5kXToCTIouyerLaz4ZIHoKZvrlV3uvI2_yS9uxYSDOTMylSiSIrfflJzIQDvF_254PueQJBwFdA_NPlgsE2M9RPN3ytxWxiZayoNfAb2S8-ufSrVuXWyu6-B07DhpFI7mMefbfJKeLqcvszNutZkpZWQHnAH_tN0-FxPprHfBRraA4Dy6ZuFDfWQ4aggjaVw8R8w_b94eA-Ia74KE0_KmJdvnfTWzY' }],
-    createdAt: ''
+    createdAt: '',
+    visibility: 'public'
   },
   {
     id: 'mock-3',
@@ -47,7 +49,8 @@ const FALLBACK_POSTS: PostListItem[] = [
     commentsCount: 67,
     coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBeNpyPWgHp2nwSvQTWtCeaofqg20_O69-I4IEuKOZZGTUANJH6kxko2edXheL1ZxexGlGyJiDRnjCBIzvP62VLXIZMoKeMQoeQqso8yslcc6HO5OzlKOJUYyJcHsqGH6Y7xWifPuTPtR7Je8wTsiZGkyl6aozwybIXjIt95MyI6vWK69-40eEjzutJxermk2OvTjKDILGazSvY7GY0Ct-Jhr_h_9-QjQHL_FyVw9bQ2-rxDLb5aoJg0_Vt2zh3ir_E8gQAqKICTS4f',
     images: [{ url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBeNpyPWgHp2nwSvQTWtCeaofqg20_O69-I4IEuKOZZGTUANJH6kxko2edXheL1ZxexGlGyJiDRnjCBIzvP62VLXIZMoKeMQoeQqso8yslcc6HO5OzlKOJUYyJcHsqGH6Y7xWifPuTPtR7Je8wTsiZGkyl6aozwybIXjIt95MyI6vWK69-40eEjzutJxermk2OvTjKDILGazSvY7GY0Ct-Jhr_h_9-QjQHL_FyVw9bQ2-rxDLb5aoJg0_Vt2zh3ir_E8gQAqKICTS4f' }],
-    createdAt: ''
+    createdAt: '',
+    visibility: 'public'
   },
   {
     id: 'mock-4',
@@ -59,7 +62,8 @@ const FALLBACK_POSTS: PostListItem[] = [
     commentsCount: 12,
     coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDxCAwTBoitMiPokZGj8seccpob91CePrL-5jF-WEm6EjHh_7bn_oEfqVPlkt78mlonXv7S_HQtg10R9dFRWF6PqsUHY0bjiKA9M0WpDuHP9rb0288UqFDFbiCYoiKAnFrv2C21hiTVrWjbwnXGj1yvn5v23m94PV1bUy6s7xxvsDsyoDW98_lp0NKFs4OF-sSsgjB5uMWKlC-l5f_ooZtuLcueeyVdyNXQVHqXxEFsyDnmsa-68AN-qUnitI6UJrZDBkrtraXthf47',
     images: [{ url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDxCAwTBoitMiPokZGj8seccpob91CePrL-5jF-WEm6EjHh_7bn_oEfqVPlkt78mlonXv7S_HQtg10R9dFRWF6PqsUHY0bjiKA9M0WpDuHP9rb0288UqFDFbiCYoiKAnFrv2C21hiTVrWjbwnXGj1yvn5v23m94PV1bUy6s7xxvsDsyoDW98_lp0NKFs4OF-sSsgjB5uMWKlC-l5f_ooZtuLcueeyVdyNXQVHqXxEFsyDnmsa-68AN-qUnitI6UJrZDBkrtraXthf47' }],
-    createdAt: ''
+    createdAt: '',
+    visibility: 'public'
   },
   {
     id: 'mock-5',
@@ -71,7 +75,8 @@ const FALLBACK_POSTS: PostListItem[] = [
     commentsCount: 31,
     coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB6rpJJXIekCvjtvv8mQjGUf_RKGaeczFkSNGH0dG8BotDhxCysILvp842-XtOC09XO0azWzmd_m6Cu6Qvu-AG-kbIcxs5O0OvDfsshEAefe739Enh1wHCI9CWwcZ0rRPFuFF25aKfBQxTlrC9wxmHYLiIhoIvUFKUOeODMW-VZv3JQ3pU5H0J9xv0gAo1apaL6lrGg-Umov08Hv0Sj8OVtBP6qzYK-ihQMTyPo4AQPYPKbb8mAmhWlsuVL8O12YFAlZNztxQzljkkx',
     images: [{ url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB6rpJJXIekCvjtvv8mQjGUf_RKGaeczFkSNGH0dG8BotDhxCysILvp842-XtOC09XO0azWzmd_m6Cu6Qvu-AG-kbIcxs5O0OvDfsshEAefe739Enh1wHCI9CWwcZ0rRPFuFF25aKfBQxTlrC9wxmHYLiIhoIvUFKUOeODMW-VZv3JQ3pU5H0J9xv0gAo1apaL6lrGg-Umov08Hv0Sj8OVtBP6qzYK-ihQMTyPo4AQPYPKbb8mAmhWlsuVL8O12YFAlZNztxQzljkkx' }],
-    createdAt: ''
+    createdAt: '',
+    visibility: 'public'
   },
   {
     id: 'mock-6',
@@ -83,7 +88,8 @@ const FALLBACK_POSTS: PostListItem[] = [
     commentsCount: 55,
     coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCL8JjVUQ4KoGi9REsTpMa-aFv9PXDazctnnxtQCte5-poax_A7HGpYhSYDZak7HXfhG8Z7NOsNVnxTicVKwwY3YRCx-nE3XDnXORh91oRUo9LHyNJNnbrYiNVnpbVVYdCH83ZXuxrL2T92KSJ_dV8_Vu0I2PqrpJSwdiFNzklFc-iDIqLRY0UPdbZBwakECkaCdAMqvD19_sbR55CRvpuO9hxtMambX2HP1obQAM3PP7I3cg81ZzJP7gQO6bV-UQm4tklwb-pbM8ru',
     images: [{ url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCL8JjVUQ4KoGi9REsTpMa-aFv9PXDazctnnxtQCte5-poax_A7HGpYhSYDZak7HXfhG8Z7NOsNVnxTicVKwwY3YRCx-nE3XDnXORh91oRUo9LHyNJNnbrYiNVnpbVVYdCH83ZXuxrL2T92KSJ_dV8_Vu0I2PqrpJSwdiFNzklFc-iDIqLRY0UPdbZBwakECkaCdAMqvD19_sbR55CRvpuO9hxtMambX2HP1obQAM3PP7I3cg81ZzJP7gQO6bV-UQm4tklwb-pbM8ru' }],
-    createdAt: ''
+    createdAt: '',
+    visibility: 'public'
   }
 ];
 
@@ -226,7 +232,11 @@ export default function Home() {
                   
                   <div className="p-5 bg-surface-container-low relative z-10">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-headline text-xl text-on-surface">{post.title}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-headline text-xl text-on-surface">{post.title}</h3>
+                        {post.visibility === 'private' && <Lock size={14} className="text-on-surface-variant/60" />}
+                        {post.visibility === 'feed_only' && <EyeOff size={14} className="text-on-surface-variant/60" />}
+                      </div>
                       {post.filmType && (
                         <span className="font-label text-xs text-on-surface-variant bg-surface-container-highest px-2 py-0.5 rounded-sm">
                           {post.filmType}

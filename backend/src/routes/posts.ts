@@ -36,12 +36,17 @@ posts.get('/', authOptional(), async (c) => {
     if (!currentUserId) {
       return c.json({ success: false, error: '未登录' }, 401);
     }
-    // 看到自己和关注的人的 公开和仅动态
-    whereClause = "WHERE (p.user_id = ? OR p.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?)) AND p.visibility IN ('public', 'feed_only')";
+    // 看到自己（所有可见性）和关注的人（仅公开和动态）
+    whereClause = "WHERE (p.user_id = ? OR (p.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?) AND p.visibility IN ('public', 'feed_only')))";
     queryParams.push(currentUserId, currentUserId);
   } else {
-    // 推荐流（首页）：仅看到公开
-    whereClause = "WHERE p.visibility = 'public'";
+    // 推荐流（首页）：看到公开的，或者是自己的
+    if (currentUserId) {
+      whereClause = "WHERE (p.visibility = 'public' OR p.user_id = ?)";
+      queryParams.push(currentUserId);
+    } else {
+      whereClause = "WHERE p.visibility = 'public'";
+    }
   }
 
   const countQuery = `SELECT COUNT(*) as count FROM posts p ${whereClause}`;
@@ -112,6 +117,11 @@ posts.get('/:id', authOptional(), async (c) => {
 
   if (!post) {
     return c.json({ success: false, error: '帖子不存在' }, 404);
+  }
+
+  // 可见性检查
+  if (post.visibility === 'private' && (!currentUserId || String(currentUserId) !== String(post.user_id))) {
+    return c.json({ success: false, error: '这是私密动态，仅作者可见' }, 403);
   }
 
   // 获取帖子图片
