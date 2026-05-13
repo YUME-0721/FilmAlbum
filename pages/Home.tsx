@@ -99,8 +99,7 @@ function formatCount(count: number): string {
   return String(count);
 }
 
-/** 为瀑布流分配随机高度 */
-const HEIGHT_POOL = ['400px', '550px', '320px', '480px', '380px', '520px'];
+
 
 export default function Home() {
   const { t } = useTranslation();
@@ -183,7 +182,7 @@ export default function Home() {
   };
 
   return (
-    <main className="pt-8 pb-16 px-8 max-w-[1920px] mx-auto">
+    <main className="pt-8 pb-16 px-4 md:px-8 max-w-[1920px] mx-auto">
       {/* Gallery Header */}
       <header className="mb-12">
         <h1 className="font-headline text-4xl md:text-5xl text-on-surface mb-4 leading-tight">
@@ -221,45 +220,48 @@ export default function Home() {
                 className="masonry-item group cursor-pointer"
                 onClick={() => navigate(`/post/${post.id}`)}
               >
-                <div className="overflow-hidden relative border border-outline-variant/15">
+                <div className="overflow-hidden relative border border-outline-variant/10 rounded-xl bg-surface-container-low shadow-lg hover:shadow-primary/5 transition-all duration-500">
                   <img 
                     src={post.coverImage} 
                     alt={post.title}
-                    className="w-full object-cover transition-all duration-700 hover:scale-105 block"
-                    style={{ minHeight: HEIGHT_POOL[index % HEIGHT_POOL.length] }}
+                    className="w-full h-auto block transition-all duration-700 hover:scale-[1.03]"
                     referrerPolicy="no-referrer"
                   />
                   
-                  <div className="p-5 bg-surface-container-low relative z-10">
+                  <div className="p-4 bg-surface-container-low relative z-10 border-t border-outline-variant/5">
                     <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-headline text-xl text-on-surface">{post.title}</h3>
-                        {post.visibility === 'private' && <Lock size={14} className="text-on-surface-variant/60" />}
-                        {post.visibility === 'feed_only' && <EyeOff size={14} className="text-on-surface-variant/60" />}
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <h3 className="font-headline text-lg text-on-surface truncate">{post.title}</h3>
+                        <div className="flex-shrink-0 flex gap-1">
+                          {post.visibility === 'private' && <Lock size={12} className="text-on-surface-variant/50" />}
+                          {post.visibility === 'feed_only' && <EyeOff size={12} className="text-on-surface-variant/50" />}
+                        </div>
                       </div>
-                      {post.filmType && (
-                        <span className="font-label text-xs text-on-surface-variant bg-surface-container-highest px-2 py-0.5 rounded-sm">
+                    </div>
+                    {post.filmType && (
+                      <div className="mb-3">
+                        <span className="font-label text-[10px] uppercase tracking-wider text-primary/80 bg-primary/5 px-2 py-0.5 rounded-sm">
                           {post.filmType}
                         </span>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant/30 overflow-hidden">
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-outline-variant/5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-5 h-5 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant/30 overflow-hidden flex-shrink-0">
                           {post.author.avatarUrl ? (
                             <img src={post.author.avatarUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
-                            <User size={14} className="text-on-surface-variant" />
+                            <User size={12} className="text-on-surface-variant" />
                           )}
                         </div>
-                        <span className="text-sm text-on-surface-variant font-body">{post.author.nickname}</span>
+                        <span className="text-xs text-on-surface-variant font-body truncate">{post.author.nickname}</span>
                       </div>
-                      <div className="flex gap-4 text-on-surface-variant font-label text-xs">
+                      <div className="flex gap-3 text-on-surface-variant/80 font-label text-[10px] flex-shrink-0">
                         <span className="flex items-center gap-1">
-                          <Heart size={14} /> {formatCount(post.likesCount)}
+                          <Heart size={12} /> {formatCount(post.likesCount)}
                         </span>
                         <span className="flex items-center gap-1">
-                          <MessageSquare size={14} /> {formatCount(post.commentsCount)}
+                          <MessageSquare size={12} /> {formatCount(post.commentsCount)}
                         </span>
                       </div>
                     </div>
