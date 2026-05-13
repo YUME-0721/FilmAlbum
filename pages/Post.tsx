@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import { getPost, likePost, unlikePost, getComments, createComment, type PostDetail, type CommentItem } from '../src/api/posts.ts';
 import { post as apiPost, del } from '../src/api/client.ts';
-import { ArrowLeft, User, Heart, MessageSquare, Share2, X, Lock, EyeOff } from 'lucide-react';
+import { ArrowLeft, User, Heart, MessageSquare, Share2, X, Lock, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 
 /** 回退 MOCK 数据 */
 const FALLBACK_POST: PostDetail = {
@@ -31,6 +31,7 @@ const FALLBACK_POST: PostDetail = {
   ],
   likesCount: 1200,
   commentsCount: 42,
+  likedBy: [],
   isLiked: false,
   isFollowing: false,
   isOwner: false,
@@ -63,6 +64,7 @@ export default function Post() {
   const [likesCount, setLikesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
+  const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const fetchPost = useCallback(async () => {
@@ -110,10 +112,12 @@ export default function Post() {
         const result = await unlikePost(id);
         setIsLiked(false);
         if (result.data) setLikesCount(result.data.likesCount);
+        fetchPost();
       } else {
         const result = await likePost(id);
         setIsLiked(true);
         if (result.data) setLikesCount(result.data.likesCount);
+        fetchPost();
       }
     } catch {
       // 静默处理点赞错误
@@ -233,13 +237,66 @@ export default function Post() {
           </div>
         </div>
 
-        {/* Images */}
-        <div className="space-y-8 mb-12">
-          {post.images.map((img, idx) => (
-            <div key={img.id || idx} className="relative bg-surface-container-lowest p-4 md:p-8 border border-outline-variant/10">
-              <img src={img.imageUrl} alt={`Post image ${idx + 1}`} className="w-full h-auto object-contain max-h-[80vh]" referrerPolicy="no-referrer" />
+        {/* Images Carousel */}
+        <div className="mb-12 relative group/carousel">
+          <div className="relative aspect-[4/3] md:aspect-[16/9] bg-surface-container-lowest overflow-hidden border border-outline-variant/10">
+            {post.images.map((img, idx) => (
+              <div 
+                key={img.id || idx}
+                className={`absolute inset-0 transition-all duration-500 ease-in-out flex items-center justify-center p-4 md:p-8 ${
+                  idx === currentImgIndex ? 'opacity-100 translate-x-0 z-10' : 'opacity-0 translate-x-full z-0'
+                }`}
+                style={{
+                  transform: idx === currentImgIndex ? 'translateX(0)' : (idx < currentImgIndex ? 'translateX(-100%)' : 'translateX(100%)')
+                }}
+              >
+                <img 
+                  src={img.imageUrl} 
+                  alt={`Post image ${idx + 1}`} 
+                  className="w-full h-full object-contain select-none" 
+                  referrerPolicy="no-referrer" 
+                />
+              </div>
+            ))}
+
+            {/* Navigation Buttons */}
+            {post.images.length > 1 && (
+              <>
+                <button 
+                  onClick={() => setCurrentImgIndex(prev => (prev === 0 ? post.images.length - 1 : prev - 1))}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center transition-all opacity-0 group-hover/carousel:opacity-100 z-20"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button 
+                  onClick={() => setCurrentImgIndex(prev => (prev === post.images.length - 1 ? 0 : prev + 1))}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center transition-all opacity-0 group-hover/carousel:opacity-100 z-20"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </>
+            )}
+
+            {/* Index Indicator */}
+            <div className="absolute bottom-6 right-8 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white tracking-widest z-20">
+              {currentImgIndex + 1} / {post.images.length}
             </div>
-          ))}
+          </div>
+
+          {/* Thumbnails / Indicators */}
+          {post.images.length > 1 && (
+            <div className="flex justify-center gap-2 mt-4">
+              {post.images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImgIndex(idx)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                    idx === currentImgIndex ? 'bg-primary w-4' : 'bg-outline-variant/40 hover:bg-outline-variant'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Metadata & Actions */}
@@ -273,6 +330,44 @@ export default function Post() {
             </button>
           </div>
         </div>
+
+        {/* 点赞用户列表 */}
+        {post.likedBy && post.likedBy.length > 0 && (
+          <div className="flex items-center gap-4 py-4 mt-8 px-6 bg-surface-container-low rounded-xl border border-outline-variant/5">
+            <div className="flex -space-x-3 overflow-hidden">
+              {post.likedBy.slice(0, 5).map((u, i) => (
+                <div 
+                  key={u.id} 
+                  className="inline-block h-8 w-8 rounded-full ring-2 ring-surface-container-low overflow-hidden bg-surface-variant cursor-pointer"
+                  style={{ zIndex: 10 - i }}
+                  onClick={() => navigate(`/space/${u.id}`)}
+                >
+                  {u.avatarUrl ? (
+                    <img src={u.avatarUrl} alt={u.nickname} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-primary/20 text-primary text-[10px] font-bold">
+                      {u.nickname[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="text-sm text-on-surface-variant font-body">
+              <span className="font-bold text-on-surface cursor-pointer hover:text-primary" onClick={() => navigate(`/space/${post.likedBy[0].id}`)}>
+                {post.likedBy[0].nickname}
+              </span>
+              {post.likedBy.length > 1 && (
+                <>
+                  <span className="mx-1">以及其他</span>
+                  <span className="font-bold text-on-surface">
+                    {post.likedBy.length - 1} 位用户
+                  </span>
+                </>
+              )}
+              <span className="ml-1">点赞了此帖</span>
+            </div>
+          </div>
+        )}
       </article>
 
       {/* Comments Section */}

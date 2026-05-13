@@ -23,14 +23,15 @@ posts.get('/', authOptional(), async (c) => {
 
   if (queryUserId) {
     // 查看个人空间
-    if (currentUserId && String(currentUserId) === String(queryUserId)) {
+    // NOTE: 前端传来的 queryUserId 可能是补全零后的字符串（如 '0001'），而 currentUserId 是原始 ID，需统一转换后比较
+    if (currentUserId && Number(currentUserId) === Number(queryUserId)) {
       // 查看自己的空间：看到所有
       whereClause = 'WHERE p.user_id = ?';
     } else {
       // 查看他人空间：看到公开和仅动态
       whereClause = "WHERE p.user_id = ? AND p.visibility IN ('public', 'feed_only')";
     }
-    queryParams.push(queryUserId);
+    queryParams.push(Number(queryUserId));
   } else if (type === 'feed') {
     // 关注动态流
     if (!currentUserId) {
@@ -38,12 +39,12 @@ posts.get('/', authOptional(), async (c) => {
     }
     // 看到自己（所有可见性）和关注的人（仅公开和动态）
     whereClause = "WHERE (p.user_id = ? OR (p.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?) AND p.visibility IN ('public', 'feed_only')))";
-    queryParams.push(currentUserId, currentUserId);
+    queryParams.push(Number(currentUserId), Number(currentUserId));
   } else {
     // 推荐流（首页）：看到公开的，或者是自己的
     if (currentUserId) {
       whereClause = "WHERE (p.visibility = 'public' OR p.user_id = ?)";
-      queryParams.push(currentUserId);
+      queryParams.push(Number(currentUserId));
     } else {
       whereClause = "WHERE p.visibility = 'public'";
     }
@@ -147,6 +148,15 @@ posts.get('/:id', authOptional(), async (c) => {
     isFollowing = !!follow;
   }
 
+  // 获取点赞该帖子的用户（显示前 10 个）
+  const likedUsers = await c.env.DB.prepare(
+    `SELECT u.id, u.nickname, u.avatar_url 
+     FROM likes l 
+     JOIN users u ON l.user_id = u.id 
+     WHERE l.post_id = ? 
+     ORDER BY l.created_at DESC LIMIT 10`
+  ).bind(postId).all();
+
   return c.json({
     success: true,
     data: {
@@ -159,7 +169,7 @@ posts.get('/:id', authOptional(), async (c) => {
       tags: JSON.parse((post.tags as string) || '[]'),
       visibility: post.visibility || 'public',
       author: {
-        id: post.user_id,
+        id: String(post.user_id).padStart(4, '0'),
         nickname: post.author_name,
         avatarUrl: post.author_avatar,
         bio: post.author_bio
@@ -172,9 +182,14 @@ posts.get('/:id', authOptional(), async (c) => {
       })) ?? [],
       likesCount: post.likes_count,
       commentsCount: post.comments_count,
+      likedBy: likedUsers.results?.map((u: any) => ({
+        id: String(u.id).padStart(4, '0'),
+        nickname: u.nickname,
+        avatarUrl: u.avatar_url
+      })) ?? [],
       isLiked,
       isFollowing,
-      isOwner: String(currentUserId) === String(post.user_id),
+      isOwner: currentUserId ? Number(currentUserId) === Number(post.user_id) : false,
       createdAt: post.created_at
     }
   });

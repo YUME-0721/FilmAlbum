@@ -38,6 +38,7 @@ export interface PostDetail {
   images: Array<{ id: string; imageUrl: string; previewUrl?: string; sortOrder: number }>;
   likesCount: number;
   commentsCount: number;
+  likedBy: PostAuthor[];
   isLiked: boolean;
   isFollowing: boolean;
   isOwner: boolean;

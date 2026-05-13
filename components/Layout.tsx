@@ -5,7 +5,7 @@
  */
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext.tsx';
-import { Search, Mail, User, Settings as SettingsIcon } from 'lucide-react';
+import { Search, User, Settings as SettingsIcon } from 'lucide-react';
 import SearchOverlay from './SearchOverlay';
 import { useState } from 'react';
 import { useTranslation } from '../src/hooks/useTranslation';
@@ -65,15 +65,6 @@ export default function Layout() {
             >
               <Search size={20} strokeWidth={2.5} />
             </button>
-            {isLoggedIn && (
-              <button 
-                onClick={() => navigate('/messages')}
-                className="text-on-surface hover:text-primary transition-colors"
-                title={t('nav.messages')}
-              >
-                <Mail size={20} strokeWidth={2.5} />
-              </button>
-            )}
             {isLoggedIn ? (
               <div className="flex items-center gap-4">
                 <button 

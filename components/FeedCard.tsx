@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../src/context/AuthContext';
 import { deletePost, type PostListItem } from '../src/api/posts';
-import { User, Pencil, Trash2, Heart, MessageSquare, Share2, Lock, EyeOff } from 'lucide-react';
+import { User, Pencil, Trash2, Heart, MessageSquare, Share2, MoreHorizontal, Edit2, Lock, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '../src/hooks/useTranslation';
 
 /** 相对时间格式化 */
@@ -168,28 +168,53 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
               />
             </div>
           ) : (
-            /* 多图：横向滚动 + 左右导航 */
-            <div className="relative">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide cursor-pointer" onClick={onClick}>
+            /* 多图：轮播样式 */
+            <div className="relative group/carousel overflow-hidden rounded-lg">
+              <div 
+                className="flex transition-transform duration-500 ease-out"
+                style={{ transform: `translateX(-${imgIdx * 100}%)` }}
+                onClick={onClick}
+              >
                 {imgs.map((img: { url: string; previewUrl?: string }, i: number) => (
-                  <img
+                  <div key={i} className="flex-shrink-0 w-full">
+                    <img
+                      src={img.previewUrl || img.url}
+                      alt=""
+                      className="w-full h-[420px] object-cover cursor-pointer"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Navigation buttons */}
+              <button 
+                onClick={(e) => { e.stopPropagation(); setImgIdx(prev => (prev === 0 ? imgs.length - 1 : prev - 1)); }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setImgIdx(prev => (prev === imgs.length - 1 ? 0 : prev + 1)); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
+              >
+                <ChevronRight size={20} />
+              </button>
+
+              {/* Dots / Indicators */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                {imgs.map((_: any, i: number) => (
+                  <div 
                     key={i}
-                    src={img.previewUrl || img.url}
-                    alt=""
-                    className={`flex-shrink-0 h-52 rounded-lg object-cover transition-opacity ${i === imgIdx ? 'opacity-100' : 'opacity-80 hover:opacity-100'}`}
-                    style={{ width: imgs.length === 2 ? 'calc(50% - 4px)' : imgs.length >= 3 ? '200px' : 'auto' }}
-                    referrerPolicy="no-referrer"
-                    onClick={(e) => { e.stopPropagation(); setImgIdx(i); }}
+                    className={`h-1 rounded-full transition-all ${i === imgIdx ? 'w-4 bg-white' : 'w-1 bg-white/40'}`}
                   />
                 ))}
               </div>
-              {hasMultiple && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                  {imgs.map((_, i) => (
-                    <div key={i} className={`w-1 h-1 rounded-full transition-colors ${i === imgIdx ? 'bg-white' : 'bg-white/30'}`} />
-                  ))}
-                </div>
-              )}
+
+              {/* Counter */}
+              <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-white font-mono">
+                {imgIdx + 1}/{imgs.length}
+              </div>
             </div>
           )}
         </div>

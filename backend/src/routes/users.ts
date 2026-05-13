@@ -55,7 +55,7 @@ users.get('/:id', authOptional(), async (c) => {
       followingCount: followingCount?.count ?? 0,
       likesCount: likesCount?.count ?? 0,
       isFollowing,
-      isOwner: currentUserId === user.id.toString(),
+      isOwner: currentUserId ? Number(currentUserId) === Number(user.id) : false,
       createdAt: user.created_at
     }
   });

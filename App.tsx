@@ -63,16 +63,7 @@ export default function App() {
                   <Settings />
                 </ProtectedRoute>
               } />
-              <Route path="messages" element={
-                <ProtectedRoute>
-                  <Messages />
-                </ProtectedRoute>
-              } />
-              <Route path="messages/:userId" element={
-                <ProtectedRoute>
-                  <Messages />
-                </ProtectedRoute>
-              } />
+
               
               {/* 登录页公开访问 */}
               <Route path="login" element={<Login />} />
