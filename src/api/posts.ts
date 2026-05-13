@@ -22,6 +22,7 @@ export interface PostListItem {
   commentsCount: number;
   coverImage: string;
   images: Array<{ url: string; previewUrl?: string }>;
+  visibility: 'public' | 'feed_only' | 'private';
   createdAt: string;
 }
 
@@ -40,6 +41,7 @@ export interface PostDetail {
   isLiked: boolean;
   isFollowing: boolean;
   isOwner: boolean;
+  visibility: 'public' | 'feed_only' | 'private';
   createdAt: string;
 }
 
@@ -77,6 +79,7 @@ export function createPost(data: {
   camera?: string;
   lens?: string;
   tags?: string[];
+  visibility?: 'public' | 'feed_only' | 'private';
   images?: Array<{ url: string; previewUrl?: string }>;
 }) {
   return post<{ id: string }>('/posts', data);
@@ -90,6 +93,7 @@ export function updatePost(id: string, data: {
   camera?: string;
   lens?: string;
   tags?: string[];
+  visibility?: 'public' | 'feed_only' | 'private';
   images?: Array<{ url: string; previewUrl?: string }>;
 }) {
   return put<{ id: string }>(`/posts/${id}`, data);

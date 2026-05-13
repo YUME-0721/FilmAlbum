@@ -37,14 +37,14 @@ async function computeFileSample(file: File): Promise<string> {
 export async function uploadImage(
   file: File,
   rollId?: string,
-  type?: 'filmStock' | 'frame',
+  type?: 'filmStock' | 'frame' | 'post',
   generatePreview: boolean = true,
   previewFile?: File
 ): Promise<UploadResult> {
   const { smartCompress } = await import('../utils/image-compress.ts');
 
   // 获取上传策略 (使用简单缓存避免重复请求)
-  const qType = type === 'filmStock' ? 'filmStock' : (rollId ? 'roll' : '');
+  const qType = type === 'filmStock' ? 'filmStock' : (type === 'post' ? 'post' : (rollId ? 'roll' : ''));
   const cacheKey = `strategy_${qType}_${rollId || 'default'}`;
   let strategy;
   

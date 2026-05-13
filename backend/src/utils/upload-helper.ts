@@ -1,6 +1,6 @@
 import type { Env } from '../types';
 
-export type UploadType = 'avatar' | 'roll' | 'preview' | 'gear' | 'film_stock';
+export type UploadType = 'avatar' | 'roll' | 'preview' | 'gear' | 'film_stock' | 'post';
 
 interface UploadOptions {
   file: File;
@@ -49,6 +49,7 @@ export async function getUploadStrategy(c: any, options: Omit<UploadOptions, 'fi
   let pathTemplate = specificPath || '';
   if (!pathTemplate) {
     if (type === 'film_stock') pathTemplate = 'Films/';
+    else if (type === 'post') pathTemplate = '{userId}/Posts/';
     else if (rollId) pathTemplate = '{userId}/{rollId}/';
     else pathTemplate = '{userId}/';
   }

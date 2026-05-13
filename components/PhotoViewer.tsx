@@ -27,7 +27,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
   const [frames, setFrames] = useState<FrameItem[]>(initialFrames);
   const [currentFrame, setCurrentFrame] = useState(initialIndex);
   const [slideDirection, setSlideDirection] = useState(0);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(window.innerWidth > window.innerHeight);
   const [borderType, setBorderType] = useState('none'); // none, white, black
   const [isExportWithBorder, setIsExportWithBorder] = useState(false);
   const [borderOptions, setBorderOptions] = useState({

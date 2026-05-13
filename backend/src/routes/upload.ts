@@ -29,6 +29,7 @@ upload.post('/', authRequired(), async (c) => {
     if (typeQuery === 'filmStock') strategyType = 'film_stock';
     else if (typeQuery === 'gear') strategyType = 'gear';
     else if (typeQuery === 'preview') strategyType = 'preview';
+    else if (typeQuery === 'post' || typeQuery === 'frame') strategyType = 'post';
     else if (rollId) strategyType = 'roll';
 
     // 2. 上传主图
@@ -85,6 +86,7 @@ upload.get('/strategy', authRequired(), async (c) => {
     let strategyType: UploadType = 'avatar';
     if (typeQuery === 'filmStock') strategyType = 'film_stock';
     else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (typeQuery === 'post' || typeQuery === 'frame') strategyType = 'post';
     else if (rollId) strategyType = 'roll';
 
     const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
@@ -107,6 +109,7 @@ upload.post('/hf/init', authRequired(), async (c) => {
     let strategyType: UploadType = 'avatar';
     if (typeQuery === 'filmStock') strategyType = 'film_stock';
     else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (typeQuery === 'post' || typeQuery === 'frame') strategyType = 'post';
     else if (rollId) strategyType = 'roll';
 
     const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
@@ -153,6 +156,7 @@ upload.post('/hf/commit', authRequired(), async (c) => {
     let strategyType: UploadType = 'avatar';
     if (typeQuery === 'filmStock') strategyType = 'film_stock';
     else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (typeQuery === 'post' || typeQuery === 'frame') strategyType = 'post';
     else if (rollId) strategyType = 'roll';
 
     const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
@@ -200,6 +204,7 @@ upload.post('/chunk/init', authRequired(), async (c) => {
     let strategyType: UploadType = 'avatar';
     if (typeQuery === 'filmStock') strategyType = 'film_stock';
     else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (typeQuery === 'post' || typeQuery === 'frame') strategyType = 'post';
     else if (rollId) strategyType = 'roll';
 
     const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
@@ -245,6 +250,7 @@ upload.post('/chunk/upload', authRequired(), async (c) => {
     let strategyType: UploadType = 'avatar';
     if (typeQuery === 'filmStock') strategyType = 'film_stock';
     else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (typeQuery === 'post' || typeQuery === 'frame') strategyType = 'post';
     else if (rollId) strategyType = 'roll';
 
     const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
@@ -285,6 +291,7 @@ upload.post('/chunk/merge', authRequired(), async (c) => {
     let strategyType: UploadType = 'avatar';
     if (typeQuery === 'filmStock') strategyType = 'film_stock';
     else if (typeQuery === 'gear') strategyType = 'gear';
+    else if (typeQuery === 'post' || typeQuery === 'frame') strategyType = 'post';
     else if (rollId) strategyType = 'roll';
 
     const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });

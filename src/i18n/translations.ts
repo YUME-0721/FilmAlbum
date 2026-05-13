@@ -24,6 +24,7 @@ export const translations = {
       upload: '上传',
       all: '全部',
       add: '添加',
+      selected: '已选择 {count} 张',
       submitting: '提交中...',
       submit: '提交',
       update: '提交更新',
@@ -163,6 +164,8 @@ export const translations = {
           location: '例如：中国 陕西 西安',
           camera: '例如：Nikon F3',
           lens: '例如：NIKKOR 50mm f1.8D',
+          upload: '点击或拖拽照片至此处',
+          uploadDesc: '支持 JPG, PNG, WEBP (最大 20MB)',
         }
       },
       filmTypes: {
@@ -214,6 +217,14 @@ export const translations = {
       title: '标题',
       content: '正文',
       placeholder: '分享你的摄影心得或拍摄故事...',
+      placeholder_title: '未命名故事...',
+      visibility: '可见范围',
+      visibilityPublic: '公开',
+      visibilityPublicDesc: '在首页和个人空间均可见',
+      visibilityFeed: '仅动态',
+      visibilityFeedDesc: '在首页不可见，仅个人空间可见',
+      visibilityPrivate: '隐私',
+      visibilityPrivateDesc: '仅自己可见',
     },
     gear: {
       add: '添加设备',
@@ -362,6 +373,7 @@ export const translations = {
       upload: 'Upload',
       all: 'All',
       add: 'Add',
+      selected: '{count} Selected',
       submitting: 'Submitting...',
       submit: 'Submit',
       update: 'Update',
@@ -501,6 +513,8 @@ export const translations = {
           location: 'e.g.: Xi\'an, Shaanxi',
           camera: 'e.g.: Nikon F3',
           lens: 'e.g.: NIKKOR 50mm f1.8D',
+          upload: 'Click or drag photos here',
+          uploadDesc: 'Supports JPG, PNG, WEBP (Max 20MB)',
         }
       },
       filmTypes: {
@@ -552,6 +566,14 @@ export const translations = {
       title: 'Title',
       content: 'Content',
       placeholder: 'Share your photography stories...',
+      placeholder_title: 'Untitled Story...',
+      visibility: 'Visibility',
+      visibilityPublic: 'Public',
+      visibilityPublicDesc: 'Visible on home and space',
+      visibilityFeed: 'Feed Only',
+      visibilityFeedDesc: 'Hidden from home, visible in space',
+      visibilityPrivate: 'Private',
+      visibilityPrivateDesc: 'Visible only to you',
     },
     gear: {
       add: 'Add Gear',

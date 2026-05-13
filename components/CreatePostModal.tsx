@@ -38,6 +38,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
   const [filmType, setFilmType] = useState('');
   const [camera, setCamera] = useState('');
   const [lens, setLens] = useState('');
+  const [visibility, setVisibility] = useState<'public' | 'feed_only' | 'private'>('public');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
         setFilmType(editPost.filmType || '');
         setCamera(editPost.camera || '');
         setLens(editPost.lens || '');
+        setVisibility(editPost.visibility || 'public');
       } else {
         setStep(1);
         setSelectedImages([]);
@@ -65,6 +67,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
         setFilmType('');
         setCamera('');
         setLens('');
+        setVisibility('public');
       }
     }
   }, [isOpen, editPost]);
@@ -106,7 +109,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
 
     setIsUploading(true);
     try {
-      const uploadPromises = Array.from(files).map(file => uploadImage(file, undefined, 'frame', true));
+      const uploadPromises = Array.from(files).map(file => uploadImage(file, undefined, 'post' as any, true));
       const results = await Promise.all(uploadPromises);
       const newImages = results.map(res => ({ url: res.url, previewUrl: res.previewUrl || res.url }));
       setSelectedImages(prev => [...prev, ...newImages]);
@@ -142,7 +145,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
 
   const submitPost = async () => {
     if (!title.trim()) {
-      alert("请输入标题");
+      alert(t('login.inputPassword')); // Placeholder for "Please input something" if no generic one
       return;
     }
     setIsSubmitting(true);
@@ -154,6 +157,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
         filmType,
         camera,
         lens,
+        visibility,
         images: selectedImages
       };
       
@@ -255,8 +259,8 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                         <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
                           <Plus className="text-on-surface-variant group-hover:text-primary transition-colors" size={32} />
                         </div>
-                        <span className="text-sm font-label text-on-surface-variant group-hover:text-on-surface transition-colors font-medium">Click or drag photos here</span>
-                        <p className="text-[10px] text-on-surface-variant/40 mt-2 uppercase tracking-widest">Supports JPG, PNG, WEBP (Max 20MB)</p>
+                        <span className="text-sm font-label text-on-surface-variant group-hover:text-on-surface transition-colors font-medium">{t('roll.form.placeholders.upload')}</span>
+                        <p className="text-[10px] text-on-surface-variant/40 mt-2 uppercase tracking-widest">{t('roll.form.placeholders.uploadDesc')}</p>
                       </>
                     )}
                     <input 
@@ -417,7 +421,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                       className="w-full mt-6 py-3 text-on-surface-variant hover:text-primary text-xs font-bold flex items-center justify-center gap-2 transition-all uppercase tracking-widest bg-surface-container rounded-xl border border-outline-variant/10 hover:border-primary/30"
                     >
                       <ArrowLeft size={16} />
-                      {t('common.cancel')} / {selectedImages.length} selected
+                      {t('common.cancel')} / {t('common.selected', { count: selectedImages.length })}
                     </button>
                   </div>
                 </div>
@@ -436,7 +440,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                         maxLength={15}
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Untitled Story..."
+                        placeholder={t('post.placeholder_title')}
                         className="w-full bg-surface-container border border-outline-variant/10 rounded-2xl px-6 py-5 text-on-surface placeholder:text-on-surface-variant/30 outline-none focus:border-primary/50 focus:bg-surface-bright transition-all text-xl font-headline font-bold"
                       />
                       <div className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-label text-on-surface-variant/30 font-bold">
@@ -470,7 +474,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                         type="text"
                         value={filmType}
                         onChange={(e) => setFilmType(e.target.value)}
-                        placeholder="如: Kodak Vision3 500T"
+                        placeholder={t('roll.form.placeholders.stock')}
                         className="w-full bg-surface-container border border-outline-variant/10 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/30 outline-none focus:border-primary/50 transition-all font-medium"
                       />
                     </div>
@@ -483,7 +487,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                         type="text"
                         value={camera}
                         onChange={(e) => setCamera(e.target.value)}
-                        placeholder="如: Nikon F3HP"
+                        placeholder={t('roll.form.placeholders.camera')}
                         className="w-full bg-surface-container border border-outline-variant/10 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/30 outline-none focus:border-primary/50 transition-all font-medium"
                       />
                     </div>
@@ -496,9 +500,45 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
                         type="text"
                         value={lens}
                         onChange={(e) => setLens(e.target.value)}
-                        placeholder="如: 50mm f/1.4 AIS"
+                        placeholder={t('roll.form.placeholders.lens')}
                         className="w-full bg-surface-container border border-outline-variant/10 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/30 outline-none focus:border-primary/50 transition-all font-medium"
                       />
+                    </div>
+                  </div>
+
+                  {/* Visibility Selection */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-on-surface-variant">
+                      <ImageIcon size={16} />
+                      <label className="text-xs font-bold uppercase tracking-[0.2em]">{t('post.visibility')}</label>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {(['public', 'feed_only', 'private'] as const).map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setVisibility(v)}
+                          className={`flex flex-col gap-2 p-4 rounded-2xl border transition-all text-left group ${
+                            visibility === v 
+                              ? 'bg-primary/10 border-primary shadow-lg shadow-primary/5' 
+                              : 'bg-surface-container border-outline-variant/10 hover:border-primary/30'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs font-bold uppercase tracking-widest ${visibility === v ? 'text-primary' : 'text-on-surface'}`}>
+                              {t(`post.visibility${v.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')}`)}
+                            </span>
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
+                              visibility === v ? 'border-primary bg-primary' : 'border-on-surface-variant/30'
+                            }`}>
+                              {visibility === v && <div className="w-1.5 h-1.5 rounded-full bg-on-primary" />}
+                            </div>
+                          </div>
+                          <p className={`text-[10px] leading-relaxed transition-colors ${visibility === v ? 'text-primary/70' : 'text-on-surface-variant/50'}`}>
+                            {t(`post.visibility${v.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')}Desc`)}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -544,8 +584,8 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editPost }
           <div className="hidden sm:block">
             {selectedImages.length > 0 && (
               <p className="text-xs font-label text-on-surface-variant/40 tracking-widest uppercase font-bold">
-                Selected <span className="text-primary">{selectedImages.length}</span> / 9 
-                <span className="ml-2 opacity-50 font-normal italic">Memories being archived</span>
+                {t('common.selected', { count: selectedImages.length })} / 9 
+                <span className="ml-2 opacity-50 font-normal italic">{t('common.uploadStatus.desc')}</span>
               </p>
             )}
           </div>

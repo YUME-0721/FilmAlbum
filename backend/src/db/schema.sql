@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS posts (
   camera TEXT DEFAULT '',
   lens TEXT DEFAULT '',
   tags TEXT DEFAULT '[]',
+  visibility TEXT DEFAULT 'public',
   created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

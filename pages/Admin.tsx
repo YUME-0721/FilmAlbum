@@ -82,6 +82,7 @@ const i18n = {
     strategyPreview: '影集预览',
     strategyGear: '设备图像',
     strategyFilmStock: '胶卷型号',
+    strategyPost: '动态图片',
     strategyPath: '路径模板',
     strategyCompress: '压缩',
     strategyChannel: '独立渠道',
@@ -201,6 +202,7 @@ const i18n = {
     strategyPreview: 'Preview',
     strategyGear: 'Gear',
     strategyFilmStock: 'Film Stock',
+    strategyPost: 'Post Image',
     strategyPath: 'Path Template',
     strategyCompress: 'Compress',
     strategyChannel: 'Channel',
@@ -317,6 +319,7 @@ export default function Admin() {
     preview_path: '', preview_compress: 'true', preview_channel: '',
     gear_path: '', gear_compress: 'true', gear_channel: '',
     film_stock_path: '', film_stock_compress: 'true', film_stock_channel: '',
+    post_path: '', post_compress: 'true', post_channel: '',
   });
   const [imgBedSaveStatus, setImgBedSaveStatus] = useState({ type: '', message: '' });
   const [showImgToken, setShowImgToken] = useState(false);
@@ -497,6 +500,9 @@ export default function Admin() {
           film_stock_path: s['film_stock_path'] || 'Films/',
           film_stock_compress: s['film_stock_compress'] || 'true',
           film_stock_channel: s['film_stock_channel'] || '',
+          post_path:       s['post_path']       || '{userId}/Posts/',
+          post_compress:   s['post_compress']   || 'true',
+          post_channel:    s['post_channel']    || '',
         });
         setSmtp({
           smtp_from:     s['smtp_from']     || '',
@@ -586,7 +592,7 @@ export default function Admin() {
     if (img_bed_name_type) payload['img_bed_name_type'] = img_bed_name_type;
     
     // 包含所有策略字段
-    ['avatar', 'roll', 'preview', 'gear', 'film_stock'].forEach(type => {
+    ['avatar', 'roll', 'preview', 'gear', 'film_stock', 'post'].forEach(type => {
       payload[`${type}_path`] = (imgBed as any)[`${type}_path`];
       payload[`${type}_compress`] = String((imgBed as any)[`${type}_compress`]);
       payload[`${type}_channel`] = (imgBed as any)[`${type}_channel`];
@@ -1686,6 +1692,7 @@ export default function Admin() {
                           { key: 'preview', label: '影集预览' },
                           { key: 'gear', label: '设备图像' },
                           { key: 'film_stock', label: '胶卷型号' },
+                          { key: 'post', label: at('strategyPost') },
                         ].map((item) => (
                           <tr key={item.key} className={`transition-colors ${isDarkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-white'}`}>
                             <td className="px-6 py-4 font-bold text-xs">{item.label}</td>

@@ -22,14 +22,26 @@ posts.get('/', authOptional(), async (c) => {
   const queryParams: any[] = [];
 
   if (queryUserId) {
-    whereClause = 'WHERE p.user_id = ?';
+    // 查看个人空间
+    if (currentUserId && String(currentUserId) === String(queryUserId)) {
+      // 查看自己的空间：看到所有
+      whereClause = 'WHERE p.user_id = ?';
+    } else {
+      // 查看他人空间：看到公开和仅动态
+      whereClause = "WHERE p.user_id = ? AND p.visibility IN ('public', 'feed_only')";
+    }
     queryParams.push(queryUserId);
   } else if (type === 'feed') {
+    // 关注动态流
     if (!currentUserId) {
       return c.json({ success: false, error: '未登录' }, 401);
     }
-    whereClause = 'WHERE p.user_id = ? OR p.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?)';
+    // 看到自己和关注的人的 公开和仅动态
+    whereClause = "WHERE (p.user_id = ? OR p.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?)) AND p.visibility IN ('public', 'feed_only')";
     queryParams.push(currentUserId, currentUserId);
+  } else {
+    // 推荐流（首页）：仅看到公开
+    whereClause = "WHERE p.visibility = 'public'";
   }
 
   const countQuery = `SELECT COUNT(*) as count FROM posts p ${whereClause}`;
@@ -38,7 +50,7 @@ posts.get('/', authOptional(), async (c) => {
   queryParams.push(pageSize, offset);
 
   const result = await c.env.DB.prepare(
-    `SELECT p.id, p.user_id, p.title, p.content, p.film_type, p.camera, p.lens, p.tags, p.created_at,
+    `SELECT p.id, p.user_id, p.title, p.content, p.film_type, p.camera, p.lens, p.tags, p.visibility, p.created_at,
             u.nickname as author_name, u.avatar_url as author_avatar,
             (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
             (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count,
@@ -59,6 +71,7 @@ posts.get('/', authOptional(), async (c) => {
     camera: row.camera,
     lens: row.lens,
     tags: JSON.parse((row.tags as string) || '[]'),
+    visibility: row.visibility || 'public',
     author: {
       id: String(row.user_id).padStart(4, '0'),
       nickname: row.author_name,
@@ -134,6 +147,7 @@ posts.get('/:id', authOptional(), async (c) => {
       camera: post.camera,
       lens: post.lens,
       tags: JSON.parse((post.tags as string) || '[]'),
+      visibility: post.visibility || 'public',
       author: {
         id: post.user_id,
         nickname: post.author_name,
@@ -166,6 +180,7 @@ posts.post('/', authRequired(), requireLevel('lv2'), async (c) => {
     camera?: string;
     lens?: string;
     tags?: string[];
+    visibility?: string;
     images?: Array<{ url: string; previewUrl?: string }>;
   }>();
 
@@ -176,13 +191,14 @@ posts.post('/', authRequired(), requireLevel('lv2'), async (c) => {
   const postId = generateId();
 
   await c.env.DB.prepare(
-    `INSERT INTO posts (id, user_id, title, content, film_type, camera, lens, tags)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO posts (id, user_id, title, content, film_type, camera, lens, tags, visibility)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     postId, userId, body.title,
     body.content ?? '', body.filmType ?? '',
     body.camera ?? '', body.lens ?? '',
-    JSON.stringify(body.tags ?? [])
+    JSON.stringify(body.tags ?? []),
+    body.visibility ?? 'public'
   ).run();
 
   // 插入帖子图片
@@ -209,6 +225,7 @@ posts.put('/:id', authRequired(), requireLevel('lv2'), async (c) => {
     camera?: string;
     lens?: string;
     tags?: string[];
+    visibility?: string;
     images?: Array<{ url: string; previewUrl?: string }>;
   }>();
 
@@ -227,13 +244,14 @@ posts.put('/:id', authRequired(), requireLevel('lv2'), async (c) => {
 
   // 2. 更新文本和参数
   await c.env.DB.prepare(
-    `UPDATE posts SET title = ?, content = ?, film_type = ?, camera = ?, lens = ?, tags = ?
+    `UPDATE posts SET title = ?, content = ?, film_type = ?, camera = ?, lens = ?, tags = ?, visibility = ?
      WHERE id = ?`
   ).bind(
     body.title,
     body.content ?? '', body.filmType ?? '',
     body.camera ?? '', body.lens ?? '',
     JSON.stringify(body.tags ?? []),
+    body.visibility ?? 'public',
     postId
   ).run();
 

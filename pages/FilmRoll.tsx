@@ -35,7 +35,8 @@ const FALLBACK_ROLL: RollDetail = {
   status: 'COMPLETED',
   author: { id: '', nickname: '', avatarUrl: '' },
   isOwner: true,
-  createdAt: ''
+  createdAt: '',
+  sortOrder: 0
 };
 
 export default function FilmRoll() {
