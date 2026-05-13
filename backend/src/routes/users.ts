@@ -148,7 +148,7 @@ users.get('/:id/followers', async (c) => {
 
   const total = await c.env.DB.prepare(
     'SELECT COUNT(*) as count FROM follows WHERE following_id = ?'
-  ).bind(targetId).first<{ count: number }>();
+  ).bind(Number(targetId)).first<{ count: number }>();
 
   const followers = await c.env.DB.prepare(
     `SELECT u.id, u.nickname, u.avatar_url, u.bio
@@ -156,7 +156,7 @@ users.get('/:id/followers', async (c) => {
      WHERE f.following_id = ?
      ORDER BY f.created_at DESC
      LIMIT ? OFFSET ?`
-  ).bind(targetId, pageSize, offset).all();
+  ).bind(Number(targetId), pageSize, offset).all();
 
   return c.json({
     success: true,
@@ -184,7 +184,7 @@ users.get('/:id/following', async (c) => {
 
   const total = await c.env.DB.prepare(
     'SELECT COUNT(*) as count FROM follows WHERE follower_id = ?'
-  ).bind(targetId).first<{ count: number }>();
+  ).bind(Number(targetId)).first<{ count: number }>();
 
   const following = await c.env.DB.prepare(
     `SELECT u.id, u.nickname, u.avatar_url, u.bio
@@ -192,7 +192,7 @@ users.get('/:id/following', async (c) => {
      WHERE f.follower_id = ?
      ORDER BY f.created_at DESC
      LIMIT ? OFFSET ?`
-  ).bind(targetId, pageSize, offset).all();
+  ).bind(Number(targetId), pageSize, offset).all();
 
   return c.json({
     success: true,

@@ -163,7 +163,7 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
               <img
                 src={imgs[0].previewUrl || imgs[0].url}
                 alt={post.title}
-                className="w-full max-h-[420px] object-cover"
+                className="w-full h-auto max-h-[600px] object-contain bg-surface-container-highest/20"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -180,7 +180,7 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
                     <img
                       src={img.previewUrl || img.url}
                       alt=""
-                      className="w-full h-[420px] object-cover cursor-pointer"
+                      className="w-full h-[480px] md:h-[600px] object-contain bg-surface-container-highest/20 cursor-pointer"
                       referrerPolicy="no-referrer"
                     />
                   </div>

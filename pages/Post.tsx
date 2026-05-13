@@ -239,7 +239,7 @@ export default function Post() {
 
         {/* Images Carousel */}
         <div className="mb-12 relative group/carousel">
-          <div className="relative aspect-[4/3] md:aspect-[16/9] bg-surface-container-lowest overflow-hidden border border-outline-variant/10">
+          <div className="relative h-[500px] md:h-[700px] max-h-[80vh] bg-surface-container-lowest overflow-hidden border border-outline-variant/10 rounded-sm">
             {post.images.map((img, idx) => (
               <div 
                 key={img.id || idx}
