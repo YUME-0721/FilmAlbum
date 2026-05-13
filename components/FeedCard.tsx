@@ -36,6 +36,29 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
   const imgs = post.images?.length ? post.images : (post.coverImage ? [{ url: post.coverImage, previewUrl: post.coverImage }] : []);
   const hasMultiple = imgs.length > 1;
   const { user } = useAuth();
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+
+    // 阈值设置为 50px
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        // 向左划，下一张
+        setImgIdx(prev => (prev === imgs.length - 1 ? 0 : prev + 1));
+      } else {
+        // 向右划，上一张
+        setImgIdx(prev => (prev === 0 ? imgs.length - 1 : prev - 1));
+      }
+    }
+    setTouchStart(null);
+  };
   // NOTE: 两端的 id 都经过 padStart(4,'0') 处理，直接字符串比较
   const isOwner = !!(user && post.author && user.id === post.author.id);
 
@@ -174,29 +197,31 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
                 className="flex transition-transform duration-500 ease-out"
                 style={{ transform: `translateX(-${imgIdx * 100}%)` }}
                 onClick={onClick}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
               >
                 {imgs.map((img: { url: string; previewUrl?: string }, i: number) => (
-                  <div key={i} className="flex-shrink-0 w-full flex items-center justify-center bg-black/20">
+                  <div key={i} className="flex-shrink-0 w-full flex items-center justify-center bg-black/20 select-none">
                     <img
                       src={img.previewUrl || img.url}
                       alt=""
-                      className="w-full h-[380px] md:h-[520px] object-contain cursor-pointer hover:scale-[1.01] transition-transform duration-700"
+                      className="w-full h-[380px] md:h-[520px] object-contain cursor-pointer hover:scale-[1.01] transition-transform duration-700 pointer-events-none"
                       referrerPolicy="no-referrer"
                     />
                   </div>
                 ))}
               </div>
 
-              {/* Navigation buttons */}
+              {/* Navigation buttons - Hidden on mobile as we now have touch swipe */}
               <button 
                 onClick={(e) => { e.stopPropagation(); setImgIdx(prev => (prev === 0 ? imgs.length - 1 : prev - 1)); }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white hidden md:flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
               >
                 <ChevronLeft size={20} />
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); setImgIdx(prev => (prev === imgs.length - 1 ? 0 : prev + 1)); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white hidden md:flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
               >
                 <ChevronRight size={20} />
               </button>

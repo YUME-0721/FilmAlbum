@@ -157,6 +157,13 @@ export default function Home() {
     fetchPosts(1, activeTab);
   }, [activeTab, fetchPosts]);
 
+  // 监听全局发布事件
+  useEffect(() => {
+    const handleGlobalCreate = () => setIsCreateModalOpen(true);
+    window.addEventListener('open-create-post', handleGlobalCreate);
+    return () => window.removeEventListener('open-create-post', handleGlobalCreate);
+  }, []);
+
   const loadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -310,7 +317,7 @@ export default function Home() {
       {(!user || user.level !== 'lv1') && (
         <button 
           onClick={handleFabClick}
-          className="fixed bottom-8 right-8 bg-primary text-on-primary w-14 h-14 flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 z-40 rounded-sm"
+          className="fixed bottom-8 right-8 bg-primary text-on-primary w-14 h-14 hidden md:flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 z-40 rounded-sm"
         >
           <Plus size={28} className="drop-shadow-md" />
         </button>

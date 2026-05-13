@@ -5,7 +5,7 @@
  */
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext.tsx';
-import { Search, User, Settings as SettingsIcon, Menu, X, Home, Film, LogOut } from 'lucide-react';
+import { Search, User, Settings as SettingsIcon, Menu, X, Home, Film, LogOut, Plus } from 'lucide-react';
 import SearchOverlay from './SearchOverlay';
 import { useState, useEffect } from 'react';
 import { useTranslation } from '../src/hooks/useTranslation';
@@ -40,6 +40,15 @@ export default function Layout() {
     await logout();
     setIsMenuOpen(false);
     navigate('/');
+  };
+
+  const handleCreateClick = () => {
+    if (!isLoggedIn) {
+      navigate('/login');
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('open-create-post'));
+    setIsMenuOpen(false);
   };
 
   const isFeed = new URLSearchParams(location.search).get('tab') === 'feed';
@@ -78,6 +87,13 @@ export default function Layout() {
 
           {/* PC Actions */}
           <div className="hidden md:flex items-center gap-6">
+            <button 
+              onClick={handleCreateClick}
+              className="text-on-surface hover:text-primary transition-colors"
+              title={t('post.create')}
+            >
+              <Plus size={22} strokeWidth={2.5} />
+            </button>
             <button 
               onClick={() => setIsSearchOpen(true)}
               className="text-on-surface hover:text-primary transition-colors"
@@ -155,6 +171,12 @@ export default function Layout() {
                 >
                   <Film size={20} /> {t('nav.feed')}
                 </Link>
+                <button 
+                  onClick={handleCreateClick}
+                  className="flex items-center gap-4 text-lg font-bold text-on-surface"
+                >
+                  <Plus size={20} /> {t('post.create')}
+                </button>
                 <button 
                   onClick={() => { setIsSearchOpen(true); setIsMenuOpen(false); }}
                   className="flex items-center gap-4 text-lg font-bold text-on-surface"

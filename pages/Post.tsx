@@ -67,6 +67,26 @@ export default function Post() {
   const [isLoading, setIsLoading] = useState(true);
   const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null || !post) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        setCurrentImgIndex(prev => (prev === post.images.length - 1 ? 0 : prev + 1));
+      } else {
+        setCurrentImgIndex(prev => (prev === 0 ? post.images.length - 1 : prev - 1));
+      }
+    }
+    setTouchStart(null);
+  };
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const fetchPost = useCallback(async () => {
@@ -177,20 +197,12 @@ export default function Post() {
   if (!post) return null;
 
   return (
-    <main className="max-w-5xl mx-auto pt-8 pb-24 px-8 min-h-screen relative">
-      <button 
-        onClick={() => navigate(-1)}
-        className="flex items-center space-x-2 text-on-surface-variant hover:text-primary transition-colors mb-6 md:mb-0 md:absolute md:-left-20 lg:-left-28 md:top-10 group"
-      >
-        <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-        <span className="text-xs font-label tracking-widest uppercase hidden md:inline">返回</span>
-      </button>
-
-      <article className="bg-surface-container-low border border-outline-variant/15 p-8 md:p-12">
+    <main className="max-w-5xl mx-auto pt-4 md:pt-12 pb-24 px-4 md:px-8 min-h-screen relative">
+      <article className="bg-surface-container-low border border-outline-variant/10 rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
-        <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <header className="p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-variant border border-outline-variant/30 cursor-pointer flex items-center justify-center" onClick={() => post.author.id && navigate(`/space/${post.author.id}`)}>
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-variant border border-outline-variant/30 cursor-pointer flex items-center justify-center shadow-md" onClick={() => post.author.id && navigate(`/space/${post.author.id}`)}>
               {post.author.avatarUrl ? (
                 <img src={post.author.avatarUrl} alt={post.author.nickname} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : (
@@ -198,17 +210,17 @@ export default function Post() {
               )}
             </div>
             <div>
-              <h2 className="font-headline font-bold text-lg text-on-surface cursor-pointer hover:text-primary transition-colors" onClick={() => post.author.id && navigate(`/space/${post.author.id}`)}>{post.author.nickname}</h2>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="font-label text-xs text-on-surface-variant">{formatRelativeTime(post.createdAt)}发布</p>
+              <h2 className="font-headline font-bold text-lg text-on-surface cursor-pointer hover:text-primary transition-colors tracking-tight" onClick={() => post.author.id && navigate(`/space/${post.author.id}`)}>{post.author.nickname}</h2>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="font-label text-[11px] text-on-surface-variant uppercase tracking-wider">{formatRelativeTime(post.createdAt)}发布</p>
                 {post.visibility === 'private' && (
-                  <span className="flex items-center gap-1 text-on-surface-variant text-[10px]" title={t('post.visibilityPrivate')}>
+                  <span className="flex items-center gap-1 text-on-surface-variant text-[10px] bg-white/5 px-1.5 py-0.5 rounded" title={t('post.visibilityPrivate')}>
                     <Lock size={10} />
                     <span>{t('post.visibilityPrivate')}</span>
                   </span>
                 )}
                 {post.visibility === 'feed_only' && (
-                  <span className="flex items-center gap-1 text-on-surface-variant text-[10px]" title={t('post.visibilityFeedOnly')}>
+                  <span className="flex items-center gap-1 text-on-surface-variant text-[10px] bg-white/5 px-1.5 py-0.5 rounded" title={t('post.visibilityFeedOnly')}>
                     <EyeOff size={10} />
                     <span>{t('post.visibilityFeedOnly')}</span>
                   </span>
@@ -219,33 +231,37 @@ export default function Post() {
           {!post.isOwner && (
             <button 
               onClick={handleFollow}
-              className={`${isFollowing ? 'bg-surface-variant text-on-surface' : 'bg-primary text-on-primary hover:bg-primary-dim'} px-6 py-2 text-xs font-bold transition-colors uppercase tracking-widest self-start md:self-auto rounded-sm`}
+              className={`${isFollowing ? 'bg-surface-variant text-on-surface' : 'bg-primary text-on-primary hover:bg-primary-dim'} px-8 py-2 text-xs font-bold transition-all uppercase tracking-widest self-start md:self-auto rounded-sm active:scale-95 shadow-lg shadow-primary/10`}
             >
               {isFollowing ? '已关注' : '关注'}
             </button>
           )}
         </header>
 
-        {/* Content */}
-        <div className="space-y-6 mb-12">
-          <h1 className="font-headline text-3xl md:text-4xl font-bold text-on-surface">{post.title}</h1>
-          <p className="font-body text-on-surface-variant leading-relaxed text-lg">
+        {/* Content Section */}
+        <div className="px-6 md:px-10 pb-8 space-y-5">
+          <h1 className="font-headline text-3xl md:text-5xl font-bold text-on-surface leading-tight tracking-tight">{post.title}</h1>
+          <p className="font-body text-on-surface-variant leading-relaxed text-lg whitespace-pre-wrap">
             {post.content}
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pt-2">
             {post.tags.map(tag => (
-              <span key={tag} className="px-3 py-1 bg-surface-variant text-on-surface-variant text-xs font-label rounded-sm">#{tag}</span>
+              <span key={tag} className="px-3 py-1 bg-primary/5 text-primary text-xs font-bold rounded-sm tracking-wide">#{tag}</span>
             ))}
           </div>
         </div>
 
         {/* Images Carousel */}
-        <div className="mb-12 relative group/carousel">
-          <div className="relative h-[500px] md:h-[700px] max-h-[80vh] bg-surface-container-lowest overflow-hidden border border-outline-variant/10 rounded-sm">
+        <div className="relative group/carousel bg-black/20">
+          <div 
+            className="relative h-[400px] sm:h-[500px] md:h-[700px] max-h-[85vh] overflow-hidden"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             {post.images.map((img, idx) => (
               <div 
                 key={img.id || idx}
-                className={`absolute inset-0 transition-all duration-500 ease-in-out flex items-center justify-center p-4 md:p-8 ${
+                className={`absolute inset-0 transition-all duration-700 ease-in-out flex items-center justify-center ${
                   idx === currentImgIndex ? 'opacity-100 translate-x-0 z-10' : 'opacity-0 translate-x-full z-0'
                 }`}
                 style={{
@@ -255,81 +271,83 @@ export default function Post() {
                 <img 
                   src={img.imageUrl} 
                   alt={`Post image ${idx + 1}`} 
-                  className="w-full h-full object-contain select-none" 
+                  className="w-full h-full object-contain select-none pointer-events-none" 
                   referrerPolicy="no-referrer" 
                 />
               </div>
             ))}
 
-            {/* Navigation Buttons */}
+            {/* Navigation Buttons - Hidden on mobile */}
             {post.images.length > 1 && (
               <>
                 <button 
                   onClick={() => setCurrentImgIndex(prev => (prev === 0 ? post.images.length - 1 : prev - 1))}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center transition-all opacity-0 group-hover/carousel:opacity-100 z-20"
+                  className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 hover:bg-black/50 text-white hidden md:flex items-center justify-center transition-all opacity-0 group-hover/carousel:opacity-100 z-20 backdrop-blur-sm"
                 >
-                  <ChevronLeft size={24} />
+                  <ChevronLeft size={28} />
                 </button>
                 <button 
                   onClick={() => setCurrentImgIndex(prev => (prev === post.images.length - 1 ? 0 : prev + 1))}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center transition-all opacity-0 group-hover/carousel:opacity-100 z-20"
+                  className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 hover:bg-black/50 text-white hidden md:flex items-center justify-center transition-all opacity-0 group-hover/carousel:opacity-100 z-20 backdrop-blur-sm"
                 >
-                  <ChevronRight size={24} />
+                  <ChevronRight size={28} />
                 </button>
               </>
             )}
 
             {/* Index Indicator */}
-            <div className="absolute bottom-6 right-8 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white tracking-widest z-20">
+            <div className="absolute top-6 right-6 bg-black/40 backdrop-blur-md px-3 py-1 rounded text-[10px] font-bold text-white tracking-[0.2em] z-20">
               {currentImgIndex + 1} / {post.images.length}
             </div>
           </div>
 
-          {/* Thumbnails / Indicators */}
-          {post.images.length > 1 && (
-            <div className="flex justify-center gap-2 mt-4">
-              {post.images.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentImgIndex(idx)}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${
-                    idx === currentImgIndex ? 'bg-primary w-4' : 'bg-outline-variant/40 hover:bg-outline-variant'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Metadata & Actions */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-t border-outline-variant/15 pt-8">
-          <div className="grid grid-cols-2 md:flex gap-6 md:gap-12 text-sm font-label uppercase tracking-widest text-on-surface-variant">
-            <div>
-              <span className="block text-[10px] text-primary/60 mb-1">胶片</span>
-              <span className="text-on-surface">{post.filmType}</span>
-            </div>
-            <div>
-              <span className="block text-[10px] text-primary/60 mb-1">相机</span>
-              <span className="text-on-surface">{post.camera}</span>
-            </div>
-            <div>
-              <span className="block text-[10px] text-primary/60 mb-1">镜头</span>
-              <span className="text-on-surface">{post.lens}</span>
-            </div>
+        {/* Thumbnails / Indicators */}
+        {post.images.length > 1 && (
+          <div className="flex justify-center gap-2.5 py-4 bg-black/10">
+            {post.images.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentImgIndex(idx)}
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                  idx === currentImgIndex ? 'bg-primary w-6' : 'bg-white/20 hover:bg-white/40'
+                }`}
+              />
+            ))}
           </div>
+        )}
+      </div>
 
-          <div className="flex gap-6">
-            <button onClick={handleLike} className={`flex items-center gap-2 transition-colors group ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
-              <Heart size={20} className={`group-hover:scale-110 transition-transform ${isLiked ? 'fill-current text-primary' : ''}`} />
-              <span className="font-label text-sm">{likesCount}</span>
-            </button>
-            <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
-              <MessageSquare size={20} className="group-hover:scale-110 transition-transform" />
-              <span className="font-label text-sm">{comments.length || post.commentsCount}</span>
-            </button>
-            <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
-              <Share2 size={20} className="group-hover:scale-110 transition-transform" />
-            </button>
+      {/* Metadata & Actions */}
+      <div className="px-6 md:px-10 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b border-outline-variant/10 pb-8 mb-8">
+            <div className="grid grid-cols-2 md:flex gap-8 md:gap-16 text-sm font-label uppercase tracking-widest text-on-surface-variant">
+              <div>
+                <span className="block text-[10px] text-primary/60 mb-1.5 font-bold">胶片 FILM</span>
+                <span className="text-on-surface font-bold">{post.filmType}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] text-primary/60 mb-1.5 font-bold">相机 CAMERA</span>
+                <span className="text-on-surface font-bold">{post.camera}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] text-primary/60 mb-1.5 font-bold">镜头 LENS</span>
+                <span className="text-on-surface font-bold">{post.lens}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-8 self-center md:self-auto">
+              <button onClick={handleLike} className={`flex items-center gap-2.5 transition-all group ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
+                <Heart size={24} className={`group-hover:scale-110 transition-transform ${isLiked ? 'fill-current text-primary' : ''}`} />
+                <span className="font-bold text-base">{likesCount}</span>
+              </button>
+              <button className="flex items-center gap-2.5 text-on-surface-variant hover:text-primary transition-all group">
+                <MessageSquare size={24} className="group-hover:scale-110 transition-transform" />
+                <span className="font-bold text-base">{comments.length || post.commentsCount}</span>
+              </button>
+              <button className="flex items-center gap-2.5 text-on-surface-variant hover:text-primary transition-all group">
+                <Share2 size={24} className="group-hover:scale-110 transition-transform" />
+              </button>
+            </div>
           </div>
         </div>
 
