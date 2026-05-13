@@ -270,7 +270,7 @@ export default function Home() {
           </section>
         ) : (
           /* Social Feed */
-          <section className="max-w-[1200px] mx-auto space-y-6">
+          <section className="max-w-2xl mx-auto space-y-10">
             {posts.length > 0 ? posts.map((post) => (
               <FeedCard 
                 key={post.id} 

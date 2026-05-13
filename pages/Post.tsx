@@ -8,6 +8,7 @@ import { useAuth } from '../src/context/AuthContext.tsx';
 import { getPost, likePost, unlikePost, getComments, createComment, type PostDetail, type CommentItem } from '../src/api/posts.ts';
 import { post as apiPost, del } from '../src/api/client.ts';
 import { ArrowLeft, User, Heart, MessageSquare, Share2, X, Lock, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 /** 回退 MOCK 数据 */
 const FALLBACK_POST: PostDetail = {
@@ -56,6 +57,7 @@ export default function Post() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
+  const { t } = useTranslation();
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentText, setCommentText] = useState('');
@@ -200,15 +202,15 @@ export default function Post() {
               <div className="flex items-center gap-2 mt-1">
                 <p className="font-label text-xs text-on-surface-variant">{formatRelativeTime(post.createdAt)}发布</p>
                 {post.visibility === 'private' && (
-                  <span className="flex items-center gap-1 text-on-surface-variant text-[10px]" title="私密动态">
+                  <span className="flex items-center gap-1 text-on-surface-variant text-[10px]" title={t('post.visibilityPrivate')}>
                     <Lock size={10} />
-                    <span>私密</span>
+                    <span>{t('post.visibilityPrivate')}</span>
                   </span>
                 )}
                 {post.visibility === 'feed_only' && (
-                  <span className="flex items-center gap-1 text-on-surface-variant text-[10px]" title="仅动态">
+                  <span className="flex items-center gap-1 text-on-surface-variant text-[10px]" title={t('post.visibilityFeedOnly')}>
                     <EyeOff size={10} />
-                    <span>仅动态</span>
+                    <span>{t('post.visibilityFeedOnly')}</span>
                   </span>
                 )}
               </div>

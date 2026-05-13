@@ -63,32 +63,32 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
   };
 
   return (
-    <article className="bg-[#1a1a1a] border border-white/8 rounded-xl overflow-hidden hover:border-white/15 transition-colors relative group">
+    <article className="bg-[#161616] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-all duration-300 relative group shadow-2xl shadow-black/50">
       {/* 顶部：作者信息 */}
-      <div className="flex items-center gap-3 px-5 pt-5 pb-3">
+      <div className="flex items-center gap-4 px-6 pt-6 pb-4">
         <div
-          className="w-10 h-10 rounded-full bg-surface-variant flex-shrink-0 overflow-hidden border border-white/10 cursor-pointer"
+          className="w-11 h-11 rounded-full bg-surface-variant flex-shrink-0 overflow-hidden border border-white/10 cursor-pointer shadow-lg"
           onClick={onClick}
         >
           {post.author.avatarUrl ? (
             <img src={post.author.avatarUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <User size={20} className="text-[#999]" />
+              <User size={22} className="text-[#999]" />
             </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[#e7e5e5] font-semibold text-sm leading-tight">{post.author.nickname}</p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-[#666] text-xs">{formatRelativeTime(post.createdAt, language)}</p>
+          <p className="text-[#f0f0f0] font-bold text-sm tracking-wide leading-tight">{post.author.nickname}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-[#777] text-[11px] font-medium">{formatRelativeTime(post.createdAt, language)}</p>
             {post.visibility === 'private' && (
-              <span className="flex items-center text-[#666]" title={t('post.visibilityPrivate')}>
+              <span className="flex items-center text-[#555]" title={t('post.visibilityPrivate')}>
                 <Lock size={12} />
               </span>
             )}
             {post.visibility === 'feed_only' && (
-              <span className="flex items-center text-[#666]" title={t('post.visibilityFeed')}>
+              <span className="flex items-center text-[#555]" title={t('post.visibilityFeedOnly')}>
                 <EyeOff size={12} />
               </span>
             )}
@@ -118,20 +118,20 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
 
       {/* 标签 */}
       {post.tags && post.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 px-5 pb-2">
+        <div className="flex flex-wrap gap-2 px-6 pb-3">
           {post.tags.map((tag: string) => (
-            <span key={tag} className="text-primary text-xs font-medium">#{tag}</span>
+            <span key={tag} className="text-primary text-[11px] font-bold tracking-wider bg-primary/5 px-2 py-0.5 rounded-sm">#{tag}</span>
           ))}
         </div>
       )}
 
       {/* 标题 + 内容 */}
-      <div className="px-5 pb-3 cursor-pointer" onClick={onClick}>
+      <div className="px-6 pb-4 cursor-pointer" onClick={onClick}>
         {post.title && (
-          <h3 className="font-bold text-[#e7e5e5] text-base leading-snug mb-1">{post.title}</h3>
+          <h3 className="font-bold text-[#f0f0f0] text-lg leading-snug mb-2 tracking-tight">{post.title}</h3>
         )}
         {post.content && (
-          <p className="text-[#aaa] text-sm leading-relaxed line-clamp-3">{post.content}</p>
+          <p className="text-[#999] text-sm leading-relaxed line-clamp-3 font-body">{post.content}</p>
         )}
         {/* 设备信息 */}
         {(post.filmType || post.camera || post.lens) && (
@@ -157,13 +157,13 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
 
       {/* 图片区域 */}
       {imgs.length > 0 && (
-        <div className="px-5 pb-3">
+        <div className="px-6 pb-4">
           {imgs.length === 1 ? (
-            <div className="rounded-lg overflow-hidden cursor-pointer" onClick={onClick}>
+            <div className="rounded-xl overflow-hidden cursor-pointer bg-black/20" onClick={onClick}>
               <img
                 src={imgs[0].previewUrl || imgs[0].url}
                 alt={post.title}
-                className="w-full h-auto max-h-[600px] object-contain bg-surface-container-highest/20"
+                className="w-full h-auto block hover:scale-[1.02] transition-transform duration-700"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -176,11 +176,11 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
                 onClick={onClick}
               >
                 {imgs.map((img: { url: string; previewUrl?: string }, i: number) => (
-                  <div key={i} className="flex-shrink-0 w-full">
+                  <div key={i} className="flex-shrink-0 w-full flex items-center justify-center bg-black/20">
                     <img
                       src={img.previewUrl || img.url}
                       alt=""
-                      className="w-full h-[480px] md:h-[600px] object-contain bg-surface-container-highest/20 cursor-pointer"
+                      className="w-full h-[380px] md:h-[520px] object-contain cursor-pointer hover:scale-[1.01] transition-transform duration-700"
                       referrerPolicy="no-referrer"
                     />
                   </div>
@@ -221,20 +221,20 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
       )}
 
       {/* 底部操作栏 */}
-      <div className="flex items-center justify-between px-5 py-3 border-t border-white/6">
-        <div className="flex items-center gap-5 text-[#666] text-sm">
-          <button className="flex items-center gap-1.5 hover:text-[#aaa] transition-colors">
-            <Heart size={18} />
-            <span className="text-xs">{post.likesCount > 0 ? post.likesCount : t('profile.likes')}</span>
+      <div className="flex items-center justify-between px-6 py-4 border-t border-white/5 bg-white/[0.02]">
+        <div className="flex items-center gap-6 text-[#777]">
+          <button className="flex items-center gap-2 hover:text-primary transition-colors group">
+            <Heart size={20} className="group-active:scale-125 transition-transform" />
+            <span className="text-xs font-bold">{post.likesCount > 0 ? post.likesCount : t('profile.likes')}</span>
           </button>
-          <button className="flex items-center gap-1.5 hover:text-[#aaa] transition-colors" onClick={onClick}>
-            <MessageSquare size={18} />
-            <span className="text-xs">{post.commentsCount > 0 ? post.commentsCount : t('profile.tabs.post')}</span>
+          <button className="flex items-center gap-2 hover:text-primary transition-colors group" onClick={onClick}>
+            <MessageSquare size={20} className="group-active:scale-125 transition-transform" />
+            <span className="text-xs font-bold">{post.commentsCount > 0 ? post.commentsCount : t('profile.tabs.post')}</span>
           </button>
         </div>
-        <button className="flex items-center gap-1 text-[#555] hover:text-[#aaa] transition-colors text-xs">
-          <Share2 size={16} />
-          Share
+        <button className="flex items-center gap-2 text-[#555] hover:text-[#999] transition-colors text-xs font-bold uppercase tracking-widest">
+          <Share2 size={18} />
+          {t('common.share')}
         </button>
       </div>
     </article>
