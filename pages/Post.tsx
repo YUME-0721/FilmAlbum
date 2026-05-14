@@ -9,6 +9,7 @@ import { getPost, likePost, unlikePost, getComments, createComment, type PostDet
 import { post as apiPost, del } from '../src/api/client.ts';
 import { ArrowLeft, User, Heart, MessageSquare, Share2, X, Lock, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '../src/hooks/useTranslation';
+import { motion, AnimatePresence } from 'motion/react';
 
 /** 回退 MOCK 数据 */
 const FALLBACK_POST: PostDetail = {
@@ -200,7 +201,7 @@ export default function Post() {
     <main className="max-w-5xl mx-auto pt-4 md:pt-12 pb-24 px-4 md:px-8 min-h-screen relative">
       <article className="bg-surface-container-low border border-outline-variant/10 rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
-        <header className="p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <header className="p-4 md:p-10 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-variant border border-outline-variant/30 cursor-pointer flex items-center justify-center shadow-md" onClick={() => post.author.id && navigate(`/space/${post.author.id}`)}>
               {post.author.avatarUrl ? (
@@ -229,12 +230,26 @@ export default function Post() {
             </div>
           </div>
           {!post.isOwner && (
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleFollow}
-              className={`${isFollowing ? 'bg-surface-variant text-on-surface' : 'bg-primary text-on-primary hover:bg-primary-dim'} px-8 py-2 text-xs font-bold transition-all uppercase tracking-widest self-start md:self-auto rounded-sm active:scale-95 shadow-lg shadow-primary/10`}
+              layout
+              className={`${isFollowing ? 'bg-surface-variant text-on-surface' : 'bg-primary text-on-primary hover:bg-primary-dim'} px-4 md:px-8 py-2 text-[10px] md:text-xs font-bold transition-all uppercase tracking-widest rounded-sm shadow-lg shadow-primary/10 flex-shrink-0 relative overflow-hidden min-w-[80px] md:min-w-[120px]`}
             >
-              {isFollowing ? '已关注' : '关注'}
-            </button>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={isFollowing ? 'followed' : 'follow'}
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -10, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="block"
+                >
+                  {isFollowing ? '已关注' : '关注'}
+                </motion.span>
+              </AnimatePresence>
+            </motion.button>
           )}
         </header>
 
@@ -318,34 +333,34 @@ export default function Post() {
       </div>
 
       {/* Metadata & Actions */}
-      <div className="px-6 md:px-10 pt-8 pb-2">
-          <div className="flex flex-wrap justify-between items-center gap-y-6 border-b border-outline-variant/10 pb-6">
-            <div className="flex flex-wrap gap-x-6 gap-y-3 text-[10px] md:text-sm font-label uppercase tracking-widest text-on-surface-variant">
-              <div className="flex items-center gap-2">
+      <div className="px-6 md:px-10 pt-4 pb-2">
+          <div className="flex items-center justify-between gap-4 border-b border-outline-variant/10 pb-4 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-4 md:gap-6 text-[9px] md:text-sm font-label uppercase tracking-widest text-on-surface-variant flex-shrink-0">
+              <div className="flex items-center gap-1.5">
                 <span className="text-primary/60 font-bold">FILM</span>
-                <span className="text-on-surface font-bold">{post.filmType}</span>
+                <span className="text-on-surface font-bold truncate max-w-[60px] md:max-w-none">{post.filmType}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <span className="text-primary/60 font-bold">CAMERA</span>
-                <span className="text-on-surface font-bold">{post.camera}</span>
+                <span className="text-on-surface font-bold truncate max-w-[60px] md:max-w-none">{post.camera}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <span className="text-primary/60 font-bold">LENS</span>
-                <span className="text-on-surface font-bold">{post.lens}</span>
+                <span className="text-on-surface font-bold truncate max-w-[60px] md:max-w-none">{post.lens}</span>
               </div>
             </div>
 
-            <div className="flex gap-6 items-center ml-auto md:ml-0">
-              <button onClick={handleLike} className={`flex items-center gap-2 transition-all group ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
-                <Heart size={20} className={`group-hover:scale-110 transition-transform ${isLiked ? 'fill-current text-primary' : ''}`} />
-                <span className="font-bold text-sm">{likesCount}</span>
+            <div className="flex gap-4 md:gap-6 items-center flex-shrink-0">
+              <button onClick={handleLike} className={`flex items-center gap-1.5 transition-all group ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
+                <Heart size={18} className={`group-hover:scale-110 transition-transform ${isLiked ? 'fill-current text-primary' : ''}`} />
+                <span className="font-bold text-xs">{likesCount}</span>
               </button>
-              <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-all group">
-                <MessageSquare size={20} className="group-hover:scale-110 transition-transform" />
-                <span className="font-bold text-sm">{comments.length || post.commentsCount}</span>
+              <button className="flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-all group">
+                <MessageSquare size={18} className="group-hover:scale-110 transition-transform" />
+                <span className="font-bold text-xs">{comments.length || post.commentsCount}</span>
               </button>
-              <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-all group">
-                <Share2 size={20} className="group-hover:scale-110 transition-transform" />
+              <button className="flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-all group">
+                <Share2 size={18} className="group-hover:scale-110 transition-transform" />
               </button>
             </div>
           </div>
@@ -353,7 +368,7 @@ export default function Post() {
 
         {/* 点赞用户列表 */}
         {post.likedBy && post.likedBy.length > 0 && (
-          <div className="flex items-center gap-4 py-4 px-6 bg-surface-container-low rounded-xl border border-outline-variant/5 mx-6 md:mx-10 mb-8">
+          <div className="flex items-center gap-4 py-3 px-6 bg-surface-container-low rounded-xl border border-outline-variant/5 mx-6 md:mx-10 mb-8 mt-1">
             <div className="flex -space-x-3 overflow-hidden">
               {post.likedBy.slice(0, 5).map((u, i) => (
                 <div 

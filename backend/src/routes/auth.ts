@@ -4,7 +4,7 @@
  */
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { signJwt, hashPassword, verifyPassword, generateId, authRequired, getJwtSecret } from '../middleware/auth';
+import { signJwt, hashPassword, verifyPassword, generateId, authRequired, authOptional, getJwtSecret } from '../middleware/auth';
 
 const auth = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
@@ -438,15 +438,19 @@ auth.post('/delete-account', authRequired(), async (c) => {
 });
 
 /** GET /api/auth/me - 获取当前登录用户信息 */
-auth.get('/me', authRequired(), async (c) => {
+auth.get('/me', authOptional(), async (c) => {
   const userId = c.get('userId');
+
+  if (!userId) {
+    return c.json({ success: true, data: null });
+  }
 
   const user = await c.env.DB.prepare(
     'SELECT id, email, nickname, avatar_url, bio, level, created_at FROM users WHERE id = ?'
   ).bind(userId).first<{ id: number; email: string; nickname: string; avatar_url: string; bio: string; level: string; created_at: string }>();
 
   if (!user) {
-    return c.json({ success: false, error: '用户不存在' }, 404);
+    return c.json({ success: true, data: null });
   }
 
   // 查询粉丝数和关注数

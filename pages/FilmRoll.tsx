@@ -16,7 +16,7 @@ import FilmStockManager from '../components/FilmStockManager';
 import RollForm from '../components/RollForm';
 import { 
   ArrowLeft, ImagePlus, Pencil, Download, Trash2, Camera, Calendar, 
-  MapPin, ArrowUp, ArrowDown, CloudUpload, Info, CheckCircle2, Circle, X
+  MapPin, ArrowUp, ArrowDown, CloudUpload, Info, CheckCircle2, Circle, X, ArrowUpDown, Check
 } from 'lucide-react';
 
 const FALLBACK_FRAMES: FrameItem[] = [];
@@ -59,6 +59,7 @@ export default function FilmRoll() {
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isSortMode, setIsSortMode] = useState(false);
   const [selectedFrameIds, setSelectedFrameIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -297,35 +298,69 @@ export default function FilmRoll() {
                 <button onClick={() => setShowEditModal(true)} className="p-2.5 hover:bg-surface-variant rounded-xl transition-colors border border-outline-variant/30">
                   <Pencil size={20} />
                 </button>
+                <button 
+                  onClick={() => setIsSortMode(true)} 
+                  className={`p-2.5 rounded-xl transition-colors border ${isSortMode ? 'bg-primary/10 border-primary text-primary' : 'hover:bg-surface-variant border-outline-variant/30'}`}
+                  title="Sort Mode"
+                >
+                  <ArrowUpDown size={20} />
+                </button>
                 <button onClick={() => setIsSelectionMode(true)} className="p-2.5 hover:bg-error/10 text-error rounded-xl transition-colors border border-error/20">
                   <Trash2 size={20} />
                 </button>
               </>
             ) : (
-              <div className="flex items-center gap-3 bg-surface-variant/50 p-1.5 rounded-2xl animate-in fade-in slide-in-from-right-4 duration-300">
-                <span className="px-3 text-sm font-bold text-on-surface-variant">
-                  {selectedFrameIds.length === 0 ? '选择照片' : `已选 ${selectedFrameIds.length} 张`}
-                </span>
+              /* Selection Mode UI - Improved */
+              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-lg md:static md:w-auto md:translate-x-0 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="flex items-center gap-2 md:gap-3 bg-black/80 md:bg-surface-variant/50 backdrop-blur-xl p-2 md:p-1.5 rounded-3xl md:rounded-2xl border border-white/10 shadow-2xl">
+                  <div className="hidden sm:flex px-4 py-2 bg-white/5 rounded-xl flex-col justify-center">
+                    <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold leading-none mb-1">Status</span>
+                    <span className="text-xs font-bold text-white whitespace-nowrap">
+                      {selectedFrameIds.length === 0 ? '未选择' : `已选 ${selectedFrameIds.length} 张`}
+                    </span>
+                  </div>
+                  
+                  <div className="flex-1 flex items-center justify-between md:justify-end gap-2">
+                    <button 
+                      onClick={handleBatchDelete} 
+                      disabled={selectedFrameIds.length === 0}
+                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 md:py-2 bg-error text-on-error rounded-2xl md:rounded-xl font-bold hover:bg-error/90 transition-all disabled:opacity-30 whitespace-nowrap text-xs md:text-sm shadow-lg shadow-error/20"
+                    >
+                      <Trash2 size={16} className="shrink-0" />
+                      <span>删除选中</span>
+                    </button>
+                    
+                    <button 
+                      onClick={handleDeleteRoll} 
+                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 md:py-2 bg-white/10 text-white rounded-2xl md:rounded-xl font-bold hover:bg-white/20 transition-all whitespace-nowrap text-xs md:text-sm border border-white/5"
+                    >
+                      <X size={16} className="shrink-0" />
+                      <span>删除整卷</span>
+                    </button>
+
+                    <button 
+                      onClick={() => { setIsSelectionMode(false); setSelectedFrameIds([]); }} 
+                      className="w-12 h-12 md:w-auto md:h-auto md:px-4 md:py-2 flex items-center justify-center bg-surface-variant/50 text-white rounded-2xl md:rounded-xl hover:bg-surface-variant transition-colors"
+                      title="取消选择"
+                    >
+                      <span className="hidden md:inline font-bold text-sm">取消</span>
+                      <X size={20} className="md:hidden" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sort Mode UI */}
+            {isSortMode && !isSelectionMode && (
+              <div className="fixed top-6 right-6 md:static flex items-center gap-3 bg-primary/10 border border-primary/20 p-1.5 rounded-2xl animate-in fade-in slide-in-from-right-4 duration-300 z-[60]">
+                <span className="px-3 text-sm font-bold text-primary">排序模式</span>
                 <button 
-                  onClick={handleBatchDelete} 
-                  disabled={selectedFrameIds.length === 0}
-                  className="flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-xl font-bold hover:bg-error/90 transition-all disabled:opacity-50"
+                  onClick={() => setIsSortMode(false)} 
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20"
                 >
-                  <Trash2 size={18} />
-                  <span>删除选中</span>
-                </button>
-                <button 
-                  onClick={handleDeleteRoll} 
-                  className="flex items-center gap-2 px-4 py-2 bg-error/10 text-error rounded-xl font-bold hover:bg-error/20 transition-all"
-                >
-                  <X size={18} />
-                  <span>删除整卷</span>
-                </button>
-                <button 
-                  onClick={() => { setIsSelectionMode(false); setSelectedFrameIds([]); }} 
-                  className="p-2 hover:bg-surface-variant rounded-xl transition-colors"
-                >
-                  取消
+                  <Check size={18} />
+                  <span>完成排序</span>
                 </button>
               </div>
             )}
@@ -360,8 +395,12 @@ export default function FilmRoll() {
                     layout: { type: "spring", stiffness: 300, damping: 30 },
                     opacity: { duration: 0.2 }
                   }}
-                  className={`group relative aspect-[3/2] bg-surface-container rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-500 ${isSelectionMode && selectedFrameIds.includes(frame.id) ? 'ring-4 ring-primary ring-inset' : ''}`}
-                  onClick={() => isSelectionMode ? toggleSelection(frame.id) : navigate(`/frame/${frame.id}`)}
+                  className={`group relative aspect-[3/2] bg-surface-container rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-500 ${isSelectionMode && selectedFrameIds.includes(frame.id) ? 'ring-4 ring-primary ring-inset' : ''} ${isSortMode ? 'ring-2 ring-primary/30' : ''}`}
+                  onClick={() => {
+                    if (isSelectionMode) toggleSelection(frame.id);
+                    else if (isSortMode) return; // In sort mode, only use buttons
+                    else navigate(`/frame/${frame.id}`);
+                  }}
                 >
                   <img
                     src={frame.previewUrl || frame.imageUrl}
@@ -384,20 +423,20 @@ export default function FilmRoll() {
   
                   {/* 操作浮层 */}
                   {!isSelectionMode && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <div className={`absolute inset-0 bg-black/40 transition-opacity flex items-center justify-center gap-4 ${isSortMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'up'); }} 
                         disabled={index === 0} 
-                        className="p-2 bg-white/20 hover:bg-white/40 rounded-lg text-white disabled:opacity-20 transition-all hover:scale-110 active:scale-95"
+                        className={`p-3 bg-white/20 hover:bg-white/40 rounded-xl text-white disabled:opacity-20 transition-all hover:scale-110 active:scale-90 ${isSortMode ? 'bg-primary/40' : ''}`}
                       >
-                        <ArrowUp size={20} />
+                        <ArrowUp size={24} />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'down'); }} 
                         disabled={index === frames.length - 1} 
-                        className="p-2 bg-white/20 hover:bg-white/40 rounded-lg text-white disabled:opacity-20 transition-all hover:scale-110 active:scale-95"
+                        className={`p-3 bg-white/20 hover:bg-white/40 rounded-xl text-white disabled:opacity-20 transition-all hover:scale-110 active:scale-90 ${isSortMode ? 'bg-primary/40' : ''}`}
                       >
-                        <ArrowDown size={20} />
+                        <ArrowDown size={24} />
                       </button>
                     </div>
                   )}

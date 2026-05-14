@@ -691,16 +691,31 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
               </button>
             ) : (
               <>
-                <button
-                  className={`px-8 py-2 text-xs font-bold transition-colors flex items-center gap-2 uppercase tracking-widest ${
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleFollow}
+                  layout
+                  className={`px-8 py-2 text-xs font-bold transition-all flex items-center gap-2 uppercase tracking-widest rounded-sm min-w-[140px] justify-center ${
                     profile?.isFollowing
-                      ? 'bg-surface-container-highest text-on-surface border border-outline-variant/20 hover:bg-surface-bright'
-                      : 'bg-primary text-on-primary hover:bg-primary-dim'
+                      ? 'bg-surface-container-highest text-on-surface border border-outline-variant/20'
+                      : 'bg-primary text-on-primary shadow-lg shadow-primary/10'
                   }`}
                 >
-                  {profile?.isFollowing ? <UserMinus size={14} /> : <UserPlus size={14} />}
-                  {profile?.isFollowing ? t('profile.followed') : t('profile.follow')}
-                </button>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={profile?.isFollowing ? 'followed' : 'follow'}
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -10, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center gap-2"
+                    >
+                      {profile?.isFollowing ? <UserMinus size={14} /> : <UserPlus size={14} />}
+                      {profile?.isFollowing ? t('profile.followed') : t('profile.follow')}
+                    </motion.div>
+                  </AnimatePresence>
+                </motion.button>
                 <button 
                   onClick={() => navigate(`/messages/${targetUserId}`)}
                   className="bg-surface-container-highest text-on-surface px-8 py-2 text-xs font-bold hover:bg-surface-bright transition-colors border border-outline-variant/20 uppercase tracking-widest flex items-center gap-2"
