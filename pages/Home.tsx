@@ -5,7 +5,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getPosts, type PostListItem } from '../src/api/posts.ts';
-import CreatePostModal from '../components/CreatePostModal.tsx';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import FeedCard from '../components/FeedCard';
 import { User, Heart, MessageSquare, ChevronDown, Plus, Lock, EyeOff } from 'lucide-react';
@@ -110,8 +109,6 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<PostListItem | null>(null);
   // NOTE: 读取 URL ?tab=feed 将导航栏「动态」链接切到关注居流
   const [activeTab, setActiveTab] = useState<'recommend' | 'feed'>(
     () => new URLSearchParams(location.search).get('tab') === 'feed' ? 'feed' : 'recommend'
@@ -157,13 +154,6 @@ export default function Home() {
     fetchPosts(1, activeTab);
   }, [activeTab, fetchPosts]);
 
-  // 监听全局发布事件
-  useEffect(() => {
-    const handleGlobalCreate = () => setIsCreateModalOpen(true);
-    window.addEventListener('open-create-post', handleGlobalCreate);
-    return () => window.removeEventListener('open-create-post', handleGlobalCreate);
-  }, []);
-
   const loadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -175,7 +165,7 @@ export default function Home() {
       navigate('/login');
       return;
     }
-    setIsCreateModalOpen(true);
+    navigate('/publish');
   };
 
   const handlePostCreated = () => {
@@ -286,10 +276,7 @@ export default function Home() {
                 post={post} 
                 onClick={() => navigate(`/post/${post.id}`)} 
                 onDelete={handlePostDeleted}
-                onEdit={(p) => {
-                  setEditTarget(p);
-                  setIsCreateModalOpen(true);
-                }}
+                onEdit={(p) => navigate(`/post/edit/${p.id}`)}
               />
             )) : (
               <div className="text-center py-20 text-on-surface-variant">
@@ -323,15 +310,6 @@ export default function Home() {
         </button>
       )}
 
-      <CreatePostModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => {
-          setIsCreateModalOpen(false);
-          setEditTarget(null);
-        }} 
-        onSuccess={handlePostCreated} 
-        editPost={editTarget}
-      />
     </main>
   );
 }

@@ -18,7 +18,6 @@ import GearForm from './GearForm';
 import RollForm from './RollForm';
 import ProfileEditForm from './ProfileEditForm';
 import FeedCard from './FeedCard';
-import CreatePostModal from './CreatePostModal';
 import FollowListModal from './FollowListModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { commonBrands, brandMap, getBrandDisplayName, filterFilmStocks } from '../src/constants/brands';
@@ -96,8 +95,6 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
-  const [editTargetPost, setEditTargetPost] = useState<PostListItem | null>(null);
-  const [isEditPostModalOpen, setIsEditPostModalOpen] = useState(false);
 
   // 新建相册模态框及表单状态
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -1050,10 +1047,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                   post={post} 
                   onClick={() => navigate(`/post/${post.id}`)} 
                   onDelete={handlePostDeleted}
-                  onEdit={(p) => {
-                    setEditTargetPost(p);
-                    setIsEditPostModalOpen(true);
-                  }}
+                  onEdit={(p) => navigate(`/post/edit/${p.id}`)}
                 />
               ))}
               {hasMorePosts && !isLoadingPosts && (
@@ -1474,18 +1468,6 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         </div>
       )}
 
-      {/* Edit Post Modal */}
-      {isEditPostModalOpen && profile?.isOwner && (
-        <CreatePostModal 
-          isOpen={isEditPostModalOpen} 
-          onClose={() => {
-            setIsEditPostModalOpen(false);
-            setEditTargetPost(null);
-          }}
-          onSuccess={handlePostEdited}
-          editPost={editTargetPost}
-        />
-      )}
     </main>
   );
 }

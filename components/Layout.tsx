@@ -47,7 +47,7 @@ export default function Layout() {
       navigate('/login');
       return;
     }
-    window.dispatchEvent(new CustomEvent('open-create-post'));
+    navigate('/publish');
     setIsMenuOpen(false);
   };
 

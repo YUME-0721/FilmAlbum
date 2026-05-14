@@ -11,6 +11,7 @@ import Profile from './pages/Profile.tsx';
 import FilmRoll from './pages/FilmRoll.tsx';
 import FrameView from './pages/FrameView.tsx';
 import Post from './pages/Post.tsx';
+import Publish from './pages/Publish.tsx';
 import Login from './pages/Login.tsx';
 import ResetPassword from './pages/ResetPassword.tsx';
 import Settings from './pages/Settings.tsx';
@@ -56,6 +57,16 @@ export default function App() {
               <Route path="post/:id" element={
                 <ProtectedRoute>
                   <Post />
+                </ProtectedRoute>
+              } />
+              <Route path="post/edit/:id" element={
+                <ProtectedRoute>
+                  <Publish />
+                </ProtectedRoute>
+              } />
+              <Route path="publish" element={
+                <ProtectedRoute>
+                  <Publish />
                 </ProtectedRoute>
               } />
               <Route path="settings" element={
