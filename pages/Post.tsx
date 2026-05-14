@@ -318,34 +318,34 @@ export default function Post() {
       </div>
 
       {/* Metadata & Actions */}
-      <div className="px-6 md:px-10 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b border-outline-variant/10 pb-8 mb-8">
-            <div className="grid grid-cols-2 md:flex gap-8 md:gap-16 text-sm font-label uppercase tracking-widest text-on-surface-variant">
-              <div>
-                <span className="block text-[10px] text-primary/60 mb-1.5 font-bold">胶片 FILM</span>
+      <div className="px-6 md:px-10 pt-8 pb-2">
+          <div className="flex flex-wrap justify-between items-center gap-y-6 border-b border-outline-variant/10 pb-6">
+            <div className="flex flex-wrap gap-x-6 gap-y-3 text-[10px] md:text-sm font-label uppercase tracking-widest text-on-surface-variant">
+              <div className="flex items-center gap-2">
+                <span className="text-primary/60 font-bold">FILM</span>
                 <span className="text-on-surface font-bold">{post.filmType}</span>
               </div>
-              <div>
-                <span className="block text-[10px] text-primary/60 mb-1.5 font-bold">相机 CAMERA</span>
+              <div className="flex items-center gap-2">
+                <span className="text-primary/60 font-bold">CAMERA</span>
                 <span className="text-on-surface font-bold">{post.camera}</span>
               </div>
-              <div>
-                <span className="block text-[10px] text-primary/60 mb-1.5 font-bold">镜头 LENS</span>
+              <div className="flex items-center gap-2">
+                <span className="text-primary/60 font-bold">LENS</span>
                 <span className="text-on-surface font-bold">{post.lens}</span>
               </div>
             </div>
 
-            <div className="flex gap-8 self-center md:self-auto">
-              <button onClick={handleLike} className={`flex items-center gap-2.5 transition-all group ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
-                <Heart size={24} className={`group-hover:scale-110 transition-transform ${isLiked ? 'fill-current text-primary' : ''}`} />
-                <span className="font-bold text-base">{likesCount}</span>
+            <div className="flex gap-6 items-center ml-auto md:ml-0">
+              <button onClick={handleLike} className={`flex items-center gap-2 transition-all group ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
+                <Heart size={20} className={`group-hover:scale-110 transition-transform ${isLiked ? 'fill-current text-primary' : ''}`} />
+                <span className="font-bold text-sm">{likesCount}</span>
               </button>
-              <button className="flex items-center gap-2.5 text-on-surface-variant hover:text-primary transition-all group">
-                <MessageSquare size={24} className="group-hover:scale-110 transition-transform" />
-                <span className="font-bold text-base">{comments.length || post.commentsCount}</span>
+              <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-all group">
+                <MessageSquare size={20} className="group-hover:scale-110 transition-transform" />
+                <span className="font-bold text-sm">{comments.length || post.commentsCount}</span>
               </button>
-              <button className="flex items-center gap-2.5 text-on-surface-variant hover:text-primary transition-all group">
-                <Share2 size={24} className="group-hover:scale-110 transition-transform" />
+              <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-all group">
+                <Share2 size={20} className="group-hover:scale-110 transition-transform" />
               </button>
             </div>
           </div>
@@ -353,7 +353,7 @@ export default function Post() {
 
         {/* 点赞用户列表 */}
         {post.likedBy && post.likedBy.length > 0 && (
-          <div className="flex items-center gap-4 py-4 mt-8 px-6 bg-surface-container-low rounded-xl border border-outline-variant/5">
+          <div className="flex items-center gap-4 py-4 px-6 bg-surface-container-low rounded-xl border border-outline-variant/5 mx-6 md:mx-10 mb-8">
             <div className="flex -space-x-3 overflow-hidden">
               {post.likedBy.slice(0, 5).map((u, i) => (
                 <div 

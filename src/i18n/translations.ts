@@ -212,6 +212,7 @@ export const translations = {
       downloadPreview: '下载压缩图'
     },
     post: {
+      create: '发布',
       new: '发布动态',
       empty: '暂无动态内容',
       title: '标题',
@@ -561,6 +562,7 @@ export const translations = {
       downloadPreview: 'Download Preview'
     },
     post: {
+      create: 'Post',
       new: 'Post',
       empty: 'No posts yet',
       title: 'Title',
