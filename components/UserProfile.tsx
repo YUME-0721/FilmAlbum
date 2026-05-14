@@ -700,9 +700,9 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         {/* Center: Info (Nickname, ID, Bio, Desktop Buttons) */}
         <div className="flex-1 flex flex-col gap-4 md:gap-6 min-w-0">
           <div className="space-y-1 md:space-y-4">
-            <div className="flex flex-col md:flex-row md:items-end gap-1 md:gap-3">
+            <div className="flex flex-row items-end justify-between md:justify-start gap-1 md:gap-3">
               <h1 className="font-headline text-2xl md:text-5xl font-bold text-on-surface break-words leading-tight">{profile?.nickname || '用户'}</h1>
-              <span className="text-on-surface-variant font-label text-[10px] md:text-xs tracking-widest opacity-60">ID: {profile?.id}</span>
+              <span className="text-on-surface-variant font-label text-[10px] md:text-xs tracking-widest opacity-60 pb-1 md:pb-1.5">ID: {profile?.id}</span>
             </div>
             <p className="font-body text-on-surface-variant max-w-xl leading-relaxed text-xs md:text-base">
               {profile?.bio || '这个人很懒，什么都没写。'}
@@ -864,9 +864,9 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                   setShowCreateModal(true);
                 }}
                 className="bg-primary text-on-primary h-[34px] md:h-10 px-2.5 md:px-6 rounded-lg shadow-lg shadow-primary/20 hover:bg-primary-dim transition-all flex items-center justify-center gap-2 active:scale-90"
-                title={t('roll.create')}
+                title={t('roll.new')}
               >
-                <span className="hidden md:inline text-xs font-bold uppercase tracking-widest">{t('roll.create')}</span>
+                <span className="hidden md:inline text-xs font-bold uppercase tracking-widest">{t('roll.new')}</span>
                 <Plus size={16} strokeWidth={3} />
               </button>
             )}

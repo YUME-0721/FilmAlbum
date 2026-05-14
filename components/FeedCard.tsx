@@ -182,12 +182,18 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
       {imgs.length > 0 && (
         <div className="px-6 pb-4">
           {imgs.length === 1 ? (
-            <div className="rounded-xl overflow-hidden cursor-pointer bg-black/20" onClick={onClick}>
+            <div className="rounded-xl overflow-hidden cursor-pointer bg-surface-container-highest/20 min-h-[300px] relative animate-pulse" onClick={onClick}>
               <img
                 src={imgs[0].previewUrl || imgs[0].url}
                 alt={post.title}
-                className="w-full h-auto block hover:scale-[1.02] transition-transform duration-700"
+                className="w-full h-auto block hover:scale-[1.02] transition-transform duration-700 relative z-10"
                 referrerPolicy="no-referrer"
+                onLoad={(e) => {
+                  e.currentTarget.parentElement?.classList.remove('animate-pulse', 'bg-surface-container-highest/20');
+                }}
+                onError={(e) => {
+                  e.currentTarget.parentElement?.classList.remove('animate-pulse');
+                }}
               />
             </div>
           ) : (
@@ -201,12 +207,19 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
                 onTouchEnd={handleTouchEnd}
               >
                 {imgs.map((img: { url: string; previewUrl?: string }, i: number) => (
-                  <div key={i} className="flex-shrink-0 w-full flex items-center justify-center bg-black/20 select-none">
+                  <div key={i} className="flex-shrink-0 w-full flex items-center justify-center bg-surface-container-highest/20 animate-pulse select-none min-h-[380px] md:min-h-[520px]">
                     <img
                       src={img.previewUrl || img.url}
                       alt=""
-                      className="w-full h-[380px] md:h-[520px] object-contain cursor-pointer hover:scale-[1.01] transition-transform duration-700 pointer-events-none"
+                      className="w-full h-[380px] md:h-[520px] object-contain cursor-pointer hover:scale-[1.01] transition-transform duration-700 pointer-events-none opacity-0 transition-opacity"
                       referrerPolicy="no-referrer"
+                      onLoad={(e) => {
+                        e.currentTarget.classList.remove('opacity-0');
+                        e.currentTarget.parentElement?.classList.remove('animate-pulse', 'bg-surface-container-highest/20');
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.parentElement?.classList.remove('animate-pulse');
+                      }}
                     />
                   </div>
                 ))}

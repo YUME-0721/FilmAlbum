@@ -218,12 +218,21 @@ export default function Home() {
                 onClick={() => navigate(`/post/${post.id}`)}
               >
                 <div className="overflow-hidden relative border border-outline-variant/10 rounded-xl bg-surface-container-low shadow-lg hover:shadow-primary/5 transition-all duration-500">
-                  <img 
-                    src={post.coverImage} 
-                    alt={post.title}
-                    className="w-full h-auto block transition-all duration-700 hover:scale-[1.03]"
-                    referrerPolicy="no-referrer"
-                  />
+                  <div className="min-h-[240px] bg-surface-container-highest/30 animate-pulse relative">
+                    <img 
+                      src={post.coverImage} 
+                      alt={post.title}
+                      className="w-full h-auto block transition-all duration-700 hover:scale-[1.03] relative z-10"
+                      referrerPolicy="no-referrer"
+                      onLoad={(e) => {
+                        e.currentTarget.parentElement?.classList.remove('animate-pulse', 'bg-surface-container-highest/30');
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.parentElement?.classList.remove('animate-pulse');
+                        e.currentTarget.style.opacity = '0.5'; // 降低失败图透明度
+                      }}
+                    />
+                  </div>
                   
                   <div className="p-4 bg-surface-container-low relative z-10 border-t border-outline-variant/5">
                     <div className="flex justify-between items-start mb-2">

@@ -50,7 +50,14 @@ export async function getUploadStrategy(c: any, options: Omit<UploadOptions, 'fi
   if (!pathTemplate) {
     if (type === 'film_stock') pathTemplate = 'Films/';
     else if (type === 'post') pathTemplate = '{userId}/Posts/';
-    else if (rollId) pathTemplate = '{userId}/{rollId}/';
+    else if (rollId) {
+      // 影集相关的图片统一存放在 photos 目录下
+      if (type === 'preview') {
+        pathTemplate = '{userId}/photos/{rollId}/previews/';
+      } else {
+        pathTemplate = '{userId}/photos/{rollId}/originals/';
+      }
+    }
     else pathTemplate = '{userId}/';
   }
 
