@@ -351,17 +351,22 @@ export default function FilmRoll() {
               </div>
             )}
 
-            {/* Sort Mode UI */}
+            {/* Sort Mode UI - Improved */}
             {isSortMode && !isSelectionMode && (
-              <div className="fixed top-6 right-6 md:static flex items-center gap-3 bg-primary/10 border border-primary/20 p-1.5 rounded-2xl animate-in fade-in slide-in-from-right-4 duration-300 z-[60]">
-                <span className="px-3 text-sm font-bold text-primary">排序模式</span>
-                <button 
-                  onClick={() => setIsSortMode(false)} 
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20"
-                >
-                  <Check size={18} />
-                  <span>完成排序</span>
-                </button>
+              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-sm md:static md:w-auto md:translate-x-0 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="flex items-center justify-between gap-3 bg-black/80 md:bg-primary/10 backdrop-blur-xl p-2 md:p-1.5 rounded-3xl md:rounded-2xl border border-primary/20 shadow-2xl">
+                  <div className="flex items-center gap-2 px-3">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    <span className="text-sm font-bold text-primary whitespace-nowrap">排序模式</span>
+                  </div>
+                  <button 
+                    onClick={() => setIsSortMode(false)} 
+                    className="flex items-center gap-2 px-6 py-3 md:px-4 md:py-2 bg-primary text-on-primary rounded-2xl md:rounded-xl font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20 whitespace-nowrap"
+                  >
+                    <Check size={18} />
+                    <span>完成排序</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>

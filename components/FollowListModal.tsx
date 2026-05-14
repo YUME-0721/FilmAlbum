@@ -33,14 +33,11 @@ export default function FollowListModal({ isOpen, onClose, userId, type, userNam
   const fetchUsers = useCallback(async (pageNum: number, isNewSearch = false) => {
     setIsLoading(true);
     try {
-      const res = await get<{ 
-        data: FollowUser[], 
-        pagination: { totalPages: number } 
-      }>(`/users/${userId}/${type}?page=${pageNum}&pageSize=20`);
+      const res = await get<FollowUser[]>(`/users/${userId}/${type}?page=${pageNum}&pageSize=20`);
       
       if (res.success && res.data) {
-        const newUsers = res.data.data;
-        const totalPages = res.data.pagination.totalPages;
+        const newUsers = res.data;
+        const totalPages = res.pagination?.totalPages || 1;
         
         if (isNewSearch || pageNum === 1) {
           setUsers(newUsers);

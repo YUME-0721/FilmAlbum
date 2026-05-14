@@ -653,111 +653,124 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
 
   return (
     <main className="max-w-7xl mx-auto px-8 pt-12 pb-24">
-      {/* Profile Header */}
-      <header className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-12 mb-12 md:mb-20">
-        {/* Left: Avatar */}
-        <div className="relative group shrink-0">
-          <div className="w-32 h-32 md:w-48 md:h-48 overflow-hidden bg-surface-container-highest flex items-center justify-center">
-            {profile?.avatarUrl ? (
-              <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-            ) : (
-              <User size={80} className="text-on-surface-variant/30" />
-            )}
-          </div>
-          <div className="absolute bottom-0 right-0 bg-primary text-on-primary px-2 py-0.5 text-[10px] font-label uppercase tracking-widest">
-            ARTIST
-          </div>
-        </div>
-
-        {/* Center-Left: Name & Bio & Buttons */}
-        <div className="flex-1 flex flex-col gap-4 md:gap-6 text-center md:text-left w-full max-w-full overflow-hidden">
-          <div className="space-y-3 md:space-y-4">
-            <div className="flex flex-col md:flex-row md:items-end gap-1 md:gap-3 justify-center md:justify-start">
-              <h1 className="font-headline text-2xl md:text-5xl font-bold text-on-surface break-words leading-tight">{profile?.nickname || '用户'}</h1>
-              <span className="text-on-surface-variant font-label text-[10px] md:text-xs tracking-widest mb-1 opacity-60">ID: {profile?.id}</span>
+      {/* Profile Header - Compact on mobile */}
+      <header className="flex flex-col md:flex-row gap-6 md:gap-12 mb-8 md:mb-20">
+        {/* Top section: Avatar + Basic Info Side-by-Side on mobile */}
+        <div className="flex md:flex-row items-start gap-5 md:gap-12 flex-1 min-w-0">
+          {/* Avatar */}
+          <div className="relative group shrink-0">
+            <div className="w-24 h-24 md:w-48 md:h-48 overflow-hidden bg-surface-container-highest flex items-center justify-center rounded-2xl md:rounded-none">
+              {profile?.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                <User size={40} className="text-on-surface-variant/30 md:hidden" />
+              )}
+              {/* Desktop fallback */}
+              {!profile?.avatarUrl && <User size={80} className="hidden md:block text-on-surface-variant/30" />}
             </div>
-            <p className="font-body text-on-surface-variant max-w-xl leading-relaxed text-xs md:text-base px-4 md:px-0">
-              {profile?.bio || '这个人很懒，什么都没写。'}
-            </p>
+            <div className="absolute -bottom-2 -right-1 md:bottom-0 md:right-0 bg-primary text-on-primary px-1.5 py-0.5 text-[8px] md:text-[10px] font-label uppercase tracking-widest rounded-sm">
+              ARTIST
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-            {profile?.isOwner ? (
-              <button 
-                className="bg-primary text-on-primary px-8 py-2 text-xs font-bold hover:bg-primary-dim transition-colors flex items-center gap-2 uppercase tracking-widest"
-                onClick={() => setShowEditProfileModal(true)}
-              >
-                <Pencil size={14} />
-                {t('profile.editProfile')}
-              </button>
-            ) : (
-              <>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleFollow}
-                  layout
-                  className={`px-8 py-2 text-xs font-bold transition-all flex items-center gap-2 uppercase tracking-widest rounded-sm min-w-[140px] justify-center ${
-                    profile?.isFollowing
-                      ? 'bg-surface-container-highest text-on-surface border border-outline-variant/20'
-                      : 'bg-primary text-on-primary shadow-lg shadow-primary/10'
-                  }`}
-                >
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.div
-                      key={profile?.isFollowing ? 'followed' : 'follow'}
-                      initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -10, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex items-center gap-2"
-                    >
-                      {profile?.isFollowing ? <UserMinus size={14} /> : <UserPlus size={14} />}
-                      {profile?.isFollowing ? t('profile.followed') : t('profile.follow')}
-                    </motion.div>
-                  </AnimatePresence>
-                </motion.button>
+
+          {/* Basic Info (Nickname, ID, Bio, Buttons) */}
+          <div className="flex-1 flex flex-col gap-3 md:gap-6 min-w-0">
+            <div className="space-y-1 md:space-y-4">
+              <div className="flex flex-col md:flex-row md:items-end gap-1 md:gap-3">
+                <h1 className="font-headline text-xl md:text-5xl font-bold text-on-surface break-words leading-tight">{profile?.nickname || '用户'}</h1>
+                <span className="text-on-surface-variant font-label text-[10px] md:text-xs tracking-widest opacity-60">ID: {profile?.id}</span>
+              </div>
+              <p className="font-body text-on-surface-variant max-w-xl leading-relaxed text-[11px] md:text-base line-clamp-2 md:line-clamp-none">
+                {profile?.bio || '这个人很懒，什么都没写。'}
+              </p>
+            </div>
+            
+            {/* Desktop Buttons */}
+            <div className="hidden md:flex flex-wrap gap-3">
+              {profile?.isOwner ? (
                 <button 
-                  onClick={() => navigate(`/messages/${targetUserId}`)}
-                  className="bg-surface-container-highest text-on-surface px-8 py-2 text-xs font-bold hover:bg-surface-bright transition-colors border border-outline-variant/20 uppercase tracking-widest flex items-center gap-2"
+                  className="bg-primary text-on-primary px-8 py-2 text-xs font-bold hover:bg-primary-dim transition-colors flex items-center gap-2 uppercase tracking-widest"
+                  onClick={() => setShowEditProfileModal(true)}
                 >
-                  <MessageSquare size={14} />
-                  {t('profile.sendMessage')}
+                  <Pencil size={14} />
+                  {t('profile.editProfile')}
                 </button>
-              </>
-            )}
+              ) : (
+                <>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleFollow}
+                    layout
+                    className={`px-8 py-2 text-xs font-bold transition-all flex items-center gap-2 uppercase tracking-widest rounded-sm min-w-[140px] justify-center ${
+                      profile?.isFollowing ? 'bg-surface-container-highest text-on-surface border border-outline-variant/20' : 'bg-primary text-on-primary shadow-lg shadow-primary/10'
+                    }`}
+                  >
+                    {/* ... (Follow button content - kept same as before) */}
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div key={profile?.isFollowing ? 'followed' : 'follow'} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -10, opacity: 0 }} transition={{ duration: 0.2 }} className="flex items-center gap-2">
+                        {profile?.isFollowing ? <UserMinus size={14} /> : <UserPlus size={14} />}
+                        {profile?.isFollowing ? t('profile.followed') : t('profile.follow')}
+                      </motion.div>
+                    </AnimatePresence>
+                  </motion.button>
+                  <button onClick={() => navigate(`/messages/${targetUserId}`)} className="bg-surface-container-highest text-on-surface px-8 py-2 text-xs font-bold hover:bg-surface-bright transition-colors border border-outline-variant/20 uppercase tracking-widest flex items-center gap-2">
+                    <MessageSquare size={14} />
+                    {t('profile.sendMessage')}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Right: Stats */}
-        <div className="flex md:flex-col justify-center gap-8 md:gap-8 md:pl-12 md:border-l border-outline-variant/20 font-label w-full md:w-auto">
-          <div className="flex flex-row gap-8 md:gap-12 items-center justify-center md:justify-start">
+        {/* Right Section: Stats (Always visible, more compact on mobile) */}
+        <div className="flex md:flex-col justify-start md:justify-center gap-6 md:gap-8 md:pl-12 md:border-l border-outline-variant/10 font-label">
+          <div className="flex flex-row md:flex-col gap-8 md:gap-8 items-center md:items-start">
             <div 
-              className="flex flex-col md:items-start items-center gap-1 cursor-pointer hover:bg-surface-container-highest/20 p-2 -m-2 rounded-xl transition-all active:scale-95 group"
-              onClick={() => {
-                setFollowModalType('followers');
-                setShowFollowModal(true);
-              }}
+              className="flex flex-col md:items-start items-center gap-0.5 cursor-pointer hover:bg-surface-container-highest/20 p-2 -m-2 rounded-xl transition-all active:scale-95 group"
+              onClick={() => { setFollowModalType('followers'); setShowFollowModal(true); }}
             >
-              <span className="text-2xl font-headline font-bold text-on-surface group-hover:text-primary transition-colors">{formatCount(profile?.followersCount ?? 0)}</span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-medium group-hover:text-on-surface transition-colors">{t('profile.followers')}</span>
+              <span className="text-xl md:text-2xl font-headline font-bold text-on-surface group-hover:text-primary transition-colors">{formatCount(profile?.followersCount ?? 0)}</span>
+              <span className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-medium group-hover:text-on-surface transition-colors">{t('profile.followers')}</span>
             </div>
             <div 
-              className="flex flex-col md:items-start items-center gap-1 cursor-pointer hover:bg-surface-container-highest/20 p-2 -m-2 rounded-xl transition-all active:scale-95 group"
-              onClick={() => {
-                setFollowModalType('following');
-                setShowFollowModal(true);
-              }}
+              className="flex flex-col md:items-start items-center gap-0.5 cursor-pointer hover:bg-surface-container-highest/20 p-2 -m-2 rounded-xl transition-all active:scale-95 group"
+              onClick={() => { setFollowModalType('following'); setShowFollowModal(true); }}
             >
-              <span className="text-2xl font-headline font-bold text-on-surface group-hover:text-primary transition-colors">{formatCount(profile?.followingCount ?? 0)}</span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-medium group-hover:text-on-surface transition-colors">{t('profile.following')}</span>
+              <span className="text-xl md:text-2xl font-headline font-bold text-on-surface group-hover:text-primary transition-colors">{formatCount(profile?.followingCount ?? 0)}</span>
+              <span className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-medium group-hover:text-on-surface transition-colors">{t('profile.following')}</span>
             </div>
-            <div className="flex flex-col md:items-start items-center gap-1">
-              <span className="text-2xl font-headline font-bold text-on-surface">{formatCount(profile?.likesCount ?? 0)}</span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-medium">{t('profile.likes')}</span>
+            <div className="flex flex-col md:items-start items-center gap-0.5 p-2 -m-2 rounded-xl transition-all group">
+              <span className="text-xl md:text-2xl font-headline font-bold text-on-surface group-hover:text-primary transition-colors">{formatCount(profile?.likesCount ?? 0)}</span>
+              <span className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-medium group-hover:text-on-surface transition-colors">{t('profile.likes')}</span>
             </div>
+          </div>
+          
+          {/* Mobile Buttons - Integrated into stats row or below */}
+          <div className="flex md:hidden flex-1 justify-end items-center">
+             {profile?.isOwner ? (
+                <button 
+                  className="bg-primary/10 text-primary p-2.5 rounded-full hover:bg-primary/20 transition-colors"
+                  onClick={() => setShowEditProfileModal(true)}
+                  title={t('profile.editProfile')}
+                >
+                  <Pencil size={18} />
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button onClick={handleFollow} className={`p-2.5 rounded-full transition-all ${profile?.isFollowing ? 'bg-surface-variant text-on-surface' : 'bg-primary text-on-primary shadow-lg shadow-primary/20'}`}>
+                    {profile?.isFollowing ? <UserMinus size={18} /> : <UserPlus size={18} />}
+                  </button>
+                  <button onClick={() => navigate(`/messages/${targetUserId}`)} className="bg-surface-variant text-on-surface p-2.5 rounded-full border border-outline-variant/20">
+                    <MessageSquare size={18} />
+                  </button>
+                </div>
+              )}
           </div>
         </div>
       </header>
+
 
       {/* Functional Tabs */}
       <div className="mb-6 md:mb-8 border-b border-outline-variant/15 overflow-x-auto overflow-y-hidden scrollbar-hide">
