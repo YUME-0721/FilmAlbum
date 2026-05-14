@@ -98,142 +98,163 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-surface-container-low/95 backdrop-blur-2xl flex flex-col"
+          className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-3xl flex flex-col items-center justify-start"
         >
-          {/* Top Bar */}
-          <div className="w-full h-20 border-b border-outline-variant/10 flex items-center px-8 md:px-12 gap-6 bg-surface-container-low/50 sticky top-0 z-10">
-            <Search className="text-primary" size={24} strokeWidth={2.5} />
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('search.placeholder')}
-              className="flex-1 bg-transparent border-none text-2xl font-headline font-bold text-on-surface placeholder:text-on-surface-variant/20 outline-none"
-            />
-            <button
-              onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-bright transition-all text-on-surface-variant group"
-            >
-              <X size={24} className="group-hover:rotate-90 transition-transform duration-300" />
-            </button>
-          </div>
+          {/* Main Container for Desktop / Fullscreen for Mobile */}
+          <div className="w-full h-full max-w-7xl flex flex-col">
+            {/* Top Bar - Command Palette Style */}
+            <div className="w-full h-16 md:h-24 flex items-center px-6 md:px-12 gap-4 md:gap-8 sticky top-0 z-10">
+              <div className="flex-1 flex items-center gap-4 bg-surface-container-low/40 border border-outline-variant/10 rounded-2xl md:rounded-3xl px-4 md:px-8 py-2 md:py-4 focus-within:border-primary/40 focus-within:bg-surface-container-low/60 transition-all group shadow-2xl">
+                <Search className="text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={20} strokeWidth={2.5} />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t('search.placeholder')}
+                  className="flex-1 bg-transparent border-none text-lg md:text-3xl font-headline font-bold text-on-surface placeholder:text-on-surface-variant/10 outline-none"
+                />
+                <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-surface-container rounded-lg border border-outline-variant/5">
+                  <span className="text-[10px] font-bold text-on-surface-variant/40 tracking-widest">ESC</span>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-red-500/10 hover:text-red-400 transition-all text-on-surface-variant group shrink-0"
+              >
+                <X size={28} className="group-hover:rotate-90 transition-transform duration-300" />
+              </button>
+            </div>
 
-          {/* Results Area */}
-          <div className="flex-1 overflow-y-auto mt-4 px-8 md:px-12 pb-20 scrollbar-hide">
-            <div className="max-w-6xl mx-auto w-full py-10">
-              {!query.trim() ? (
-                <div className="flex flex-col items-center justify-center py-40 gap-6 opacity-20">
-                  <Hash size={80} />
-                  <p className="text-xl font-headline font-bold tracking-[0.2em] uppercase">{t('search.center')}</p>
-                </div>
-              ) : isLoading ? (
-                <div className="flex flex-col items-center justify-center py-40 gap-4">
-                  <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                  <p className="text-xs font-bold font-label text-on-surface-variant uppercase tracking-[0.4em]">{t('search.loading')}</p>
-                </div>
-              ) : results && (results.users.length > 0 || results.posts.length > 0) ? (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-                  {/* Users Section */}
-                  <div className="lg:col-span-4 space-y-8">
-                    <div className="flex items-center gap-3 text-on-surface-variant">
-                      <User size={18} />
-                      <h3 className="text-xs font-bold uppercase tracking-[0.3em]">{t('search.photographers')} ({results.users.length})</h3>
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto px-6 md:px-12 pb-24 scrollbar-hide">
+              <div className="max-w-6xl mx-auto w-full pt-4 md:pt-10">
+                {!query.trim() ? (
+                  <div className="flex flex-col items-center justify-center py-24 md:py-40 gap-8">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
+                      <Hash size={80} className="relative text-primary/20" />
                     </div>
-                    {results.users.length > 0 ? (
-                      <div className="space-y-4">
-                        {results.users.map((user) => (
+                    <div className="text-center space-y-2">
+                      <p className="text-lg md:text-xl font-headline font-bold tracking-[0.2em] uppercase text-on-surface/40">{t('search.center')}</p>
+                      <p className="text-[10px] md:text-xs text-on-surface-variant/20 uppercase tracking-[0.4em] font-bold">输入关键词开始探索您的胶片记忆</p>
+                    </div>
+                    
+                    {/* Quick Suggestions */}
+                    <div className="flex flex-wrap justify-center gap-3 max-w-lg">
+                      {['Kodak', 'Portra', 'Fuji', 'Leica', '120mm'].map(tag => (
+                        <button 
+                          key={tag}
+                          onClick={() => setQuery(tag)}
+                          className="px-4 py-2 bg-surface-container-low/40 border border-outline-variant/5 rounded-full text-[10px] font-bold text-on-surface-variant/40 hover:text-primary hover:border-primary/20 transition-all uppercase tracking-widest"
+                        >
+                          #{tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-32 md:py-40 gap-6">
+                    <div className="relative w-16 h-16">
+                      <div className="absolute inset-0 border-4 border-primary/10 rounded-full" />
+                      <div className="absolute inset-0 border-4 border-t-primary rounded-full animate-spin" />
+                    </div>
+                    <p className="text-[10px] font-bold font-label text-on-surface-variant/40 uppercase tracking-[0.4em] animate-pulse">{t('search.loading')}</p>
+                  </div>
+                ) : results && (results.users.length > 0 || results.posts.length > 0) ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-20">
+                    {/* Users Section */}
+                    <div className="lg:col-span-4 space-y-8">
+                      <div className="flex items-center justify-between border-b border-outline-variant/5 pb-4">
+                        <div className="flex items-center gap-3 text-on-surface-variant">
+                          <User size={16} />
+                          <h3 className="text-[10px] font-bold uppercase tracking-[0.3em]">{t('search.photographers')}</h3>
+                        </div>
+                        <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">{results.users.length}</span>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {results.users.map((user, idx) => (
                           <motion.div
                             key={user.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.05 }}
                             onClick={() => handleUserClick(user.id)}
-                            className="flex items-center gap-4 p-4 rounded-2xl bg-surface-container/30 border border-outline-variant/5 hover:border-primary/30 hover:bg-surface-container transition-all cursor-pointer group"
+                            className="flex items-center gap-4 p-3 rounded-2xl bg-surface-container-low/20 border border-outline-variant/5 hover:border-primary/20 hover:bg-surface-container-low transition-all cursor-pointer group"
                           >
-                            <div className="w-14 h-14 rounded-full overflow-hidden bg-surface-variant border border-outline-variant/20">
+                            <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-variant border border-outline-variant/10 group-hover:border-primary/30 transition-colors">
                               {user.avatarUrl ? (
-                                <img src={user.avatarUrl} alt={user.nickname} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                <img src={user.avatarUrl} alt={user.nickname} className="w-full h-full object-cover" />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-on-surface-variant/20">
-                                  <User size={24} />
-                                </div>
+                                <div className="w-full h-full flex items-center justify-center text-on-surface-variant/20"><User size={20} /></div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-on-surface group-hover:text-primary transition-colors truncate">{user.nickname}</h4>
-                              <p className="text-[10px] text-on-surface-variant/40 uppercase tracking-widest mt-1 font-bold">UID: {user.id}</p>
-                              {user.bio && (
-                                <p className="text-xs text-on-surface-variant/60 truncate mt-1 line-clamp-1 italic">"{user.bio}"</p>
-                              )}
+                              <h4 className="font-bold text-sm text-on-surface group-hover:text-primary transition-colors truncate">{user.nickname}</h4>
+                              <p className="text-[9px] text-on-surface-variant/40 uppercase tracking-widest mt-0.5">UID: {user.id}</p>
                             </div>
                           </motion.div>
                         ))}
                       </div>
-                    ) : (
-                      <p className="text-xs text-on-surface-variant/30 font-bold uppercase tracking-widest italic">{t('search.noUser')}</p>
-                    )}
-                  </div>
-
-                  {/* Posts Section */}
-                  <div className="lg:col-span-8 space-y-8">
-                    <div className="flex items-center gap-3 text-on-surface-variant">
-                      <ImageIcon size={18} />
-                      <h3 className="text-xs font-bold uppercase tracking-[0.3em]">{t('search.records')} ({results.posts.length})</h3>
                     </div>
-                    {results.posts.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {results.posts.map((post) => (
+
+                    {/* Posts Section */}
+                    <div className="lg:col-span-8 space-y-8">
+                      <div className="flex items-center justify-between border-b border-outline-variant/5 pb-4">
+                        <div className="flex items-center gap-3 text-on-surface-variant">
+                          <ImageIcon size={16} />
+                          <h3 className="text-[10px] font-bold uppercase tracking-[0.3em]">{t('search.records')}</h3>
+                        </div>
+                        <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">{results.posts.length}</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        {results.posts.map((post, idx) => (
                           <motion.div
                             key={post.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: idx * 0.1 }}
                             onClick={() => handlePostClick(post.id)}
-                            className="group rounded-3xl overflow-hidden bg-surface-container/20 border border-outline-variant/5 hover:border-primary/20 transition-all cursor-pointer flex flex-col"
+                            className="group rounded-[2rem] overflow-hidden bg-surface-container-low/20 border border-outline-variant/5 hover:border-primary/20 transition-all cursor-pointer flex flex-col"
                           >
-                            <div className="aspect-[16/10] overflow-hidden bg-black relative">
+                            <div className="aspect-[4/3] overflow-hidden bg-black relative">
                               {post.coverImage ? (
-                                <img src={post.coverImage} alt={post.title} className="w-full h-full object-contain grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" />
+                                <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-on-surface-variant/10">
-                                  <ImageIcon size={48} />
-                                </div>
+                                <div className="w-full h-full flex items-center justify-center text-on-surface-variant/10"><ImageIcon size={40} /></div>
                               )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                            <div className="p-6 space-y-4">
-                              <h4 className="text-lg font-headline font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-1">{post.title}</h4>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-5 h-5 rounded-full overflow-hidden bg-surface-variant border border-white/10">
-                                    <img src={post.author.avatarUrl || '/default-avatar.png'} alt={post.author.nickname} className="w-full h-full object-cover" />
-                                  </div>
-                                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{post.author.nickname}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-on-surface-variant/40">
-                                  <Calendar size={10} />
-                                  <span className="text-[10px] uppercase font-label">{new Date(post.createdAt).toLocaleDateString()}</span>
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap gap-2 pt-2">
-                                {post.tags.slice(0, 3).map(tag => (
-                                  <span key={tag} className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 bg-surface-container text-on-surface-variant/60 rounded-full border border-outline-variant/10">#{tag}</span>
+                              <div className="absolute top-4 left-4 flex gap-1">
+                                {post.tags.slice(0, 2).map(tag => (
+                                  <span key={tag} className="px-2 py-1 bg-black/40 backdrop-blur-md text-[8px] font-bold text-white/80 rounded-lg border border-white/5 uppercase tracking-widest">#{tag}</span>
                                 ))}
                               </div>
                             </div>
+                            <div className="p-5 flex flex-col gap-3">
+                              <h4 className="text-base font-headline font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-1">{post.title}</h4>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-5 rounded-full overflow-hidden border border-outline-variant/10">
+                                    <img src={post.author.avatarUrl || '/default-avatar.png'} alt={post.author.nickname} className="w-full h-full object-cover" />
+                                  </div>
+                                  <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">{post.author.nickname}</span>
+                                </div>
+                                <span className="text-[9px] text-on-surface-variant/30 font-label">{new Date(post.createdAt).toLocaleDateString()}</span>
+                              </div>
+                            </div>
                           </motion.div>
                         ))}
                       </div>
-                    ) : (
-                      <p className="text-xs text-on-surface-variant/30 font-bold uppercase tracking-widest italic">{t('search.noPost')}</p>
-                    )}
+                    </div>
                   </div>
-                </div>
-              ) : results && results.users.length === 0 && results.posts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-40 gap-6 opacity-20">
-                  <X size={80} />
-                  <p className="text-xl font-headline font-bold tracking-[0.2em] uppercase">{t('search.noResult')}</p>
-                </div>
-              ) : null}
+                ) : results && results.users.length === 0 && results.posts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-40 gap-6 opacity-20">
+                    <X size={80} />
+                    <p className="text-xl font-headline font-bold tracking-[0.2em] uppercase">{t('search.noResult')}</p>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </motion.div>
