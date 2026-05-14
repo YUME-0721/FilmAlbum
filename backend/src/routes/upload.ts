@@ -86,8 +86,8 @@ upload.get('/strategy', authRequired(), async (c) => {
     let strategyType: UploadType = 'avatar';
     if (typeQuery === 'filmStock') strategyType = 'film_stock';
     else if (typeQuery === 'gear') strategyType = 'gear';
-    else if (typeQuery === 'post' || typeQuery === 'frame') strategyType = 'post';
-    else if (rollId) strategyType = 'roll';
+    else if (typeQuery === 'post') strategyType = 'post';
+    else if (typeQuery === 'roll' || typeQuery === 'frame' || rollId) strategyType = 'roll';
 
     const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
     return c.json({ success: true, data: strategy });
