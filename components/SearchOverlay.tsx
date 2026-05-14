@@ -103,26 +103,34 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           {/* Main Container for Desktop / Fullscreen for Mobile */}
           <div className="w-full h-full max-w-7xl flex flex-col">
             {/* Top Bar - Command Palette Style */}
-            <div className="w-full h-16 md:h-24 flex items-center px-6 md:px-12 gap-4 md:gap-8 sticky top-0 z-10">
-              <div className="flex-1 flex items-center gap-4 bg-surface-container-low/40 border border-outline-variant/10 rounded-2xl md:rounded-3xl px-4 md:px-8 py-2 md:py-4 focus-within:border-primary/40 focus-within:bg-surface-container-low/60 transition-all group shadow-2xl">
-                <Search className="text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={20} strokeWidth={2.5} />
+            <div className="w-full h-16 md:h-24 flex items-center px-4 md:px-12 gap-3 md:gap-8 sticky top-0 z-10">
+              <div className="flex-1 flex items-center gap-3 bg-surface-container-low/40 border border-outline-variant/10 rounded-xl md:rounded-3xl px-3 md:px-8 py-2 md:py-4 focus-within:border-primary/40 focus-within:bg-surface-container-low/60 transition-all group shadow-2xl">
+                <Search className="text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={18} strokeWidth={2.5} />
                 <input
                   ref={inputRef}
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t('search.placeholder')}
-                  className="flex-1 bg-transparent border-none text-lg md:text-3xl font-headline font-bold text-on-surface placeholder:text-on-surface-variant/10 outline-none"
+                  className="flex-1 bg-transparent border-none text-base md:text-3xl font-headline font-bold text-on-surface placeholder:text-on-surface-variant/10 outline-none min-w-0"
                 />
                 <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-surface-container rounded-lg border border-outline-variant/5">
                   <span className="text-[10px] font-bold text-on-surface-variant/40 tracking-widest">ESC</span>
                 </div>
               </div>
+              
+              {/* Close / Cancel Button */}
               <button
                 onClick={onClose}
-                className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-red-500/10 hover:text-red-400 transition-all text-on-surface-variant group shrink-0"
+                className="flex items-center justify-center shrink-0"
               >
-                <X size={28} className="group-hover:rotate-90 transition-transform duration-300" />
+                {/* Mobile: Cancel Text */}
+                <span className="md:hidden text-sm font-bold text-primary px-2 py-1 active:opacity-60 transition-opacity">取消</span>
+                
+                {/* Desktop: X Icon */}
+                <div className="hidden md:flex w-12 h-12 items-center justify-center rounded-2xl hover:bg-red-500/10 hover:text-red-400 transition-all text-on-surface-variant group">
+                  <X size={28} className="group-hover:rotate-90 transition-transform duration-300" />
+                </div>
               </button>
             </div>
 
