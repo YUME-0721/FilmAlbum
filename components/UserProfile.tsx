@@ -23,7 +23,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { commonBrands, brandMap, getBrandDisplayName, filterFilmStocks } from '../src/constants/brands';
 import { 
   User, UserX, UserPlus, UserMinus, Pencil, Library, History, Camera, 
-  Search, Calendar, Filter, FolderPlus, ChevronRight, PlusCircle, 
+  Search, Calendar, Filter, FolderPlus, ChevronRight, PlusCircle, Plus,
   ChevronDown, Maximize, Circle, Timer, Star, MessageSquare, Trash2,
   ArrowUp, ArrowDown
 } from 'lucide-react';
@@ -390,7 +390,6 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
 
   /** 获取胶卷列表 */
   const fetchRolls = useCallback(async (isInitial = false) => {
-    if (isInitial) setIsLoading(true);
     try {
       const params: Record<string, string | number | undefined> = {};
       if (targetUserId) params.userId = targetUserId;
@@ -411,7 +410,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     } catch {
       setRolls([]);
     } finally {
-      if (isInitial) setIsLoading(false);
+      // fetchRolls no longer controls global isLoading to prevent race conditions with fetchProfile
     }
   }, [targetUserId, yearFilter, filmFilter, debouncedSearchQuery]);
 
@@ -652,14 +651,14 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   }
 
   return (
-    <main className="max-w-7xl mx-auto px-8 pt-12 pb-24">
+    <main className="max-w-7xl mx-auto px-6 md:px-8 pt-6 pb-24">
       {/* Profile Header - Compact & Social Layout */}
-      <header className="flex flex-col md:flex-row gap-6 md:gap-16 mb-8 md:mb-20">
-        {/* Left: Avatar (Mobile: Row with Stats) */}
-        <div className="flex md:block items-center gap-6 md:gap-0 w-full md:w-auto">
+      <header className="flex flex-col md:flex-row gap-6 md:gap-16 mb-8 md:mb-16">
+        {/* Left Section (Mobile: Avatar + Stats/Button block) */}
+        <div className="flex items-start gap-5 md:gap-0 w-full md:w-auto">
           {/* Avatar Container */}
           <div className="relative group shrink-0">
-            <div className="w-20 h-20 md:w-44 md:h-44 overflow-hidden bg-surface-container-highest flex items-center justify-center rounded-2xl md:rounded-none">
+            <div className="w-24 h-24 md:w-44 md:h-44 overflow-hidden bg-surface-container-highest flex items-center justify-center rounded-2xl md:rounded-none">
               {profile?.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : (
@@ -667,31 +666,43 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
               )}
               {!profile?.avatarUrl && <User size={72} className="hidden md:block text-on-surface-variant/30" />}
             </div>
-            <div className="absolute -bottom-1.5 -right-1 md:bottom-0 md:right-0 bg-primary text-on-primary px-1.5 py-0.5 text-[8px] md:text-[10px] font-label uppercase tracking-widest rounded-sm">
+            <div className="absolute -bottom-1 -right-1 md:bottom-0 md:right-0 bg-primary text-on-primary px-1.5 py-0.5 text-[8px] md:text-[10px] font-label uppercase tracking-widest rounded-sm">
               ARTIST
             </div>
           </div>
 
-          {/* Stats for Mobile (Beside Avatar) */}
-          <div className="flex md:hidden flex-1 justify-around items-center pl-2">
-            <div className="flex flex-col items-center gap-0.5 cursor-pointer" onClick={() => { setFollowModalType('followers'); setShowFollowModal(true); }}>
-              <span className="text-lg font-headline font-bold text-on-surface">{formatCount(profile?.followersCount ?? 0)}</span>
-              <span className="text-[9px] uppercase tracking-wider text-on-surface-variant/60 font-medium">{t('profile.followers')}</span>
+          {/* Stats & Edit Button for Mobile (Right of Avatar) */}
+          <div className="flex md:hidden flex-1 flex-col gap-3 justify-center min-h-[96px]">
+            <div className="flex justify-around items-center">
+              <div className="flex flex-col items-center gap-0.5 cursor-pointer" onClick={() => { setFollowModalType('followers'); setShowFollowModal(true); }}>
+                <span className="text-lg font-headline font-bold text-on-surface">{formatCount(profile?.followersCount ?? 0)}</span>
+                <span className="text-[9px] uppercase tracking-wider text-on-surface-variant/60 font-medium">{t('profile.followers')}</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5 cursor-pointer" onClick={() => { setFollowModalType('following'); setShowFollowModal(true); }}>
+                <span className="text-lg font-headline font-bold text-on-surface">{formatCount(profile?.followingCount ?? 0)}</span>
+                <span className="text-[9px] uppercase tracking-wider text-on-surface-variant/60 font-medium">{t('profile.following')}</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-lg font-headline font-bold text-on-surface">{formatCount(profile?.likesCount ?? 0)}</span>
+                <span className="text-[9px] uppercase tracking-wider text-on-surface-variant/60 font-medium">{t('profile.likes')}</span>
+              </div>
             </div>
-            <div className="flex flex-col items-center gap-0.5 cursor-pointer" onClick={() => { setFollowModalType('following'); setShowFollowModal(true); }}>
-              <span className="text-lg font-headline font-bold text-on-surface">{formatCount(profile?.followingCount ?? 0)}</span>
-              <span className="text-[9px] uppercase tracking-wider text-on-surface-variant/60 font-medium">{t('profile.following')}</span>
-            </div>
-            <div className="flex flex-col items-center gap-0.5">
-              <span className="text-lg font-headline font-bold text-on-surface">{formatCount(profile?.likesCount ?? 0)}</span>
-              <span className="text-[9px] uppercase tracking-wider text-on-surface-variant/60 font-medium">{t('profile.likes')}</span>
-            </div>
+            
+            {profile?.isOwner && (
+              <button 
+                className="w-full bg-surface-container-highest/50 text-on-surface py-1.5 rounded-lg text-[10px] font-bold hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 uppercase tracking-widest border border-outline-variant/10"
+                onClick={() => setShowEditProfileModal(true)}
+              >
+                <Pencil size={12} />
+                {t('profile.editProfile')}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Center: Info (Nickname, ID, Bio, Buttons) */}
+        {/* Center: Info (Nickname, ID, Bio, Desktop Buttons) */}
         <div className="flex-1 flex flex-col gap-4 md:gap-6 min-w-0">
-          <div className="space-y-1.5 md:space-y-4">
+          <div className="space-y-1 md:space-y-4">
             <div className="flex flex-col md:flex-row md:items-end gap-1 md:gap-3">
               <h1 className="font-headline text-2xl md:text-5xl font-bold text-on-surface break-words leading-tight">{profile?.nickname || '用户'}</h1>
               <span className="text-on-surface-variant font-label text-[10px] md:text-xs tracking-widest opacity-60">ID: {profile?.id}</span>
@@ -701,11 +712,11 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             </p>
           </div>
           
-          {/* Action Buttons (Visible on both) */}
+          {/* Action Buttons (Desktop only or non-owner follow button) */}
           <div className="flex flex-wrap gap-3 mt-1">
             {profile?.isOwner ? (
               <button 
-                className="bg-primary text-on-primary px-8 md:px-10 py-2 md:py-2.5 rounded-xl md:rounded-sm text-xs font-bold hover:bg-primary-dim transition-all flex items-center justify-center gap-2 uppercase tracking-widest flex-1 md:flex-none shadow-lg shadow-primary/10"
+                className="hidden md:flex bg-primary text-on-primary px-10 py-2.5 rounded-sm text-xs font-bold hover:bg-primary-dim transition-all items-center justify-center gap-2 uppercase tracking-widest shadow-lg shadow-primary/10"
                 onClick={() => setShowEditProfileModal(true)}
               >
                 <Pencil size={14} />
@@ -796,72 +807,74 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         </div>
       </div>
 
-      {/* Filters & Actions Row */}
+      {/* Filters & Actions Row - Optimized for Mobile One-Row */}
       {activeTab === 'album' && profile?.isOwner && (
-        <div className="mb-8 md:mb-12 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
-          <div className="flex flex-row flex-wrap items-center gap-2 md:gap-4 w-full md:w-auto">
-            <div className="relative group flex-1 md:flex-none">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={14} />
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="搜索标题或标签..." 
-                className="bg-surface-container-low border border-outline-variant/10 focus:border-primary/50 focus:bg-surface-container-low/50 text-xs md:text-sm py-2 pl-9 pr-4 w-full md:w-64 placeholder:text-on-surface-variant/30 transition-all outline-none rounded-sm text-on-surface"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
-              <div className="flex flex-1 md:flex-none items-center gap-2 bg-surface-container-low px-2 md:px-3 py-2 border border-outline-variant/10 rounded-sm hover:border-outline-variant/30 transition-colors">
-                <Calendar size={12} className="text-on-surface-variant/40" />
-                <select 
-                  aria-label={t('roll.year')}
-                  value={yearFilter}
-                  onChange={(e) => setYearFilter(e.target.value)}
-                  className="bg-transparent border-none text-[10px] font-label font-bold focus:ring-0 cursor-pointer pr-4 md:pr-8 uppercase tracking-[0.1em] text-on-surface-variant outline-none"
-                >
-                  <option value="">{t('roll.year')}: {t('common.all')}</option>
-                  {availableYears.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-1 md:flex-none items-center gap-2 bg-surface-container-low px-2 md:px-3 py-2 border border-outline-variant/10 rounded-sm hover:border-outline-variant/30 transition-colors">
-                <Filter size={12} className="text-on-surface-variant/40" />
-                <select 
-                  aria-label={t('roll.type')}
-                  value={filmFilter}
-                  onChange={(e) => setFilmFilter(e.target.value)}
-                  className="bg-transparent border-none text-[10px] font-label font-bold focus:ring-0 cursor-pointer pr-4 md:pr-8 uppercase tracking-[0.1em] text-on-surface-variant outline-none"
-                >
-                  <option value="">{t('roll.type')}: {t('common.all')}</option>
-                  {filmTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+        <div className="mb-8 md:mb-12 flex flex-row items-center gap-2 md:gap-6 overflow-hidden">
+          {/* Search Box - Flex-grow on mobile */}
+          <div className="relative group flex-1 md:flex-none">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={12} />
+            <input 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索..." 
+              className="bg-surface-container-low border border-outline-variant/10 focus:border-primary/40 text-[11px] md:text-sm py-1.5 pl-7 pr-2 w-full md:w-64 placeholder:text-on-surface-variant/20 transition-all outline-none rounded-lg text-on-surface"
+            />
           </div>
           
-          {currentUser?.level !== 'lv1' && (
-            <button 
-              onClick={() => {
-                if (currentUser?.level === 'lv2' && allRolls.length >= lv2RollLimit) {
-                  alert(t('profile.roll.limitReached', { limit: lv2RollLimit }) || `LV2 limit reached: ${lv2RollLimit} rolls`);
-                  return;
-                }
-                setShowCreateModal(true);
-              }}
-              className="bg-primary text-on-primary px-6 py-2.5 text-xs font-bold hover:bg-primary-dim transition-all shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-[0.2em] rounded-sm active:scale-95 w-full md:w-auto mt-2 md:mt-0"
-            >
-              <FolderPlus size={16} />
-              {t('roll.new')}
-            </button>
-          )}
+          {/* Filters Row */}
+          <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
+            {/* Year Filter */}
+            <div className="flex items-center bg-surface-container-low px-1.5 py-1.5 border border-outline-variant/10 rounded-lg">
+              <Calendar size={10} className="text-on-surface-variant/30" />
+              <select 
+                aria-label={t('roll.year')}
+                value={yearFilter}
+                onChange={(e) => setYearFilter(e.target.value)}
+                className="bg-transparent border-none text-[9px] font-bold focus:ring-0 cursor-pointer pr-1 md:pr-6 uppercase tracking-tighter text-on-surface-variant/60 outline-none"
+              >
+                <option value="">{t('common.all')}</option>
+                {availableYears.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Type Filter */}
+            <div className="flex items-center bg-surface-container-low px-1.5 py-1.5 border border-outline-variant/10 rounded-lg">
+              <Filter size={10} className="text-on-surface-variant/30" />
+              <select 
+                aria-label={t('roll.type')}
+                value={filmFilter}
+                onChange={(e) => setFilmFilter(e.target.value)}
+                className="bg-transparent border-none text-[9px] font-bold focus:ring-0 cursor-pointer pr-1 md:pr-6 uppercase tracking-tighter text-on-surface-variant/60 outline-none"
+              >
+                <option value="">{t('common.all')}</option>
+                {filmTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* New Album Icon Button */}
+            {currentUser?.level !== 'lv1' && (
+              <button 
+                onClick={() => {
+                  if (currentUser?.level === 'lv2' && allRolls.length >= lv2RollLimit) {
+                    showToast(`等级 LV2 限额 ${lv2RollLimit} 卷`, 'error');
+                    return;
+                  }
+                  setShowCreateModal(true);
+                }}
+                className="bg-primary text-on-primary p-2 rounded-lg shadow-lg shadow-primary/20 hover:bg-primary-dim transition-all active:scale-90"
+                title={t('roll.create')}
+              >
+                <Plus size={16} strokeWidth={3} />
+              </button>
+            )}
+          </div>
         </div>
       )}
-
       {/* List View of Film Rolls (Film Strips) */}
       {activeTab === 'album' && (
         rolls.length > 0 ? (
@@ -1090,16 +1103,16 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       {/* Gear Tab - 设备管理 */}
       {activeTab === 'gear' && (
         <div className="space-y-8">
-          {/* 设备筛选和添加按钮 */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 border border-outline-variant/10 rounded-sm hover:border-outline-variant/30 transition-colors">
-                <Filter size={14} className="text-on-surface-variant/40" />
+          {/* 设备筛选和添加按钮 - Mobile One-Row Optimized */}
+          <div className="flex flex-row items-center justify-between gap-2 md:gap-6 mb-8">
+            <div className="flex-1 md:flex-none">
+              <div className="flex items-center gap-2 bg-surface-container-low px-2 md:px-3 py-1.5 md:py-2 border border-outline-variant/10 rounded-lg hover:border-outline-variant/30 transition-colors">
+                <Filter size={12} className="text-on-surface-variant/40" />
                 <select 
-                  aria-label={t('roll.type')}
+                  aria-label={t('gear.status.all')}
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value as 'all' | 'used' | 'using' | 'wanted')}
-                  className="bg-transparent border-none text-[10px] font-label font-bold focus:ring-0 cursor-pointer pr-8 uppercase tracking-[0.1em] text-on-surface-variant outline-none"
+                  className="bg-transparent border-none text-[10px] md:text-xs font-bold focus:ring-0 cursor-pointer pr-4 md:pr-8 uppercase tracking-wider text-on-surface-variant outline-none"
                 >
                   <option value="all">{t('gear.status.all')}</option>
                   <option value="using">{t('gear.status.using')}</option>
@@ -1112,10 +1125,10 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             {profile?.isOwner && currentUser?.level !== 'lv1' && (
               <button 
                 onClick={() => setShowAddGearModal(true)}
-                className="bg-primary text-on-primary px-6 py-2.5 text-xs font-bold hover:bg-primary-dim transition-all shadow-lg hover:shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-[0.2em] rounded-sm active:scale-95"
+                className="bg-primary text-on-primary p-2 md:px-6 md:py-2.5 rounded-lg text-xs font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-widest active:scale-95"
               >
-                <PlusCircle size={16} />
-                {t('gear.add')}
+                <Plus size={16} strokeWidth={3} />
+                <span className="hidden md:inline">{t('gear.add')}</span>
               </button>
             )}
           </div>
