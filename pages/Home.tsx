@@ -218,14 +218,18 @@ export default function Home() {
                 onClick={() => navigate(`/post/${post.id}`)}
               >
                 <div className="overflow-hidden relative border border-outline-variant/10 rounded-xl bg-surface-container-low shadow-lg hover:shadow-primary/5 transition-all duration-500">
-                  <div className="min-h-[240px] bg-surface-container-highest/30 animate-pulse relative">
+                  <div className="bg-surface-container-highest/30 animate-pulse relative">
                     <img 
                       src={post.coverImage} 
                       alt={post.title}
                       className="w-full h-auto block transition-all duration-700 hover:scale-[1.03] relative z-10"
                       referrerPolicy="no-referrer"
                       onLoad={(e) => {
-                        e.currentTarget.parentElement?.classList.remove('animate-pulse', 'bg-surface-container-highest/30');
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) {
+                          parent.classList.remove('animate-pulse', 'bg-surface-container-highest/30');
+                          parent.style.minHeight = '0';
+                        }
                       }}
                       onError={(e) => {
                         e.currentTarget.parentElement?.classList.remove('animate-pulse');
