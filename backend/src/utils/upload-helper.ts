@@ -53,9 +53,9 @@ export async function getUploadStrategy(c: any, options: Omit<UploadOptions, 'fi
     else if (rollId) {
       // 影集相关的图片统一存放在 photos 目录下
       if (type === 'preview') {
-        pathTemplate = '{userId}/photos/{rollId}/previews/';
+        pathTemplate = '{userId}/photos/{rollId}/preview/';
       } else {
-        pathTemplate = '{userId}/photos/{rollId}/originals/';
+        pathTemplate = '{userId}/photos/{rollId}/';
       }
     }
     else pathTemplate = '{userId}/';
