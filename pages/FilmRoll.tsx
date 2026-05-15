@@ -106,7 +106,7 @@ export default function FilmRoll() {
 
     try {
       await startUpload(id, roll.title, files, frames.length, (newFrame) => {
-        setFrames(prev => [...prev, newFrame]);
+        setFrames(prev => [...prev, newFrame].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)));
       });
     } catch (error) {
       console.error('Upload error:', error);
