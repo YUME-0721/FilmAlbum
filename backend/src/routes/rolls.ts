@@ -480,6 +480,7 @@ rolls.post('/:id/frames', authRequired(), requireLevel('lv2'), async (c) => {
       description?: string;
       fileSize?: number;
       fileFormat?: string;
+      sortOrder?: number;
     }>;
   }>();
 
@@ -496,7 +497,8 @@ rolls.post('/:id/frames', authRequired(), requireLevel('lv2'), async (c) => {
 
   const createdFrames = body.frames.map((frame, index) => {
     const id = generateId();
-    const order = currentOrder + index;
+    // 如果前端提供了明确的 sortOrder，则使用它；否则基于当前最大值累加
+    const order = frame.sortOrder !== undefined ? frame.sortOrder : currentOrder + index;
     return {
       id,
       rollId,

@@ -125,6 +125,7 @@ export function addFrames(rollId: string, frames: Array<{
   description?: string;
   fileSize?: number;
   fileFormat?: string;
+  sortOrder?: number;
 }>): Promise<ApiResponse<FrameItem[]>> {
   return post<FrameItem[]>(`/rolls/${rollId}/frames`, { frames });
 }

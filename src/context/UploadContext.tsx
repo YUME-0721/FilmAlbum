@@ -19,7 +19,7 @@ export interface UploadSession {
 
 interface UploadContextType {
   sessions: Record<string, UploadSession>;
-  startUpload: (rollId: string, rollTitle: string, files: FileList, onFrameAdded?: (frame: FrameItem) => void) => Promise<void>;
+  startUpload: (rollId: string, rollTitle: string, files: FileList, baseSortOrder: number, onFrameAdded?: (frame: FrameItem) => void) => Promise<void>;
   clearSession: (rollId: string) => void;
 }
 
@@ -52,7 +52,7 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const startUpload = useCallback(async (rollId: string, rollTitle: string, files: FileList, onFrameAdded?: (frame: FrameItem) => void) => {
+  const startUpload = useCallback(async (rollId: string, rollTitle: string, files: FileList, baseSortOrder: number, onFrameAdded?: (frame: FrameItem) => void) => {
     const fileList = Array.from(files);
     const initialFiles: FileStatus[] = fileList.map(f => ({
       name: f.name,
@@ -92,7 +92,10 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
             fileFormat: file.type,
           };
 
-          const addResponse = await addFrames(rollId, [newFrame]);
+          const addResponse = await addFrames(rollId, [{
+            ...newFrame,
+            sortOrder: baseSortOrder + i
+          }]);
           if (addResponse.success && addResponse.data?.[0]) {
             updateFileStatus(rollId, i, { status: 'success', progress: 100 });
             // Update session current count

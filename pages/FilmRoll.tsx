@@ -105,7 +105,7 @@ export default function FilmRoll() {
     if (!files || files.length === 0 || !id) return;
 
     try {
-      await startUpload(id, roll.title, files, (newFrame) => {
+      await startUpload(id, roll.title, files, frames.length, (newFrame) => {
         setFrames(prev => [...prev, newFrame]);
       });
     } catch (error) {
@@ -426,9 +426,9 @@ export default function FilmRoll() {
                     </div>
                   )}
   
-                  {/* 操作浮层 */}
-                  {!isSelectionMode && (
-                    <div className={`absolute inset-0 bg-black/40 transition-opacity flex items-center justify-center gap-4 ${isSortMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                  {/* 操作浮层：仅在排序模式下显示 */}
+                  {isSortMode && (
+                    <div className="absolute inset-0 bg-black/40 transition-opacity flex items-center justify-center gap-4 opacity-100">
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'up'); }} 
                         disabled={index === 0} 
