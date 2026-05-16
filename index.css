@@ -88,11 +88,7 @@ html.light {
   @media (min-width: 768px) { .masonry-item { margin-bottom: 1.5rem; } }
   @media (min-width: 1280px) { .masonry-item { margin-bottom: 2rem; } }
 
-  .perforation-pattern {
-    background-image: radial-gradient(circle, #000000 60%, transparent 60%);
-    background-size: 12px 12px;
-    background-repeat: repeat-x;
-  }
+
 
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;

@@ -334,33 +334,33 @@ export default function Post() {
 
       {/* Metadata & Actions */}
       <div className="px-6 md:px-10 pt-4 pb-2">
-          <div className="flex items-center justify-between gap-4 border-b border-outline-variant/10 pb-4 overflow-x-auto scrollbar-hide">
-            <div className="flex items-center gap-4 md:gap-6 text-[9px] md:text-sm font-label uppercase tracking-widest text-on-surface-variant flex-shrink-0">
-              <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-between gap-2 border-b border-outline-variant/10 pb-4 overflow-x-hidden">
+            <div className="flex items-center gap-3 md:gap-10 text-[8px] md:text-sm font-label uppercase tracking-widest text-on-surface-variant flex-shrink-0">
+              <div className="flex flex-col gap-0.5">
                 <span className="text-primary/60 font-bold">FILM</span>
-                <span className="text-on-surface font-bold truncate max-w-[60px] md:max-w-none">{post.filmType}</span>
+                <span className="text-on-surface font-bold truncate max-w-[50px] md:max-w-none">{post.filmType}</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-col gap-0.5">
                 <span className="text-primary/60 font-bold">CAMERA</span>
-                <span className="text-on-surface font-bold truncate max-w-[60px] md:max-w-none">{post.camera}</span>
+                <span className="text-on-surface font-bold truncate max-w-[70px] md:max-w-none">{post.camera}</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-col gap-0.5">
                 <span className="text-primary/60 font-bold">LENS</span>
                 <span className="text-on-surface font-bold truncate max-w-[60px] md:max-w-none">{post.lens}</span>
               </div>
             </div>
 
-            <div className="flex gap-4 md:gap-6 items-center flex-shrink-0">
-              <button onClick={handleLike} className={`flex items-center gap-1.5 transition-all group ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
-                <Heart size={18} className={`group-hover:scale-110 transition-transform ${isLiked ? 'fill-current text-primary' : ''}`} />
-                <span className="font-bold text-xs">{likesCount}</span>
+            <div className="flex gap-3 md:gap-6 items-center flex-shrink-0 ml-auto border-l border-outline-variant/10 pl-2">
+              <button onClick={handleLike} className={`flex items-center gap-1 transition-all group ${isLiked ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
+                <Heart size={16} className={`group-hover:scale-110 transition-transform md:w-[18px] md:h-[18px] ${isLiked ? 'fill-current text-primary' : ''}`} />
+                <span className="font-bold text-[10px] md:text-xs">{likesCount}</span>
               </button>
-              <button className="flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-all group">
-                <MessageSquare size={18} className="group-hover:scale-110 transition-transform" />
-                <span className="font-bold text-xs">{comments.length || post.commentsCount}</span>
+              <button className="flex items-center gap-1 text-on-surface-variant hover:text-primary transition-all group" onClick={() => textareaRef.current?.focus()}>
+                <MessageSquare size={16} className="group-hover:scale-110 transition-transform md:w-[18px] md:h-[18px]" />
+                <span className="font-bold text-[10px] md:text-xs">{comments.length || post.commentsCount}</span>
               </button>
-              <button className="flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-all group">
-                <Share2 size={18} className="group-hover:scale-110 transition-transform" />
+              <button className="flex items-center gap-1 text-on-surface-variant hover:text-primary transition-all group">
+                <Share2 size={16} className="group-hover:scale-110 transition-transform md:w-[18px] md:h-[18px]" />
               </button>
             </div>
           </div>

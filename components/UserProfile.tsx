@@ -69,6 +69,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [yearFilter, setYearFilter] = useState('');
   const [filmFilter, setFilmFilter] = useState('');
+  const [rollSortOrder, setRollSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // 搜索去抖处理
   React.useEffect(() => {
@@ -89,6 +90,15 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     });
     return Array.from(years).sort((a, b) => Number(b) - Number(a)); // 降序排列
   }, [allRolls]);
+
+  // 根据排序状态对相册进行排序
+  const sortedRolls = React.useMemo(() => {
+    return [...rolls].sort((a, b) => {
+      const orderA = a.sortOrder ?? 0;
+      const orderB = b.sortOrder ?? 0;
+      return rollSortOrder === 'asc' ? orderA - orderB : orderB - orderA;
+    });
+  }, [rolls, rollSortOrder]);
 
   // 动态模块相关
   const [userPosts, setUserPosts] = useState<PostListItem[]>([]);
@@ -509,7 +519,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   /** 处理创建新相册 */
   const handleCreateRoll = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rollForm.title.trim() || isSubmitting) return;
+    if (isSubmitting) return;
     
     setIsSubmitting(true);
     try {
@@ -551,7 +561,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   /** 处理编辑相册 */
   const handleUpdateRoll = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rollForm.title.trim() || isSubmitting || !editingRoll) return;
+    if (isSubmitting || !editingRoll) return;
     
     setIsSubmitting(true);
     try {
@@ -852,6 +862,21 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                 ))}
               </select>
             </div>
+            
+            {/* Sort Toggle Button */}
+            <button 
+              onClick={() => setRollSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+              className="flex items-center justify-center bg-surface-container-low border border-outline-variant/10 rounded-lg h-[34px] md:h-10 px-3 hover:border-primary/40 transition-colors text-on-surface-variant/60 hover:text-primary active:scale-95"
+              title={rollSortOrder === 'asc' ? '正序 (1-9)' : '倒序 (9-1) '}
+            >
+              <div className="flex flex-col -gap-1">
+                <ArrowUp size={10} className={rollSortOrder === 'asc' ? 'text-primary opacity-100' : 'opacity-20'} />
+                <ArrowDown size={10} className={rollSortOrder === 'desc' ? 'text-primary opacity-100' : 'opacity-20'} />
+              </div>
+              <span className="hidden md:inline ml-2 text-[10px] font-bold uppercase tracking-widest">
+                {rollSortOrder === 'asc' ? '正序' : '倒序'}
+              </span>
+            </button>
 
             {/* New Album Icon Button */}
             {currentUser?.level !== 'lv1' && (
@@ -878,7 +903,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
         rolls.length > 0 ? (
           <div className="space-y-16">
             <AnimatePresence mode="popLayout">
-              {rolls.map((roll, index) => (
+              {sortedRolls.map((roll, index) => (
                 <motion.div 
                   key={roll.id} 
                   id={`roll-${roll.id}`} 
@@ -942,7 +967,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                   </div>
   
                   <div className="relative overflow-hidden bg-surface-container-lowest p-3 md:p-6 group-hover:bg-surface-container-low transition-colors duration-500 rounded-sm">
-                    <div className="absolute top-2 left-0 w-full h-3 perforation-pattern opacity-10"></div>
+
                     
                     {/* Mobile Layout: Single Cover Photo */}
                     <div className="block md:hidden w-full aspect-[4/3] bg-surface-container overflow-hidden relative cursor-pointer" onClick={() => navigate(`/roll/${roll.id}`)}>
@@ -970,7 +995,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                     <div className="hidden md:flex gap-4 items-center">
                       {roll.frames && roll.frames.length > 0 ? (
                         <>
-                          {roll.frames.slice(0, 4).map((frame) => (
+                          {roll.frames.slice(0, 4).map((frame, idx) => (
                             <div 
                               key={frame.id} 
                               className="flex-1 aspect-[3/2] bg-surface-container border border-outline-variant/15 relative group/frame cursor-pointer overflow-hidden"
@@ -978,11 +1003,15 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                             >
                               <img 
                                 src={frame.previewUrl || frame.imageUrl} 
-                                alt={`Frame ${frame.frameNumber}`} 
+                                alt={`Frame ${frame.frameNumber || idx + 1}`} 
                                 className="w-full h-full object-cover transition-all duration-700 hover:scale-110"
                                 referrerPolicy="no-referrer"
                               />
-                              <div className="absolute bottom-2 right-2 text-[10px] font-label text-white/50">{frame.frameNumber}</div>
+                              <div className="absolute bottom-2 right-2 text-[10px] font-label text-white/50">
+                                {frame.frameNumber && frame.frameNumber !== '00' && frame.frameNumber !== '0' 
+                                  ? frame.frameNumber 
+                                  : (idx + 1).toString().padStart(2, '0')}
+                              </div>
                             </div>
                           ))}
                           {/* 添加占位元素以保持高度一致 */}
@@ -1008,7 +1037,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                       )}
                     </div>
   
-                    <div className="absolute bottom-2 left-0 w-full h-3 perforation-pattern opacity-10"></div>
+
                   </div>
                 </motion.div>
               ))}

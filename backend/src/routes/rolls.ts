@@ -282,7 +282,7 @@ rolls.post('/', authRequired(), async (c) => {
   }
 
   const body = await c.req.json<{
-    title: string;
+    title?: string;
     filmStock?: string;
     camera?: string;
     lens?: string;
@@ -293,10 +293,6 @@ rolls.post('/', authRequired(), async (c) => {
     filmType?: string;
     tags?: string[];
   }>();
-
-  if (!body.title) {
-    return c.json({ success: false, error: '标题为必填项' }, 400);
-  }
 
   // 验证日期：结束时间不能早于开始时间
   if (body.shotDate && body.endDate && body.endDate < body.shotDate) {
@@ -315,7 +311,7 @@ rolls.post('/', authRequired(), async (c) => {
     `INSERT INTO rolls (id, user_id, title, film_stock, camera, lens, location, shot_date, end_date, format, film_type, tags, sort_order)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
-    rollId, userId, body.title,
+    rollId, userId, body.title ?? '',
     body.filmStock ?? '', body.camera ?? '', body.lens ?? '',
     body.location ?? '', body.shotDate ?? '', body.endDate ?? '',
     body.format ?? '135', body.filmType ?? 'COLOR_NEGATIVE', JSON.stringify(body.tags ?? []),

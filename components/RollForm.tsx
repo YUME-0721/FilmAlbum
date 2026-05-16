@@ -102,12 +102,11 @@ export default function RollForm({
         
         <form onSubmit={onSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label htmlFor={isEditing ? "edit-title" : "new-roll-title"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.title')} *</label>
+            <label htmlFor={isEditing ? "edit-title" : "new-roll-title"} className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('roll.form.title')}</label>
             <input 
               id={isEditing ? "edit-title" : "new-roll-title"}
               type="text" 
               autoFocus={!isEditing}
-              required
               placeholder={t('roll.form.placeholders.title')}
               value={formData.title}
               onChange={e => setFormData({...formData, title: e.target.value})}

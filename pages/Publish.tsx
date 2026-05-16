@@ -322,7 +322,7 @@ export default function Publish() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                    {rollFrames.map((frame) => (
+                    {rollFrames.map((frame, idx) => (
                       <motion.div 
                         key={frame.id} 
                         whileHover={{ y: -4 }}
@@ -357,7 +357,9 @@ export default function Publish() {
                         )}
                         
                         <div className="absolute bottom-3 left-3 text-[10px] font-bold text-white bg-black/60 backdrop-blur-md px-2 py-1 rounded uppercase tracking-widest z-10">
-                          #{frame.frameNumber.toString().padStart(2, '0')}
+                          #{frame.frameNumber && frame.frameNumber !== '00' && frame.frameNumber !== '0' 
+                             ? frame.frameNumber.toString().padStart(2, '0') 
+                             : (idx + 1).toString().padStart(2, '0')}
                         </div>
                       </motion.div>
                     ))}

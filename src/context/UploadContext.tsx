@@ -94,7 +94,8 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
 
           const addResponse = await addFrames(rollId, [{
             ...newFrame,
-            sortOrder: baseSortOrder + i
+            sortOrder: baseSortOrder + i,
+            frameNumber: (baseSortOrder + i + 1).toString().padStart(2, '0')
           }]);
           if (addResponse.success && addResponse.data?.[0]) {
             updateFileStatus(rollId, i, { status: 'success', progress: 100 });

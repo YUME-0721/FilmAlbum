@@ -158,21 +158,24 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
         )}
         {/* 设备信息 */}
         {(post.filmType || post.camera || post.lens) && (
-          <div className="flex flex-wrap gap-3 mt-2">
+          <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-white/5">
             {post.filmType && (
-              <span className="text-[10px] uppercase tracking-widest text-[#666]">
-                <span className="text-primary/70 mr-1">{t('roll.film')}</span>{post.filmType}
-              </span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[9px] uppercase tracking-widest text-primary/70 font-bold">{t('roll.film')}</span>
+                <span className="text-[11px] font-bold text-[#999] uppercase tracking-wide">{post.filmType}</span>
+              </div>
             )}
             {post.camera && (
-              <span className="text-[10px] uppercase tracking-widest text-[#666]">
-                <span className="text-primary/70 mr-1">{t('roll.camera')}</span>{post.camera}
-              </span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[9px] uppercase tracking-widest text-primary/70 font-bold">{t('roll.camera')}</span>
+                <span className="text-[11px] font-bold text-[#999] uppercase tracking-wide">{post.camera}</span>
+              </div>
             )}
             {post.lens && (
-              <span className="text-[10px] uppercase tracking-widest text-[#666]">
-                <span className="text-primary/70 mr-1">{t('roll.lens')}</span>{post.lens}
-              </span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[9px] uppercase tracking-widest text-primary/70 font-bold">{t('roll.lens')}</span>
+                <span className="text-[11px] font-bold text-[#999] uppercase tracking-wide">{post.lens}</span>
+              </div>
             )}
           </div>
         )}
