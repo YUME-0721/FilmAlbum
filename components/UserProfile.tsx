@@ -25,7 +25,7 @@ import {
   User, UserX, UserPlus, UserMinus, Pencil, Library, History, Camera, 
   Search, Calendar, Filter, FolderPlus, ChevronRight, PlusCircle, Plus,
   ChevronDown, Maximize, Circle, Timer, Star, MessageSquare, Trash2,
-  ArrowUp, ArrowDown
+  ArrowUp, ArrowDown, Box
 } from 'lucide-react';
 
 /** 用户资料类型 */
@@ -65,7 +65,9 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   // NOTE: allRolls 保存未筛选的全量相册，将年份加层与筛选结果解耦
   const [allRolls, setAllRolls] = useState<RollListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingRolls, setIsLoadingRolls] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [gearSearchQuery, setGearSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [yearFilter, setYearFilter] = useState('');
   const [filmFilter, setFilmFilter] = useState('');
@@ -214,23 +216,28 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       return;
     }
 
-    setIsLoading(true);
+    // 只有在首次加载时显示全局加载状态
+    if (!profile) {
+      setIsLoading(true);
+    }
+    
     try {
       const result = await get<UserProfileData>(`/users/${targetUserId}`);
       if (result.success && result.data) {
         setProfile(result.data);
         // 如果不是本人，且当前在相册页，则自动切换到动态页
+        // 注意：这里我们直接根据返回的 isOwner 判断，不再依赖外部的 activeTab 状态来避免重复触发
         if (!result.data.isOwner && activeTab === 'album') {
           setActiveTab('post');
         }
       }
     } catch (err) {
       console.error('Fetch profile failed:', err);
-      setProfile(null);
+      if (!profile) setProfile(null);
     } finally {
       setIsLoading(false);
     }
-  }, [targetUserId, activeTab, authLoading]);
+  }, [targetUserId, authLoading]); // 移除 activeTab 依赖以避免切换 Tab 时重新触发 fetchProfile
 
   // 处理锚点跳转
   React.useEffect(() => {
@@ -400,6 +407,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
 
   /** 获取胶卷列表 */
   const fetchRolls = useCallback(async (isInitial = false) => {
+    setIsLoadingRolls(true);
     try {
       const params: Record<string, string | number | undefined> = {};
       if (targetUserId) params.userId = targetUserId;
@@ -420,7 +428,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     } catch {
       setRolls([]);
     } finally {
-      // fetchRolls no longer controls global isLoading to prevent race conditions with fetchProfile
+      setIsLoadingRolls(false);
     }
   }, [targetUserId, yearFilter, filmFilter, debouncedSearchQuery]);
 
@@ -473,20 +481,22 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     fetchRolls(true);
     fetchFilmStocks();
     fetchGear();
-  }, [fetchProfile, fetchFilmStocks, fetchGear]); // 去掉 fetchRolls，由下面的 effect 单独处理
+    // 预加载第一页动态，提升 Tab 切换流畅度
+    fetchUserPosts(1);
+  }, [fetchProfile, fetchFilmStocks, fetchGear, fetchUserPosts]); // 去掉 fetchRolls，由下面的 effect 单独处理
 
   // 处理相册筛选与搜索
   React.useEffect(() => {
     fetchRolls();
   }, [fetchRolls]);
 
-  // 当切换到动态页时加载动态数据
+  // 当切换到动态页时，如果还没有数据则加载
   React.useEffect(() => {
-    if (activeTab === 'post') {
+    if (activeTab === 'post' && userPosts.length === 0) {
       setPostsPage(1);
       fetchUserPosts(1);
     }
-  }, [activeTab, fetchUserPosts]);
+  }, [activeTab, fetchUserPosts, userPosts.length]);
 
   // 监听路由变化，当从其他页面返回时重新获取相册列表
   React.useEffect(() => {
@@ -900,7 +910,11 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       )}
       {/* List View of Film Rolls (Film Strips) */}
       {activeTab === 'album' && (
-        rolls.length > 0 ? (
+        isLoadingRolls && rolls.length === 0 ? (
+          <div className="flex justify-center py-32">
+            <div className="text-on-surface-variant font-label text-sm tracking-widest uppercase animate-pulse">加载相册中...</div>
+          </div>
+        ) : sortedRolls.length > 0 ? (
           <div className="space-y-16">
             <AnimatePresence mode="popLayout">
               {sortedRolls.map((roll, index) => (
@@ -1091,7 +1105,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       {/* Activity Tab */}
       {activeTab === 'post' && (
         <section className="max-w-[1200px] mx-auto space-y-6 pt-4">
-          {isLoadingPosts && postsPage === 1 ? (
+          {isLoadingPosts && userPosts.length === 0 ? (
             <div className="flex justify-center py-20 animate-pulse">
               <span className="text-on-surface-variant font-label text-sm tracking-widest uppercase">{t('profile.gear.loading')}</span>
             </div>
@@ -1130,16 +1144,28 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       {/* Gear Tab - 设备管理 */}
       {activeTab === 'gear' && (
         <div className="space-y-8">
-          {/* 设备筛选和添加按钮 - Mobile One-Row Optimized */}
-          <div className="flex flex-row items-center justify-between gap-2 md:gap-6 mb-8">
-            <div className="flex-1 md:flex-none">
-              <div className="flex items-center gap-2 bg-surface-container-low px-2 md:px-3 border border-outline-variant/10 rounded-lg hover:border-outline-variant/30 transition-colors h-[34px] md:h-10">
-                <Filter size={12} className="text-on-surface-variant/40" />
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-6 mb-8">
+            <div className="flex flex-row items-center gap-2 md:gap-3 flex-1">
+              {/* Gear Search */}
+              <div className="relative group flex-1 md:flex-none h-[34px] md:h-10">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={12} />
+                <input 
+                  type="text" 
+                  value={gearSearchQuery}
+                  onChange={(e) => setGearSearchQuery(e.target.value)}
+                  placeholder="搜索相机、镜头..." 
+                  className="bg-surface-container-low border border-outline-variant/10 focus:border-primary/40 text-[11px] md:text-sm py-0 h-full pl-7 pr-2 w-full md:w-64 placeholder:text-on-surface-variant/20 transition-all outline-none rounded-lg text-on-surface"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex items-center bg-surface-container-low px-1.5 border border-outline-variant/10 rounded-lg h-[34px] md:h-10 shrink-0">
+                <Filter size={10} className="text-on-surface-variant/30" />
                 <select 
                   aria-label={t('gear.status.all')}
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value as 'all' | 'used' | 'using' | 'wanted')}
-                  className="bg-transparent border-none text-[10px] md:text-xs font-bold focus:ring-0 cursor-pointer pr-4 md:pr-8 uppercase tracking-wider text-on-surface-variant outline-none"
+                  className="bg-transparent border-none text-[9px] md:text-xs font-bold focus:ring-0 cursor-pointer pr-1 md:pr-6 uppercase tracking-tighter text-on-surface-variant/60 outline-none"
                 >
                   <option value="all">{t('gear.status.all')}</option>
                   <option value="using">{t('gear.status.using')}</option>
@@ -1161,184 +1187,206 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
           </div>
 
           {/* 设备列表 */}
-          {isLoadingGear ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-on-surface-variant font-label text-sm tracking-widest uppercase animate-pulse">{t('profile.gear.loading')}</div>
-            </div>
-          ) : gear.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {gear.map((item) => (
-                <article 
-                  key={item.id} 
-                  className="relative group bg-[#111] border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)]"
-                >
-                  {/* 背景泛光效果 */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
+          {(() => {
+            const filteredGear = gear.filter(item => {
+              if (!gearSearchQuery.trim()) return true;
+              const query = gearSearchQuery.toLowerCase();
+              return (
+                item.cameraModel.toLowerCase().includes(query) ||
+                item.lensModel.toLowerCase().includes(query)
+              );
+            });
 
-                  {/* 设备图片与叠加层 */}
-                  <div className="relative aspect-[4/3] overflow-hidden bg-[#1a1a1a]">
-                    {item.imageUrl ? (
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.cameraModel}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-white/10 group-hover:text-white/20 transition-colors">
-                        <Camera size={64} strokeWidth={1} />
-                      </div>
-                    )}
-                    
-                    {/* 渐变遮罩层，让图片底部过渡到文字背景 */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/40 to-transparent pointer-events-none" />
-                    
-                    {/* 状态徽章 */}
-                    <div className="absolute top-4 left-4 z-10">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full backdrop-blur-md border ${
-                        item.status === 'using' ? 'bg-primary/20 text-primary border-primary/30' :
-                        item.status === 'used' ? 'bg-white/10 text-white/80 border-white/20' :
-                        'bg-orange-500/20 text-orange-400 border-orange-500/30'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'using' ? 'bg-primary animate-pulse shadow-[0_0_8px_rgba(255,165,0,0.8)]' : 'bg-current'}`}></span>
-                        {item.status === 'using' ? t('gear.status.main') : item.status === 'used' ? t('gear.status.used') : t('gear.status.wanted')}
-                      </span>
-                    </div>
+            if (isLoadingGear) {
+              return (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-on-surface-variant font-label text-sm tracking-widest uppercase animate-pulse">{t('profile.gear.loading')}</div>
+                </div>
+              );
+            }
 
-                    {/* 相机型号贴合在图片底部 */}
-                    <div className="absolute bottom-0 left-0 w-full p-5 z-10 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                      <h3 className="font-headline text-2xl md:text-3xl font-bold text-white tracking-tight drop-shadow-md truncate">
-                        {item.cameraModel}
-                      </h3>
-                      {item.lensModel && (
-                        <p className="text-white/60 text-sm font-medium mt-1 truncate max-w-full block" title={item.lensModel}>
-                          {item.lensModel}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* 设备信息参数区 */}
-                  <div className="p-5 relative z-10 flex flex-col gap-4">
-                    <div className="flex flex-wrap gap-2">
-                      {item.formats.length > 0 && (
-                        <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
-                          <Maximize size={14} />
-                          {item.formats.map((f: string) => f === '半格' ? t('gear.form.formats.half') : f).join(', ')}
-                        </div>
-                      )}
-                      {item.mount && (
-                        <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
-                          <Circle size={14} />
-                          {item.mount}
-                        </div>
-                      )}
-                      {item.shotCount > 0 && (
-                        <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
-                          <Timer size={14} />
-                          {item.shotCount} {t('gear.count')}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* 评价与星星并排 */}
-                    {(item.review || item.rating > 0) && (
-                      <div className="flex items-center justify-between pt-4 border-t border-white/5 min-h-[44px]">
-                        <p className="text-sm text-white/50 italic truncate pr-4">
-                          {item.review ? `"${item.review}"` : ''}
-                        </p>
+            if (filteredGear.length > 0) {
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredGear.map((item) => (
+                    <article 
+                      key={item.id} 
+                      className="relative group bg-[#111] border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)]"
+                    >
+                      {/* 背景泛光效果 */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
+
+                      {/* 设备图片与叠加层 */}
+                      <div className="relative aspect-[4/3] overflow-hidden bg-[#1a1a1a]">
+                        {item.imageUrl ? (
+                          <img 
+                            src={item.imageUrl} 
+                            alt={item.cameraModel}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-white/10 group-hover:text-white/20 transition-colors">
+                            <Camera size={64} strokeWidth={1} />
+                          </div>
+                        )}
                         
-                        {item.rating > 0 && (
-                          <div className="flex items-center gap-0.5 shrink-0">
-                            {[...Array(5)].map((_, i) => (
-                              <Star 
-                                key={i} 
-                                size={16}
-                                className={`${
-                                  i < item.rating 
-                                    ? 'text-yellow-400 fill-current drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' 
-                                    : 'text-white/10'
-                                }`}
-                              />
-                            ))}
+                        {/* 渐变遮罩层，让图片底部过渡到文字背景 */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/40 to-transparent pointer-events-none" />
+                        
+                        {/* 状态徽章 */}
+                        <div className="absolute top-4 left-4 z-10">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full backdrop-blur-md border ${
+                            item.status === 'using' ? 'bg-primary/20 text-primary border-primary/30' :
+                            item.status === 'used' ? 'bg-white/10 text-white/80 border-white/20' :
+                            'bg-orange-500/20 text-orange-400 border-orange-500/30'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'using' ? 'bg-primary animate-pulse shadow-[0_0_8px_rgba(255,165,0,0.8)]' : 'bg-current'}`}></span>
+                            {item.status === 'using' ? t('gear.status.main') : item.status === 'used' ? t('gear.status.used') : t('gear.status.wanted')}
+                          </span>
+                        </div>
+
+                        {/* 相机型号贴合在图片底部 */}
+                        <div className="absolute bottom-0 left-0 w-full p-5 z-10 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                          <h3 className="font-headline text-2xl md:text-3xl font-bold text-white tracking-tight drop-shadow-md truncate">
+                            {item.cameraModel}
+                          </h3>
+                          {item.lensModel && (
+                            <p className="text-white/60 text-sm font-medium mt-1 truncate max-w-full block" title={item.lensModel}>
+                              {item.lensModel}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 设备详情内容 */}
+                      <div className="p-5 space-y-4">
+                        {/* 标签行 */}
+                        <div className="flex flex-wrap gap-2">
+                          {item.formats.length > 0 && (
+                            <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
+                              <Box size={14} />
+                              {item.formats.map((f: string) => f === '半格' ? t('gear.form.formats.half') : f).join(', ')}
+                            </div>
+                          )}
+                          {item.mount && (
+                            <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
+                              <Circle size={14} />
+                              {item.mount}
+                            </div>
+                          )}
+                          {item.shotCount > 0 && (
+                            <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
+                              <Timer size={14} />
+                              {item.shotCount} {t('gear.count')}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* 器材介绍与星星并排 */}
+                        {(item.review || item.rating > 0) && (
+                          <div className="flex items-center justify-between pt-4 border-t border-white/5 min-h-[44px]">
+                            <p className="text-sm text-white/50 italic line-clamp-2 pr-4 flex-1" title={item.review}>
+                              {item.review ? `"${item.review}"` : ''}
+                            </p>
+                            
+                            {item.rating > 0 && (
+                              <div className="flex shrink-0">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star 
+                                    key={i} 
+                                    size={12} 
+                                    className={`${
+                                      i < item.rating 
+                                        ? 'text-yellow-400 fill-current drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' 
+                                        : 'text-white/10'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* 操作按钮 (只有Hover时才完整显现，默认半透明) */}
+                        {profile?.isOwner && (
+                          <div className="flex gap-2 pt-2 transition-opacity duration-300 opacity-30 group-hover:opacity-100">
+                            <button 
+                              onClick={() => {
+                                setEditingGear(item);
+                                // 将 lensModel 字符串转换为 lensModels 数组
+                                const lensModels = item.lensModel ? item.lensModel.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+                                // 使用已有的 shotCounts 或初始化
+                                const shotCounts: Record<string, number> = item.shotCounts || {};
+                                // 确保所有格式都有值
+                                item.formats.forEach((format: string) => {
+                                  if (shotCounts[format] === undefined) {
+                                    shotCounts[format] = item.shotCount || 0;
+                                  }
+                                });
+                                setGearForm({
+                                  cameraModel: item.cameraModel,
+                                  lensModels: lensModels,
+                                  lensType: item.lensType,
+                                  status: item.status,
+                                  formats: item.formats,
+                                  shotCount: item.shotCount,
+                                  shotCounts: shotCounts,
+                                  mount: item.mount,
+                                  externalUrl: item.externalUrl,
+                                  review: item.review,
+                                  rating: item.rating
+                                });
+                                setCurrentLensInput(item.lensModel || '');
+                                setGearImage(null);
+                                setShowEditGearModal(true);
+                              }}
+                              className="flex-1 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-white/80 hover:text-white text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                            >
+                              <Pencil size={14} />
+                              {t('common.edit')}
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteGear(item.id)}
+                              className="flex-1 bg-white/5 hover:bg-red-500/20 border border-white/5 hover:border-red-500/30 text-white/80 hover:text-red-400 text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                            >
+                              <Trash2 size={14} />
+                              {t('common.delete')}
+                            </button>
                           </div>
                         )}
                       </div>
-                    )}
-                    
-                    {/* 操作按钮 (只有Hover时才完整显现，默认半透明) */}
-                    {profile?.isOwner && (
-                      <div className="flex gap-2 pt-2 transition-opacity duration-300 opacity-30 group-hover:opacity-100">
-                        <button 
-                          onClick={() => {
-                            setEditingGear(item);
-                            // 将 lensModel 字符串转换为 lensModels 数组
-                            const lensModels = item.lensModel ? item.lensModel.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
-                            // 使用已有的 shotCounts 或初始化
-                            const shotCounts: Record<string, number> = item.shotCounts || {};
-                            // 确保所有格式都有值
-                            item.formats.forEach((format: string) => {
-                              if (shotCounts[format] === undefined) {
-                                shotCounts[format] = item.shotCount || 0;
-                              }
-                            });
-                            setGearForm({
-                              cameraModel: item.cameraModel,
-                              lensModels: lensModels,
-                              lensType: item.lensType,
-                              status: item.status,
-                              formats: item.formats,
-                              shotCount: item.shotCount,
-                              shotCounts: shotCounts,
-                              mount: item.mount,
-                              externalUrl: item.externalUrl,
-                              review: item.review,
-                              rating: item.rating
-                            });
-                            setCurrentLensInput('');
-                            setGearImage(null);
-                            setShowEditGearModal(true);
-                          }}
-                          className="flex-1 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-white/80 hover:text-white text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-                        >
-                          <Pencil size={14} />
-                          {t('common.edit')}
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteGear(item.id)}
-                          className="flex-1 bg-white/5 hover:bg-red-500/20 border border-white/5 hover:border-red-500/30 text-white/80 hover:text-red-400 text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-                        >
-                          <Trash2 size={14} />
-                          {t('common.delete')}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-32 text-on-surface-variant bg-surface-container-lowest border border-outline-variant/10 border-dashed">
-              <Camera size={64} className="mb-6 opacity-30 mx-auto" />
-              <p className="font-headline font-bold text-xl mb-2 text-on-surface">{t('profile.gear.empty')}</p>
-              {profile?.isOwner ? (
-                <>
-                  <p className="font-body text-sm mb-8 opacity-70">{t('profile.gear.emptyDescOwner')}</p>
-                  <button 
-                    onClick={() => setShowAddGearModal(true)}
-                    className="bg-primary text-on-primary px-8 py-3 text-sm font-bold hover:bg-primary-dim transition-colors flex items-center gap-2 uppercase tracking-widest"
-                  >
-                    <PlusCircle size={16} />
-                    {t('profile.gear.add')}
-                  </button>
-                </>
-              ) : (
-                <p className="font-body text-sm opacity-70">{t('profile.gear.emptyDescOther')}</p>
-              )}
-            </div>
-          )}
+                    </article>
+                  ))}
+                </div>
+              );
+            }
 
-          {/* 添加设备模态框 */}
+            return (
+              <div className="flex flex-col items-center justify-center py-32 text-on-surface-variant bg-surface-container-lowest border border-outline-variant/10 border-dashed">
+                <Camera size={64} className="mb-6 opacity-30 mx-auto" />
+                <p className="font-headline font-bold text-xl mb-2 text-on-surface">{t('profile.gear.empty')}</p>
+                {profile?.isOwner ? (
+                  <>
+                    <p className="font-body text-sm mb-8 opacity-70">{t('profile.gear.emptyDescOwner')}</p>
+                    <button 
+                      onClick={() => setShowAddGearModal(true)}
+                      className="bg-primary text-on-primary px-8 py-3 text-sm font-bold hover:bg-primary-dim transition-colors flex items-center gap-2 uppercase tracking-widest"
+                    >
+                      <PlusCircle size={16} />
+                      {t('profile.gear.add')}
+                    </button>
+                  </>
+                ) : (
+                  <p className="font-body text-sm opacity-70">{t('profile.gear.emptyDescOther')}</p>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* 添加设备模态框 */}
           {showAddGearModal && profile?.isOwner && (
             <GearForm 
               isEditing={false}
@@ -1405,12 +1453,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             />
           )}
 
-
-
-        </div>
-      )}
-
-      {/* 编辑资料模态框 */}
+          
+          {/* 编辑资料模态框 */}
       {showEditProfileModal && profile?.isOwner && (
         <ProfileEditForm
           profile={profile}

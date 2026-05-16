@@ -239,66 +239,29 @@ export default function GearForm({
             </div>
             <div className="space-y-1">
               <label htmlFor="gear-lens-model" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">
-                {t('gear.form.lens')} * {gearForm.lensType === 'interchangeable' && <span className="text-on-surface-variant/50 normal-case">{t('gear.form.enterToAdd')}</span>}
+                {t('gear.form.lens')} * <span className="text-on-surface-variant/50 normal-case">{t('gear.form.enterToAdd')}</span>
               </label>
               <div className="space-y-2">
                 <input 
                   id="gear-lens-model"
                   type="text" 
-                  required={gearForm.lensModels.length === 0}
-                  placeholder={t('gear.form.lensPlaceholder')}
+                  required
+                  placeholder="Summicron 35mm f/2, Elmarit 28mm f/2.8..."
                   value={currentLensInput}
-                  onChange={e => setCurrentLensInput(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const value = currentLensInput.trim();
-                      if (value) {
-                        if (gearForm.lensType === 'fixed') {
-                          // 不可更换镜头只能有一个
-                          setGearForm({...gearForm, lensModels: [value]});
-                        } else {
-                          // 可更换镜头可以添加多个
-                          if (!gearForm.lensModels.includes(value)) {
-                            setGearForm({...gearForm, lensModels: [...gearForm.lensModels, value]});
-                          }
-                        }
-                        setCurrentLensInput('');
-                        if (errors.lensModels) {
-                          setErrors({...errors, lensModels: ''});
-                        }
-                      }
+                  onChange={e => {
+                    const val = e.target.value;
+                    setCurrentLensInput(val);
+                    // 实时同步到 gearForm.lensModels，用于验证和提交
+                    const models = val.split(',').map(s => s.trim()).filter(Boolean);
+                    setGearForm(prev => ({ ...prev, lensModels: models }));
+                    if (errors.lensModels && models.length > 0) {
+                      setErrors(prev => ({ ...prev, lensModels: '' }));
                     }
                   }}
-                  className={`w-full bg-surface-container-low border ${errors.lensModels ? 'border-error' : 'border-outline-variant/30'} focus:border-primary px-3 py-2 text-sm text-on-surface outline-none transition-colors`}
+                  className={`w-full bg-surface-container-low border ${errors.lensModels ? 'border-error' : 'border-outline-variant/30'} focus:border-primary px-3 py-2 text-sm text-on-surface outline-none transition-colors overflow-hidden whitespace-nowrap`}
                 />
                 {errors.lensModels && (
                   <p className="text-xs text-error">{errors.lensModels}</p>
-                )}
-                {/* 已添加的镜头列表 */}
-                {gearForm.lensModels.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {gearForm.lensModels.map((lens, index) => (
-                      <div key={index} className="flex items-center gap-1 bg-surface-container-low px-2 py-1 rounded-sm text-xs">
-                        <span>{lens}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setGearForm({
-                              ...gearForm,
-                              lensModels: gearForm.lensModels.filter((_, i) => i !== index)
-                            });
-                            if (errors.lensModels) {
-                              setErrors({...errors, lensModels: ''});
-                            }
-                          }}
-                          className="text-on-surface-variant hover:text-error"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
                 )}
               </div>
             </div>
@@ -401,19 +364,19 @@ export default function GearForm({
             </div>
           </div>
 
-          {/* 自定义评价 */}
+          {/* 器材介绍 */}
           <div className="space-y-1">
             <label htmlFor="gear-review" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('gear.form.review')}</label>
-            <input 
+            <textarea 
               id="gear-review"
-              type="text" 
-              maxLength={30}
+              maxLength={300}
+              rows={3}
               placeholder={t('gear.form.reviewPlaceholder')}
               value={gearForm.review}
               onChange={e => setGearForm({...gearForm, review: e.target.value})}
-              className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-3 py-2 text-sm text-on-surface outline-none transition-colors"
+              className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-3 py-2 text-sm text-on-surface outline-none transition-colors resize-none scrollbar-hide"
             />
-            <p className="text-xs text-on-surface-variant/50">{gearForm.review.length}/30</p>
+            <p className="text-xs text-on-surface-variant/50 text-right">{gearForm.review.length}/300</p>
           </div>
 
           <div className="pt-2 flex justify-end gap-3">
