@@ -254,7 +254,7 @@ export const translations = {
         status: '设备状态',
         rating: '评分',
         review: '器材介绍',
-        reviewPlaceholder: '不超过300个字',
+        reviewPlaceholder: '不超过1000个字',
         image: '设备照片',
         mount: '卡口系统',
         formats: {
@@ -604,7 +604,7 @@ export const translations = {
         status: 'Status',
         rating: 'Rating',
         review: 'Introduction',
-        reviewPlaceholder: 'Max 300 characters',
+        reviewPlaceholder: 'Max 1000 characters',
         image: 'Photo',
         mount: 'Mount',
         formats: {

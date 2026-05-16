@@ -65,8 +65,8 @@ gear.post('/', authRequired(), requireLevel('lv2'), async (c) => {
   }
 
   // 验证review长度
-  if (review && review.length > 30) {
-    return c.json({ success: false, error: '评价不能超过30个字符' }, 400);
+  if (review && review.length > 1000) {
+    return c.json({ success: false, error: '介绍不能超过1000个字符' }, 400);
   }
 
   // 验证rating范围
@@ -128,8 +128,8 @@ gear.put('/:id', authRequired(), requireLevel('lv2'), async (c) => {
   }
 
   // 验证review长度
-  if (review && review.length > 30) {
-    return c.json({ success: false, error: '评价不能超过30个字符' }, 400);
+  if (review && review.length > 1000) {
+    return c.json({ success: false, error: '介绍不能超过1000个字符' }, 400);
   }
 
   // 验证rating范围

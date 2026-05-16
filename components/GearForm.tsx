@@ -369,14 +369,14 @@ export default function GearForm({
             <label htmlFor="gear-review" className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">{t('gear.form.review')}</label>
             <textarea 
               id="gear-review"
-              maxLength={300}
-              rows={3}
+              maxLength={1000}
+              rows={5}
               placeholder={t('gear.form.reviewPlaceholder')}
               value={gearForm.review}
               onChange={e => setGearForm({...gearForm, review: e.target.value})}
               className="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary px-3 py-2 text-sm text-on-surface outline-none transition-colors resize-none scrollbar-hide"
             />
-            <p className="text-xs text-on-surface-variant/50 text-right">{gearForm.review.length}/300</p>
+            <p className="text-xs text-on-surface-variant/50 text-right">{gearForm.review.length}/1000</p>
           </div>
 
           <div className="pt-2 flex justify-end gap-3">

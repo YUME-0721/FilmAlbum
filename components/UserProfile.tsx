@@ -879,9 +879,19 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
               className="flex items-center justify-center bg-surface-container-low border border-outline-variant/10 rounded-lg h-[34px] md:h-10 px-3 hover:border-primary/40 transition-colors text-on-surface-variant/60 hover:text-primary active:scale-95"
               title={rollSortOrder === 'asc' ? '正序 (1-9)' : '倒序 (9-1) '}
             >
-              <div className="flex flex-col -gap-1">
-                <ArrowUp size={10} className={rollSortOrder === 'asc' ? 'text-primary opacity-100' : 'opacity-20'} />
-                <ArrowDown size={10} className={rollSortOrder === 'desc' ? 'text-primary opacity-100' : 'opacity-20'} />
+              <div className="relative w-4 h-4 flex items-center justify-center overflow-hidden">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={rollSortOrder}
+                    initial={{ y: rollSortOrder === 'asc' ? 10 : -10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: rollSortOrder === 'asc' ? -10 : 10, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center justify-center text-primary"
+                  >
+                    {rollSortOrder === 'asc' ? <ArrowUp size={14} strokeWidth={3} /> : <ArrowDown size={14} strokeWidth={3} />}
+                  </motion.div>
+                </AnimatePresence>
               </div>
               <span className="hidden md:inline ml-2 text-[10px] font-bold uppercase tracking-widest">
                 {rollSortOrder === 'asc' ? '正序' : '倒序'}
@@ -1144,10 +1154,10 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       {/* Gear Tab - 设备管理 */}
       {activeTab === 'gear' && (
         <div className="space-y-8">
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-6 mb-8">
-            <div className="flex flex-row items-center gap-2 md:gap-3 flex-1">
+          <div className="mb-8 md:mb-12 flex flex-row items-center gap-2 md:gap-6 overflow-hidden">
+            <div className="flex flex-row items-center gap-2 md:gap-3 flex-1 min-w-0">
               {/* Gear Search */}
-              <div className="relative group flex-1 md:flex-none h-[34px] md:h-10">
+              <div className="relative group flex-1 md:flex-none h-[34px] md:h-10 min-w-0">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={12} />
                 <input 
                   type="text" 
@@ -1178,10 +1188,11 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             {profile?.isOwner && currentUser?.level !== 'lv1' && (
               <button 
                 onClick={() => setShowAddGearModal(true)}
-                className="bg-primary text-on-primary h-[34px] md:h-10 px-2.5 md:px-6 rounded-lg text-xs font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-widest active:scale-95"
+                className="bg-primary text-on-primary h-[34px] md:h-10 px-2.5 md:px-6 rounded-lg text-xs font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-widest active:scale-95 shrink-0"
+                title={t('gear.add')}
               >
-                <Plus size={16} strokeWidth={3} />
                 <span className="hidden md:inline">{t('gear.add')}</span>
+                <Plus size={16} strokeWidth={3} />
               </button>
             )}
           </div>
