@@ -140,13 +140,19 @@ export async function uploadToImgBed(c: any, options: UploadOptions) {
   return `${base}${result[0].src}`;
 }
 
+const cleanUrl = (url: string) => {
+  const p = url.split('://');
+  return p.length === 2 ? `${p[0]}://${p[1].replace(/\/+/g, '/')}` : url.replace(/\/+/g, '/');
+};
+
 async function ensureWebdavDir(baseUrl: string, path: string, headers: any) {
   const parts = path.split('/').filter(p => p);
   let currentPath = '';
   for (const part of parts) {
     currentPath += `/${part}`;
     // 使用 MKCOL 创建目录，忽略可能因目录已存在导致的错误
-    await fetch(`${baseUrl}${currentPath}/`, { method: 'MKCOL', headers });
+    const target = cleanUrl(`${baseUrl}/${currentPath}/`);
+    await fetch(target, { method: 'MKCOL', headers });
   }
 }
 
@@ -158,9 +164,8 @@ export async function uploadToWebDAV(c: any, options: UploadOptions) {
   const timestamp = Date.now();
   const randomStr = Math.random().toString(36).substring(2, 8);
   const fileName = `${timestamp}_${randomStr}.${ext}`;
-  
-  const base = webdavUrl.replace(/\/$/, '');
-  const targetUrl = `${base}${finalPath}${fileName}`;
+
+  const targetUrl = cleanUrl(`${webdavUrl}/${finalPath}/${fileName}`);
 
   // NOTE: 使用 ArrayBuffer 并显式指定 Content-Length，防止某些 WebDAV 服务器（如 Cloudflare Imaged）
   // 无法处理 Transfer-Encoding: chunked 导致返回 502 错误。
@@ -189,7 +194,7 @@ export async function uploadToWebDAV(c: any, options: UploadOptions) {
 
   if (response.status === 409) {
     // 409 Conflict 通常意味着父目录不存在，尝试递归创建目录后重试
-    await ensureWebdavDir(base, finalPath, { 'Authorization': headers['Authorization'] });
+    await ensureWebdavDir(webdavUrl, finalPath, { 'Authorization': headers['Authorization'] });
     response = await fetch(targetUrl, {
       method: 'PUT',
       headers,
