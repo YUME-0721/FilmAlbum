@@ -162,15 +162,29 @@ export async function uploadToWebDAV(c: any, options: UploadOptions) {
   const base = webdavUrl.replace(/\/$/, '');
   const targetUrl = `${base}${finalPath}${fileName}`;
 
-  const headers = {
-    'Authorization': `Basic ${btoa(webdavUsername + ':' + webdavPassword)}`,
-    'Content-Type': file.type || 'application/octet-stream'
+  // NOTE: 使用 ArrayBuffer 并显式指定 Content-Length，防止某些 WebDAV 服务器（如 Cloudflare Imaged）
+  // 无法处理 Transfer-Encoding: chunked 导致返回 502 错误。
+  const buffer = await file.arrayBuffer();
+  
+  // 处理可能包含非 ASCII 字符的 Basic Auth
+  const encodeBase64 = (str: string) => {
+    try {
+      return btoa(unescape(encodeURIComponent(str)));
+    } catch {
+      return btoa(str);
+    }
+  };
+
+  const headers: any = {
+    'Authorization': `Basic ${encodeBase64(webdavUsername + ':' + webdavPassword)}`,
+    'Content-Type': file.type || 'application/octet-stream',
+    'Content-Length': buffer.byteLength.toString()
   };
 
   let response = await fetch(targetUrl, {
     method: 'PUT',
     headers,
-    body: file
+    body: buffer
   });
 
   if (response.status === 409) {
@@ -179,7 +193,7 @@ export async function uploadToWebDAV(c: any, options: UploadOptions) {
     response = await fetch(targetUrl, {
       method: 'PUT',
       headers,
-      body: file
+      body: buffer
     });
   }
 
