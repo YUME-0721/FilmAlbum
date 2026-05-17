@@ -25,6 +25,7 @@ interface RollFormProps {
     format: string;
     filmType: string;
     tags: string[];
+    status?: string;
   };
   setRollForm: React.Dispatch<React.SetStateAction<{
     title: string;
@@ -37,6 +38,7 @@ interface RollFormProps {
     format: string;
     filmType: string;
     tags: string[];
+    status?: string;
   }>>;
   filmStockSearch: string;
   setFilmStockSearch: (value: string) => void;
@@ -460,6 +462,29 @@ export default function RollForm({
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <span className="text-xs font-label text-on-surface-variant uppercase tracking-widest pl-1">影集状态</span>
+            <div className="flex gap-4">
+              {[
+                { value: 'COMPLETED', label: '已完成' },
+                { value: 'SHOOTING', label: '拍摄中' },
+                { value: 'DEVELOPING', label: '冲洗中' }
+              ].map(item => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, status: item.value })}
+                  className={`flex-1 py-2.5 text-xs font-bold transition-all border ${
+                    (formData.status || 'COMPLETED') === item.value
+                      ? 'bg-primary border-primary text-on-primary shadow-lg shadow-primary/10'
+                      : 'bg-surface-container-low border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:border-outline-variant'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
           </div>
           <div className="space-y-3">

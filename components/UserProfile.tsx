@@ -123,6 +123,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     format: string; 
     filmType: string; 
     tags: string[]; 
+    status?: string;
   }>({ 
     title: '', 
     filmStock: '', 
@@ -133,7 +134,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     endDate: new Date().toISOString().split('T')[0], 
     format: rollFormats?.[0]?.format || '135', 
     filmType: filmTypes?.[0] || 'COLOR_NEGATIVE',
-    tags: [] as string[]
+    tags: [] as string[],
+    status: 'COMPLETED'
   });
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -271,12 +273,12 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
 
   /** 获取设备列表 */
   const fetchGear = useCallback(async () => {
-    if (!isLoggedIn) return;
+    if (!targetUserId) return;
     setIsLoadingGear(true);
     try {
       // 获取当前状态的设备
       const status = selectedStatus === 'all' ? undefined : selectedStatus as 'used' | 'using' | 'wanted';
-      const result = await getGear(status);
+      const result = await getGear(status, targetUserId);
       if (result.success && result.data) {
         setGear(result.data);
       }
@@ -285,7 +287,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     } finally {
       setIsLoadingGear(false);
     }
-  }, [isLoggedIn, selectedStatus]);
+  }, [targetUserId, selectedStatus]);
 
   /** 处理创建设备 */
   const handleCreateGear = async (e: React.FormEvent) => {
@@ -552,7 +554,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
           endDate: new Date().toISOString().split('T')[0], 
           format: rollFormats?.[0]?.format || '135', 
           filmType: filmTypes?.[0] || 'COLOR_NEGATIVE',
-          tags: [] as string[]
+          tags: [] as string[],
+          status: 'COMPLETED'
         });
         setTagInput('');
         // 创建成功后直接跳转到胶卷详情页，方便立刻上传照片
@@ -595,7 +598,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
           endDate: new Date().toISOString().split('T')[0], 
           format: '135', 
           filmType: 'COLOR_NEGATIVE',
-          tags: [] as string[]
+          tags: [] as string[],
+          status: 'COMPLETED'
         });
         setTagInput('');
         // 更新成功后重新获取胶卷列表
@@ -625,7 +629,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       endDate: roll.shotDate, // 假设endDate与shotDate相同，实际应用中可能需要从API获取
       format: roll.format,
       filmType: roll.filmType,
-      tags: roll.tags
+      tags: roll.tags,
+      status: roll.status || 'COMPLETED'
     });
     setShowEditModal(true);
   };
@@ -810,17 +815,15 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             <span>{t('profile.tabs.post')}</span>
             {activeTab === 'post' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary animate-in fade-in slide-in-from-left-2 shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]" />}
           </button>
-          {/* 只对自己显示设备标签 */}
-          {profile?.isOwner && (
-            <button 
-              onClick={() => setActiveTab('gear')}
-              className={`pb-4 text-sm font-bold tracking-[0.2em] uppercase flex items-center gap-2 transition-all relative ${activeTab === 'gear' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-            >
-              <Camera size={18} />
-              <span>{t('profile.tabs.gear')}</span>
-              {activeTab === 'gear' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary animate-in fade-in slide-in-from-left-2 shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]" />}
-            </button>
-          )}
+          {/* 设备标签 - 所有人都可见 */}
+          <button 
+            onClick={() => setActiveTab('gear')}
+            className={`pb-4 text-sm font-bold tracking-[0.2em] uppercase flex items-center gap-2 transition-all relative ${activeTab === 'gear' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+          >
+            <Camera size={18} />
+            <span>{t('profile.tabs.gear')}</span>
+            {activeTab === 'gear' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary animate-in fade-in slide-in-from-left-2 shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]" />}
+          </button>
         </div>
       </div>
 
@@ -949,11 +952,23 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                         onClick={() => navigate(`/roll/${roll.id}`)}
                       >
                         <span className="text-primary/40 mr-2 font-mono text-lg md:text-xl">
-                          卷号#{String((roll.sortOrder ?? 0) + 1).padStart(3, '0')}
+                          #{String((roll.sortOrder ?? 0) + 1).padStart(3, '0')}
                         </span>
                         {roll.title}
                       </h2>
                       <span className="px-2 py-0.5 bg-secondary-container text-secondary text-[10px] font-label rounded-sm tracking-widest whitespace-nowrap">{roll.filmStock}</span>
+                      {roll.status === 'SHOOTING' && (
+                        <span className="px-2.5 py-0.5 bg-orange-500/10 text-orange-500 border border-orange-500/20 text-[10px] font-bold rounded-sm tracking-widest whitespace-nowrap animate-pulse flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                          拍摄中
+                        </span>
+                      )}
+                      {roll.status === 'DEVELOPING' && (
+                        <span className="px-2.5 py-0.5 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 text-[10px] font-bold rounded-sm tracking-widest whitespace-nowrap flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                          冲洗中
+                        </span>
+                      )}
                         {profile?.isOwner && (
                           <div className="flex items-center gap-2">
                             <button
@@ -1222,7 +1237,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                   {filteredGear.map((item) => (
                     <article 
                       key={item.id} 
-                      className="relative group bg-[#111] border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)]"
+                      className="relative group bg-[#111] border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)] cursor-pointer"
+                      onClick={() => navigate(`/gear/${item.id}`)}
                     >
                       {/* 背景泛光效果 */}
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
@@ -1323,7 +1339,8 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                         {profile?.isOwner && (
                           <div className="flex gap-2 pt-2 transition-opacity duration-300 opacity-30 group-hover:opacity-100">
                             <button 
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setEditingGear(item);
                                 // 将 lensModel 字符串转换为 lensModels 数组
                                 const lensModels = item.lensModel ? item.lensModel.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
@@ -1358,7 +1375,10 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                               {t('common.edit')}
                             </button>
                             <button 
-                              onClick={() => handleDeleteGear(item.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteGear(item.id);
+                              }}
                               className="flex-1 bg-white/5 hover:bg-red-500/20 border border-white/5 hover:border-red-500/30 text-white/80 hover:text-red-400 text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5"
                             >
                               <Trash2 size={14} />

@@ -291,6 +291,7 @@ rolls.post('/', authRequired(), async (c) => {
     endDate?: string;
     format?: string;
     filmType?: string;
+    status?: string;
     tags?: string[];
   }>();
 
@@ -308,13 +309,13 @@ rolls.post('/', authRequired(), async (c) => {
   const nextOrder = (maxOrder?.max_order ?? -1) + 1;
 
   await c.env.DB.prepare(
-    `INSERT INTO rolls (id, user_id, title, film_stock, camera, lens, location, shot_date, end_date, format, film_type, tags, sort_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO rolls (id, user_id, title, film_stock, camera, lens, location, shot_date, end_date, format, film_type, status, tags, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     rollId, userId, body.title ?? '',
     body.filmStock ?? '', body.camera ?? '', body.lens ?? '',
     body.location ?? '', body.shotDate ?? '', body.endDate ?? '',
-    body.format ?? '135', body.filmType ?? 'COLOR_NEGATIVE', JSON.stringify(body.tags ?? []),
+    body.format ?? '135', body.filmType ?? 'COLOR_NEGATIVE', body.status ?? 'COMPLETED', JSON.stringify(body.tags ?? []),
     nextOrder
   ).run();
 

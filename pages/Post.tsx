@@ -235,7 +235,7 @@ export default function Post() {
               whileTap={{ scale: 0.95 }}
               onClick={handleFollow}
               layout
-              className={`${isFollowing ? 'bg-surface-variant text-on-surface' : 'bg-primary text-on-primary hover:bg-primary-dim'} px-4 md:px-8 py-2 text-[10px] md:text-xs font-bold transition-all uppercase tracking-widest rounded-sm shadow-lg shadow-primary/10 flex-shrink-0 relative overflow-hidden min-w-[80px] md:min-w-[120px]`}
+              className={`${isFollowing ? 'bg-surface-variant text-on-surface' : 'bg-primary text-on-primary hover:bg-primary-dim'} px-3 md:px-5 py-1.5 text-[10px] md:text-[11px] font-bold transition-all uppercase tracking-widest rounded-sm flex-shrink-0 relative overflow-hidden min-w-[64px] md:min-w-[80px]`}
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span

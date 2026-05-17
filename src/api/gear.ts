@@ -61,10 +61,14 @@ export async function createGear(data: {
 
 /** 获取设备列表
  * @param status 设备状态过滤
+ * @param userId 用户ID
  */
-export async function getGear(status?: 'used' | 'using' | 'wanted'): Promise<ApiResponse<Gear[]>> {
-  const params = status ? `?status=${status}` : '';
-  return await get<Gear[]>(`/gear${params}`);
+export async function getGear(status?: 'used' | 'using' | 'wanted', userId?: string): Promise<ApiResponse<Gear[]>> {
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  if (userId) params.append('userId', userId);
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+  return await get<Gear[]>(`/gear${queryString}`);
 }
 
 /** 更新设备
@@ -115,4 +119,11 @@ export async function updateGear(
  */
 export async function deleteGear(id: string): Promise<ApiResponse> {
   return await del(`/gear/${id}`);
+}
+
+/** 获取单个设备详情
+ * @param id 设备ID
+ */
+export async function getGearById(id: string): Promise<ApiResponse<Gear & { author?: { id: string; nickname: string; avatarUrl: string } }>> {
+  return await get<Gear & { author?: { id: string; nickname: string; avatarUrl: string } }>(`/gear/${id}`);
 }

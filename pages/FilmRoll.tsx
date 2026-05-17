@@ -87,7 +87,8 @@ export default function FilmRoll() {
             shotDate: response.data.shotDate || '',
             filmType: response.data.filmType || '',
             format: response.data.format || '',
-            tags: response.data.tags || []
+            tags: response.data.tags || [],
+            status: response.data.status || 'COMPLETED'
           });
         }
       } catch (error) {
@@ -273,6 +274,18 @@ export default function FilmRoll() {
                 {roll.shotDate && <div className="flex items-center gap-1"><Calendar size={14} />{roll.shotDate}</div>}
                 {roll.location && <div className="flex items-center gap-1"><MapPin size={14} />{roll.location}</div>}
                 <div className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded capitalize">{roll.format} {roll.filmStock}</div>
+                {roll.status === 'SHOOTING' && (
+                  <div className="px-2 py-0.5 bg-orange-500/10 text-orange-500 border border-orange-500/20 text-xs font-bold rounded animate-pulse flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                    拍摄中
+                  </div>
+                )}
+                {roll.status === 'DEVELOPING' && (
+                  <div className="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 text-xs font-bold rounded flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                    冲洗中
+                  </div>
+                )}
               </div>
             </div>
           </div>

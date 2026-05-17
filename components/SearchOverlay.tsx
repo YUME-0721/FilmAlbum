@@ -104,7 +104,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           <div className="w-full h-full max-w-7xl flex flex-col">
             {/* Top Bar - Command Palette Style */}
             <div className="w-full h-16 md:h-24 flex items-center px-4 md:px-12 gap-3 md:gap-8 sticky top-0 z-10">
-              <div className="flex-1 flex items-center gap-3 bg-surface-container-low/40 border border-outline-variant/10 rounded-xl md:rounded-3xl px-3 md:px-8 py-2 md:py-4 focus-within:border-primary/40 focus-within:bg-surface-container-low/60 transition-all group shadow-2xl">
+              <div className="flex-1 min-w-0 flex items-center gap-3 bg-surface-container-low/40 border border-outline-variant/10 rounded-xl md:rounded-3xl px-3 md:px-8 py-2 md:py-4 focus-within:border-primary/40 focus-within:bg-surface-container-low/60 transition-all group shadow-2xl">
                 <Search className="text-on-surface-variant/40 group-focus-within:text-primary transition-colors" size={18} strokeWidth={2.5} />
                 <input
                   ref={inputRef}

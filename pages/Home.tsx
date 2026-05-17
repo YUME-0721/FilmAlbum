@@ -98,7 +98,12 @@ function formatCount(count: number): string {
   return String(count);
 }
 
-
+/** 生成确定性的伪随机宽高比，用于图片占位防抖动 */
+function getPlaceholderAspectRatio(id: string): string {
+  const ratios = ['3/4', '4/3', '1/1', '4/5', '5/4', '16/9'];
+  const index = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % ratios.length;
+  return ratios[index];
+}
 
 export default function Home() {
   const { t } = useTranslation();
@@ -218,17 +223,22 @@ export default function Home() {
                 onClick={() => navigate(`/post/${post.id}`)}
               >
                 <div className="overflow-hidden relative border border-outline-variant/10 rounded-xl bg-surface-container-low shadow-lg hover:shadow-primary/5 transition-all duration-500">
-                  <div className="bg-surface-container-highest/30 animate-pulse relative">
+                  <div 
+                    className="bg-surface-container-highest/30 animate-pulse relative w-full"
+                    style={{ aspectRatio: getPlaceholderAspectRatio(post.id) }}
+                  >
                     <img 
                       src={post.coverImage} 
                       alt={post.title}
-                      className="w-full h-auto block transition-all duration-700 hover:scale-[1.03] relative z-10"
+                      className="w-full h-auto block transition-all duration-700 hover:scale-[1.03] relative z-10 opacity-0"
                       referrerPolicy="no-referrer"
                       onLoad={(e) => {
-                        const parent = e.currentTarget.parentElement;
+                        const img = e.currentTarget;
+                        const parent = img.parentElement;
+                        img.classList.remove('opacity-0');
                         if (parent) {
                           parent.classList.remove('animate-pulse', 'bg-surface-container-highest/30');
-                          parent.style.minHeight = '0';
+                          parent.style.aspectRatio = 'auto';
                         }
                       }}
                       onError={(e) => {

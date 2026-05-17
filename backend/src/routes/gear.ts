@@ -1,14 +1,19 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { authRequired, generateId, requireLevel } from '../middleware/auth';
+import { authRequired, authOptional, generateId, requireLevel } from '../middleware/auth';
 import { uploadToImgBed } from '../utils/upload-helper';
 
 const gear = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
 /** GET /api/gear - 获取用户设备列表 */
-gear.get('/', authRequired(), async (c) => {
-  const userId = c.get('userId');
+gear.get('/', authOptional(), async (c) => {
+  const queryUserId = c.req.query('userId');
+  const userId = queryUserId || c.get('userId');
   const status = c.req.query('status');
+
+  if (!userId) {
+    return c.json({ success: false, error: '未指定用户ID且未登录' }, 400);
+  }
 
   let query = 'SELECT * FROM gear WHERE user_id = ?';
   const params: (string | number)[] = [userId];
@@ -39,6 +44,45 @@ gear.get('/', authRequired(), async (c) => {
     createdAt: row.created_at,
     updatedAt: row.updated_at
   })) ?? [];
+
+  return c.json({ success: true, data });
+});
+
+/** GET /api/gear/:id - 获取单个设备详情 */
+gear.get('/:id', authOptional(), async (c) => {
+  const id = c.req.param('id');
+
+  const row = await c.env.DB.prepare('SELECT * FROM gear WHERE id = ?').bind(id).first<Record<string, unknown>>();
+  if (!row) {
+    return c.json({ success: false, error: '设备不存在' }, 404);
+  }
+
+  // 获取该设备所属用户昵称和头像
+  const author = await c.env.DB.prepare('SELECT id, nickname, avatar_url FROM users WHERE id = ?').bind(row.user_id).first<{ id: string; nickname: string; avatar_url: string }>();
+
+  const data = {
+    id: row.id,
+    userId: row.user_id,
+    author: author ? {
+      id: author.id,
+      nickname: author.nickname,
+      avatarUrl: author.avatar_url
+    } : null,
+    cameraModel: row.camera_model,
+    lensModel: row.lens_model,
+    lensType: row.lens_type,
+    status: row.status,
+    imageUrl: row.image_url,
+    formats: JSON.parse((row.formats as string) || '[]'),
+    shotCount: row.shot_count,
+    shotCounts: JSON.parse((row.shot_counts_json as string) || '{}'),
+    mount: row.mount,
+    externalUrl: row.external_url,
+    review: row.review,
+    rating: row.rating,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
 
   return c.json({ success: true, data });
 });

@@ -23,6 +23,13 @@ function formatRelativeTime(dateString: string, language: string) {
   return date.toLocaleDateString(language, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+/** 生成确定性的伪随机宽高比，用于图片占位防抖动 */
+function getPlaceholderAspectRatio(id: string): string {
+  const ratios = ['3/4', '4/3', '1/1', '4/5', '5/4', '16/9'];
+  const index = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % ratios.length;
+  return ratios[index];
+}
+
 interface FeedCardProps {
   post: PostListItem;
   onClick: () => void;
@@ -185,17 +192,23 @@ export default function FeedCard({ post, onClick, onEdit, onDelete }: FeedCardPr
       {imgs.length > 0 && (
         <div className="px-6 pb-4">
           {imgs.length === 1 ? (
-            <div className="rounded-xl overflow-hidden cursor-pointer bg-surface-container-highest/20 min-h-[300px] relative animate-pulse" onClick={onClick}>
+            <div 
+              className="rounded-xl overflow-hidden cursor-pointer bg-surface-container-highest/20 relative animate-pulse w-full" 
+              style={{ aspectRatio: getPlaceholderAspectRatio(post.id) }}
+              onClick={onClick}
+            >
               <img
                 src={imgs[0].previewUrl || imgs[0].url}
                 alt={post.title}
-                className="w-full h-auto block hover:scale-[1.02] transition-transform duration-700 relative z-10"
+                className="w-full h-auto block hover:scale-[1.02] transition-transform duration-700 relative z-10 opacity-0 transition-opacity"
                 referrerPolicy="no-referrer"
                 onLoad={(e) => {
-                  const parent = e.currentTarget.parentElement;
+                  const img = e.currentTarget;
+                  img.classList.remove('opacity-0');
+                  const parent = img.parentElement;
                   if (parent) {
-                    parent.classList.remove('animate-pulse', 'bg-surface-container-highest/20', 'min-h-[300px]');
-                    parent.style.minHeight = '0';
+                    parent.classList.remove('animate-pulse', 'bg-surface-container-highest/20');
+                    parent.style.aspectRatio = 'auto';
                   }
                 }}
                 onError={(e) => {

@@ -100,6 +100,7 @@ export function createRoll(data: {
   shotDate?: string;
   format?: string;
   filmType?: string;
+  status?: string;
   tags?: string[];
 }) {
   return post<{ id: string }>('/rolls', data);

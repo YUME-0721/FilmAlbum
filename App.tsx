@@ -17,6 +17,7 @@ import ResetPassword from './pages/ResetPassword.tsx';
 import Settings from './pages/Settings.tsx';
 import Messages from './pages/Messages.tsx';
 import Admin from './pages/Admin.tsx';
+import GearDetail from './pages/GearDetail.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
 import ScrollToTop from './components/ScrollToTop.tsx';
 import { UploadProvider } from './src/context/UploadContext.tsx';
@@ -80,6 +81,9 @@ export default function App() {
               <Route path="login" element={<Login />} />
               <Route path="reset-password" element={<ResetPassword />} />
             </Route>
+
+            {/* 独立的公开设备介绍展示页 */}
+            <Route path="gear/:id" element={<GearDetail />} />
 
             {/* 超级管理员后台 — 独立布局，无主导航栏 */}
             <Route path="/admin" element={<Admin />} />
