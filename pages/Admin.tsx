@@ -49,13 +49,13 @@ const i18n = {
     lv1Desc: '只读权限',
     lv2Desc: '标准权限',
     lv3Desc: '无限制',
-    imgBedSettings: '图床配置',
+    imgBedSettings: '图片存储',
     imgBedUrl: '图床地址',
     imgBedUrlPlaceholder: 'https://img.example.com',
     imgBedToken: '图床 Token',
     imgBedTokenPlaceholder: '图床 API Token',
-    saveImgBed: '保存图床配置',
-    imgBedPath: '图床路径',
+    saveImgBed: '保存图片存储',
+    imgBedPath: '基础路径',
     imgBedPathPlaceholder: '/FilmAlbum/',
     apiSettings: 'API 配置 (自定义域名)',
     apiBaseUrl: 'API 地址',
@@ -89,7 +89,7 @@ const i18n = {
     useGlobal: '跟随全局',
     tabSystem: '系统设置',
     tabUsers: '用户管理',
-    tabImgBed: '图床配置',
+    tabImgBed: '图片存储',
     tabFilmStocks: '胶卷',
     filmStockManagement: '胶卷管理',
     addFilmStock: '新增胶卷',
@@ -306,13 +306,18 @@ export default function Admin() {
   const [newUser, setNewUser] = useState({ email: '', password: '', nickname: '', level: 'lv1' });
   const [createStatus, setCreateStatus] = useState({ type: '', message: '' });
 
-  // 图床配置状态
+  // 图片存储配置状态
   const [imgBed, setImgBed] = useState({ 
+    storage_type: 'img_bed',
     img_bed_url: '', 
     img_bed_token: '', 
     img_bed_path: '/FilmAlbum/',
     img_bed_channel: 'huggingface',
     img_bed_name_type: 'index',
+    webdav_url: '',
+    webdav_username: '',
+    webdav_password: '',
+    webdav_path: '/FilmAlbum/',
     // 显式初始化策略字段，防止 TS 报错
     avatar_path: '', avatar_compress: 'true', avatar_channel: '',
     roll_path: '', roll_compress: 'false', roll_channel: '',
@@ -479,11 +484,16 @@ export default function Admin() {
         setSystemSettings(s as any);
         // 将图床和 SMTP 配置回填到对应表单（密文不展示）
         setImgBed({
+          storage_type:      s['storage_type']      || 'img_bed',
           img_bed_url:       s['img_bed_url']       || '',
           img_bed_token:     s['img_bed_token'] ? '••••••••' : '',
           img_bed_path:      s['img_bed_path']      || '/FilmAlbum/',
           img_bed_channel:   s['img_bed_channel']   || 'huggingface',
           img_bed_name_type: s['img_bed_name_type'] || 'index',
+          webdav_url:        s['webdav_url']        || '',
+          webdav_username:   s['webdav_username']   || '',
+          webdav_password:   s['webdav_password'] ? '••••••••' : '',
+          webdav_path:       s['webdav_path']       || '/FilmAlbum/',
           // 回填各类型策略
           avatar_path:     s['avatar_path']     || '{userId}/',
           avatar_compress: s['avatar_compress'] || 'true',
@@ -584,12 +594,16 @@ export default function Admin() {
 
   // 保存图床配置
   const handleSaveImgBed = async () => {
-    const { img_bed_url, img_bed_path, img_bed_channel, img_bed_name_type } = imgBed;
-    const payload: Record<string, string> = {};
+    const { storage_type, img_bed_url, img_bed_path, img_bed_channel, img_bed_name_type, webdav_url, webdav_username, webdav_path } = imgBed;
+    const payload: Record<string, string> = { storage_type };
     if (img_bed_url) payload['img_bed_url'] = img_bed_url;
     if (img_bed_path) payload['img_bed_path'] = img_bed_path;
     if (img_bed_channel) payload['img_bed_channel'] = img_bed_channel;
     if (img_bed_name_type) payload['img_bed_name_type'] = img_bed_name_type;
+    
+    if (webdav_url) payload['webdav_url'] = webdav_url;
+    if (webdav_username) payload['webdav_username'] = webdav_username;
+    if (webdav_path) payload['webdav_path'] = webdav_path;
     
     // 包含所有策略字段
     ['avatar', 'roll', 'preview', 'gear', 'film_stock', 'post'].forEach(type => {
@@ -600,6 +614,9 @@ export default function Admin() {
 
     if (imgBed.img_bed_token && imgBed.img_bed_token !== '••••••••') {
       payload['img_bed_token'] = imgBed.img_bed_token;
+    }
+    if (imgBed.webdav_password && imgBed.webdav_password !== '••••••••') {
+      payload['webdav_password'] = imgBed.webdav_password;
     }
     if (Object.keys(payload).length === 0) return;
 
@@ -1646,26 +1663,67 @@ export default function Admin() {
                     </div>
                     基础配置 / Basic Setup
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                      <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">{at('imgBedUrl')}</label>
-                      <input type="url" value={imgBed.img_bed_url} onChange={(e) => setImgBed(p => ({ ...p, img_bed_url: e.target.value }))} className={inputCls} placeholder="https://img.example.com" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">{at('imgBedToken')}</label>
-                      <input type="password" value={imgBed.img_bed_token} onChange={(e) => setImgBed(p => ({ ...p, img_bed_token: e.target.value }))} className={inputCls} placeholder="••••••••••••••••" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">{at('imgBedChannel')}</label>
-                      <select value={imgBed.img_bed_channel} onChange={(e) => setImgBed(p => ({ ...p, img_bed_channel: e.target.value }))} className={inputCls}>
-                        <option value="telegram">Telegram (大文件)</option>
-                        <option value="cfr2">CloudFlare R2 (大文件，私密)</option>
-                        <option value="s3">S3 (大文件，私密，收费)</option>
-                        <option value="discord">Discord (大文件分片存储)</option>
-                        <option value="huggingface">HuggingFace (大文件直传)</option>
-                      </select>
-                    </div>
+                  
+                  <div className="flex flex-col md:flex-row gap-4 mb-8">
+                    <label className={`flex-1 flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${imgBed.storage_type === 'img_bed' ? 'border-amber-500 bg-amber-500/5' : (isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-50')}`}>
+                      <input type="radio" name="storageType" value="img_bed" checked={imgBed.storage_type === 'img_bed'} onChange={(e) => setImgBed(p => ({ ...p, storage_type: e.target.value }))} className="hidden" />
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${imgBed.storage_type === 'img_bed' ? 'border-amber-500' : 'border-gray-400'}`}>
+                        {imgBed.storage_type === 'img_bed' && <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />}
+                      </div>
+                      <span className="font-bold text-sm">图床接口 (Image Hosting API)</span>
+                    </label>
+                    <label className={`flex-1 flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${imgBed.storage_type === 'webdav' ? 'border-blue-500 bg-blue-500/5' : (isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-50')}`}>
+                      <input type="radio" name="storageType" value="webdav" checked={imgBed.storage_type === 'webdav'} onChange={(e) => setImgBed(p => ({ ...p, storage_type: e.target.value }))} className="hidden" />
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${imgBed.storage_type === 'webdav' ? 'border-blue-500' : 'border-gray-400'}`}>
+                        {imgBed.storage_type === 'webdav' && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
+                      </div>
+                      <span className="font-bold text-sm">WebDAV 存储 (自建 NAS 等)</span>
+                    </label>
                   </div>
+
+                  {imgBed.storage_type === 'img_bed' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
+                      <div className="md:col-span-2">
+                        <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">{at('imgBedUrl')}</label>
+                        <input type="url" value={imgBed.img_bed_url} onChange={(e) => setImgBed(p => ({ ...p, img_bed_url: e.target.value }))} className={inputCls} placeholder="https://img.example.com" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">{at('imgBedToken')}</label>
+                        <input type="password" value={imgBed.img_bed_token} onChange={(e) => setImgBed(p => ({ ...p, img_bed_token: e.target.value }))} className={inputCls} placeholder="••••••••••••••••" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">{at('imgBedChannel')}</label>
+                        <select value={imgBed.img_bed_channel} onChange={(e) => setImgBed(p => ({ ...p, img_bed_channel: e.target.value }))} className={inputCls}>
+                          <option value="telegram">Telegram (大文件)</option>
+                          <option value="cfr2">CloudFlare R2 (大文件，私密)</option>
+                          <option value="s3">S3 (大文件，私密，收费)</option>
+                          <option value="discord">Discord (大文件分片存储)</option>
+                          <option value="huggingface">HuggingFace (大文件直传)</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {imgBed.storage_type === 'webdav' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
+                      <div className="md:col-span-2">
+                        <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">WebDAV URL</label>
+                        <input type="url" value={imgBed.webdav_url} onChange={(e) => setImgBed(p => ({ ...p, webdav_url: e.target.value }))} className={inputCls} placeholder="https://nas.example.com:5006" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">WebDAV 用户名 (Username)</label>
+                        <input type="text" value={imgBed.webdav_username} onChange={(e) => setImgBed(p => ({ ...p, webdav_username: e.target.value }))} className={inputCls} placeholder="admin" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">WebDAV 密码 (Password)</label>
+                        <input type="password" value={imgBed.webdav_password} onChange={(e) => setImgBed(p => ({ ...p, webdav_password: e.target.value }))} className={inputCls} placeholder="••••••••••••••••" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-[10px] font-bold uppercase mb-2 ml-1 opacity-50">基础路径 (Base Path)</label>
+                        <input type="text" value={imgBed.webdav_path} onChange={(e) => setImgBed(p => ({ ...p, webdav_path: e.target.value }))} className={inputCls} placeholder="/FilmAlbum/" />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className={`pt-10 border-t ${dividerCls}`}>

@@ -19,7 +19,8 @@ export async function getUploadStrategy(c: any, options: Omit<UploadOptions, 'fi
   const db = env.DB;
 
   const strategyKeys = [
-    'img_bed_url', 'img_bed_token', 'img_bed_path', 'img_bed_channel', 'img_bed_name_type',
+    'storage_type', 'img_bed_url', 'img_bed_token', 'img_bed_path', 'img_bed_channel', 'img_bed_name_type',
+    'webdav_url', 'webdav_username', 'webdav_password', 'webdav_path',
     `${type}_path`, `${type}_compress`, `${type}_channel`
   ];
   
@@ -29,14 +30,25 @@ export async function getUploadStrategy(c: any, options: Omit<UploadOptions, 'fi
   
   const config = settings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
 
+  const storageType    = config['storage_type']     || 'img_bed';
+
+  const webdavUrl      = config['webdav_url']       || '';
+  const webdavUsername = config['webdav_username']  || '';
+  const webdavPassword = config['webdav_password']  || '';
+  const webdavPath     = config['webdav_path']      || '/FilmAlbum/';
+
   const imgBedUrl      = config['img_bed_url']      || env.IMG_BED_URL;
   const imgBedToken    = config['img_bed_token']    || env.IMG_BED_TOKEN;
-  const globalPath     = config['img_bed_path']     || '/FilmAlbum/';
+  
+  const globalPath     = storageType === 'webdav' ? webdavPath : (config['img_bed_path'] || '/FilmAlbum/');
   const globalChannel  = config['img_bed_channel']  || 'telegram';
   const globalNameType = config['img_bed_name_type'] || 'index';
 
-  if (!imgBedUrl || !imgBedToken) {
+  if (storageType === 'img_bed' && (!imgBedUrl || !imgBedToken)) {
     throw new Error('图床配置不完整，请联系管理员');
+  }
+  if (storageType === 'webdav' && (!webdavUrl || !webdavUsername || !webdavPassword)) {
+    throw new Error('WebDAV配置不完整，请联系管理员');
   }
 
   const specificPath     = config[`${type}_path`];
@@ -71,8 +83,12 @@ export async function getUploadStrategy(c: any, options: Omit<UploadOptions, 'fi
   if (!finalPath.endsWith('/')) finalPath += '/';
 
   return {
+    storageType,
     imgBedUrl,
     imgBedToken,
+    webdavUrl,
+    webdavUsername,
+    webdavPassword,
     channel,
     compress,
     globalNameType,
@@ -122,4 +138,56 @@ export async function uploadToImgBed(c: any, options: UploadOptions) {
   }
 
   return `${base}${result[0].src}`;
+}
+
+async function ensureWebdavDir(baseUrl: string, path: string, headers: any) {
+  const parts = path.split('/').filter(p => p);
+  let currentPath = '';
+  for (const part of parts) {
+    currentPath += `/${part}`;
+    // 使用 MKCOL 创建目录，忽略可能因目录已存在导致的错误
+    await fetch(`${baseUrl}${currentPath}/`, { method: 'MKCOL', headers });
+  }
+}
+
+export async function uploadToWebDAV(c: any, options: UploadOptions) {
+  const { file, type, userId, rollId, isPreview = false } = options;
+  const { webdavUrl, webdavUsername, webdavPassword, finalPath } = await getUploadStrategy(c, { type, userId, rollId, isPreview });
+
+  const ext = file.name ? file.name.split('.').pop() : 'jpg';
+  const timestamp = Date.now();
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  const fileName = `${timestamp}_${randomStr}.${ext}`;
+  
+  const base = webdavUrl.replace(/\/$/, '');
+  const targetUrl = `${base}${finalPath}${fileName}`;
+
+  const headers = {
+    'Authorization': `Basic ${btoa(webdavUsername + ':' + webdavPassword)}`,
+    'Content-Type': file.type || 'application/octet-stream'
+  };
+
+  let response = await fetch(targetUrl, {
+    method: 'PUT',
+    headers,
+    body: file
+  });
+
+  if (response.status === 409) {
+    // 409 Conflict 通常意味着父目录不存在，尝试递归创建目录后重试
+    await ensureWebdavDir(base, finalPath, { 'Authorization': headers['Authorization'] });
+    response = await fetch(targetUrl, {
+      method: 'PUT',
+      headers,
+      body: file
+    });
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`WebDAV上传失败 (${response.status}): ${errorText}`);
+  }
+
+  // 返回完整的 WebDAV 文件 URL
+  return targetUrl;
 }

@@ -179,26 +179,24 @@ export default function GearDetail() {
           >
             {/* 顶层小标状态组 */}
             <div className="flex flex-wrap items-center gap-3">
-              <span className={`px-2.5 py-0.5 border text-[10px] font-bold rounded-sm tracking-widest uppercase flex items-center gap-1 ${
-                gear.status === 'using' 
-                  ? 'bg-primary/10 border-primary/20 text-primary' 
-                  : gear.status === 'used'
-                  ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
-                  : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
-              }`}>
-                <span className={`w-1 h-1 rounded-full ${
-                  gear.status === 'using' ? 'bg-primary animate-pulse' : gear.status === 'used' ? 'bg-amber-500' : 'bg-rose-500'
-                }`} />
-                {getStatusLabel(gear.status)}
-              </span>
+              {/* NOTE: 根据产品设计，不再显示“曾经拥有”状态标签，仅显示“正在使用”或“愿望清单”等现役/期望状态以突出重点 */}
+              {gear.status !== 'used' && (
+                <span className={`px-2.5 py-0.5 border text-[10px] font-bold rounded-sm tracking-widest uppercase flex items-center gap-1 ${
+                  gear.status === 'using' 
+                    ? 'bg-primary/10 border-primary/20 text-primary' 
+                    : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                }`}>
+                  <span className={`w-1 h-1 rounded-full ${
+                    gear.status === 'using' ? 'bg-primary animate-pulse' : 'bg-rose-500'
+                  }`} />
+                  {getStatusLabel(gear.status)}
+                </span>
+              )}
 
-              {gear.lensType === 'fixed' ? (
+              {/* NOTE: 对于“可换镜头”这类常规相机特征不予展示，仅针对特殊的“固定镜头”相机进行显式标识 */}
+              {gear.lensType === 'fixed' && (
                 <span className="px-2.5 py-0.5 bg-surface-container/60 border border-outline-variant/20 text-[10px] font-bold rounded-sm tracking-widest text-on-surface-variant">
                   固定镜头
-                </span>
-              ) : (
-                <span className="px-2.5 py-0.5 bg-surface-container/60 border border-outline-variant/20 text-[10px] font-bold rounded-sm tracking-widest text-on-surface-variant">
-                  可换镜头
                 </span>
               )}
 

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { authRequired } from '../middleware/auth';
-import { uploadToImgBed, getUploadStrategy, UploadType } from '../utils/upload-helper';
+import { uploadToImgBed, uploadToWebDAV, getUploadStrategy, UploadType } from '../utils/upload-helper';
 
 const upload = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
@@ -33,32 +33,29 @@ upload.post('/', authRequired(), async (c) => {
     else if (typeQuery === 'frame' || rollId) strategyType = 'roll';
 
     // 2. 上传主图
-    const uploadUrl = await uploadToImgBed(c, {
-      file,
-      type: strategyType,
-      userId,
-      rollId
-    });
+    const strategy = await getUploadStrategy(c, { type: strategyType, userId, rollId });
+    const isWebdav = strategy.storageType === 'webdav';
+
+    let uploadUrl;
+    if (isWebdav) {
+      uploadUrl = await uploadToWebDAV(c, { file, type: strategyType, userId, rollId });
+    } else {
+      uploadUrl = await uploadToImgBed(c, { file, type: strategyType, userId, rollId });
+    }
 
     // 3. 处理预览图（仅针对影集）
     let previewUrl = null;
     if (strategyType === 'roll') {
       if (previewFile && typeof previewFile !== 'string') {
         // 前端提供预览图
-        previewUrl = await uploadToImgBed(c, {
-          file: previewFile,
-          type: 'preview',
-          userId,
-          rollId
-        });
+        previewUrl = isWebdav 
+          ? await uploadToWebDAV(c, { file: previewFile, type: 'preview', userId, rollId })
+          : await uploadToImgBed(c, { file: previewFile, type: 'preview', userId, rollId });
       } else if (generatePreview) {
         // 后端压缩原图作为预览
-        previewUrl = await uploadToImgBed(c, {
-          file,
-          type: 'preview',
-          userId,
-          rollId
-        });
+        previewUrl = isWebdav
+          ? await uploadToWebDAV(c, { file, type: 'preview', userId, rollId })
+          : await uploadToImgBed(c, { file, type: 'preview', userId, rollId });
       }
     }
 
@@ -340,32 +337,55 @@ upload.delete('/', authRequired(), async (c) => {
     return c.json({ success: false, error: '未指定文件路径' }, 400);
   }
 
-  // NOTE: 优先从 system_settings 数据库读取图床配置，env 变量作为兜底
+  // NOTE: 优先从 system_settings 数据库读取图床配置
   const delSettings = await c.env.DB.prepare(
-    "SELECT key, value FROM system_settings WHERE key IN ('img_bed_url','img_bed_token')"
+    "SELECT key, value FROM system_settings WHERE key IN ('storage_type', 'img_bed_url', 'img_bed_token', 'webdav_url', 'webdav_username', 'webdav_password')"
   ).all<{ key: string; value: string }>();
   const delMap = delSettings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
-  const imgBedUrl   = delMap['img_bed_url']   || c.env.IMG_BED_URL;
-  const imgBedToken = delMap['img_bed_token'] || c.env.IMG_BED_TOKEN;
-  const base = imgBedUrl.replace(/\/$/, '');
- 
-  // 从路径中提取文件标识（去掉前导 /）
-  const filePath = body.path.startsWith('/') ? body.path.slice(1) : body.path;
- 
+  
+  const storageType = delMap['storage_type'] || 'img_bed';
+
   try {
-    const response = await fetch(`${base}/api/manage/delete/${filePath}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${imgBedToken}`
+    if (storageType === 'webdav') {
+      const webdavUsername = delMap['webdav_username'] || '';
+      const webdavPassword = delMap['webdav_password'] || '';
+      // WebDAV URL is the full path usually
+      const response = await fetch(body.path, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Basic ${btoa(webdavUsername + ':' + webdavPassword)}` }
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        return c.json({ success: false, error: `WebDAV删除失败: ${errorText}` }, 502);
       }
-    });
+      return c.json({ success: true });
+    } else {
+      const imgBedUrl   = delMap['img_bed_url']   || c.env.IMG_BED_URL;
+      const imgBedToken = delMap['img_bed_token'] || c.env.IMG_BED_TOKEN;
+      const base = imgBedUrl.replace(/\/$/, '');
+     
+      // 从路径中提取文件标识（去掉前导 /）
+      let filePath = body.path;
+      try {
+        const urlObj = new URL(body.path);
+        filePath = urlObj.pathname;
+      } catch (e) {
+        // Not a full URL, fallback
+      }
+      filePath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+     
+      const response = await fetch(`${base}/api/manage/delete/${filePath}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${imgBedToken}` }
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      return c.json({ success: false, error: `图床删除失败: ${errorText}` }, 502);
+      if (!response.ok) {
+        const errorText = await response.text();
+        return c.json({ success: false, error: `图床删除失败: ${errorText}` }, 502);
+      }
+
+      return c.json({ success: true });
     }
-
-    return c.json({ success: true });
   } catch (error) {
     return c.json({ success: false, error: `删除异常: ${String(error)}` }, 500);
   }

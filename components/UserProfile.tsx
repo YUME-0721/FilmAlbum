@@ -24,7 +24,7 @@ import { commonBrands, brandMap, getBrandDisplayName, filterFilmStocks } from '.
 import { 
   User, UserX, UserPlus, UserMinus, Pencil, Library, History, Camera, 
   Search, Calendar, Filter, FolderPlus, ChevronRight, PlusCircle, Plus,
-  ChevronDown, Maximize, Circle, Timer, Star, MessageSquare, Trash2,
+  ChevronDown, Maximize, Circle, Timer, Star, Trash2,
   ArrowUp, ArrowDown, Box
 } from 'lucide-react';
 
@@ -746,6 +746,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
               </button>
             ) : (
               <div className="flex gap-3 w-full md:w-auto">
+                {/* NOTE: 根据产品设计调整，移除了查看他人空间时的“发送消息”按钮，简化社交互动路径 */}
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.95 }}
@@ -761,13 +762,6 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                     </motion.div>
                   </AnimatePresence>
                 </motion.button>
-                <button 
-                  onClick={() => navigate(`/messages/${targetUserId}`)} 
-                  className="bg-surface-container-highest text-on-surface px-6 md:px-10 py-2 md:py-2.5 rounded-xl md:rounded-sm text-xs font-bold hover:bg-surface-bright transition-all border border-outline-variant/20 uppercase tracking-widest flex items-center justify-center gap-2"
-                >
-                  <MessageSquare size={14} />
-                  <span className="hidden md:inline">{t('profile.sendMessage')}</span>
-                </button>
               </div>
             )}
           </div>

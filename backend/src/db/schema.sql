@@ -203,12 +203,17 @@ CREATE TABLE IF NOT EXISTS system_settings (
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('open_registration', 'true');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('default_language', 'zh-CN');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('lv2_roll_limit', '10');
-/* 图床配置 */
+/* 图片存储配置 (包含 图床 与 WebDAV) */
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('storage_type', 'img_bed');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_url', '');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_token', '');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_path', '/FilmAlbum/');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_channel', 'huggingface');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('img_bed_name_type', 'index');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('webdav_url', '');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('webdav_username', '');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('webdav_password', '');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('webdav_path', '/FilmAlbum/');
 /* 邮件服务 */
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_from', '');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_password', '');

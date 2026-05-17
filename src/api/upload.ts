@@ -80,7 +80,21 @@ export async function uploadImage(
   const sizeMB = mainFile.size / (1024 * 1024);
   let mainUrl = '';
 
-  if (sizeMB >= 10 && strategy.channel === 'huggingface') {
+  if (strategy.storageType === 'webdav') {
+    // NOTE: WebDAV 不支持原生的分片组装 API，所有图片（无论大小）默认通过普通单次请求上传给后端进行中转
+    const formData = new FormData();
+    formData.append('file', mainFile);
+    formData.append('generatePreview', 'false'); // 独立上传预览图
+    
+    const params = new URLSearchParams();
+    if (rollId) params.append('rollId', rollId);
+    if (type) params.append('type', type);
+    
+    const result = await uploadFile<any>(`/upload?${params.toString()}`, formData);
+    if (!result.success || !result.data?.url) throw new Error('WebDAV 上传失败');
+    mainUrl = result.data.url;
+  }
+  else if (sizeMB >= 10 && strategy.channel === 'huggingface') {
     // HF 大文件直传 (建议 > 20MB, 这里阈值设为10MB保守起见)
     const initParams = new URLSearchParams();
     if (qType) initParams.append('type', qType);
