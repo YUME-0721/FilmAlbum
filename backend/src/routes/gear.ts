@@ -15,15 +15,24 @@ gear.get('/', authOptional(), async (c) => {
     return c.json({ success: false, error: '未指定用户ID且未登录' }, 400);
   }
 
-  let query = 'SELECT * FROM gear WHERE user_id = ?';
+  let query = `
+    SELECT g.*, 
+      (SELECT COUNT(f.id) 
+       FROM frames f 
+       JOIN rolls r ON f.roll_id = r.id 
+       WHERE r.user_id = g.user_id AND (LOWER(r.camera) = LOWER(g.camera_model) OR LOWER(f.camera) = LOWER(g.camera_model))
+      ) as auto_shot_count
+    FROM gear g 
+    WHERE g.user_id = ?
+  `;
   const params: (string | number)[] = [userId];
 
   if (status) {
-    query += ' AND status = ?';
+    query += ' AND g.status = ?';
     params.push(status);
   }
 
-  query += ' ORDER BY created_at DESC';
+  query += ' ORDER BY g.created_at DESC';
 
   const result = await c.env.DB.prepare(query).bind(...params).all();
 
@@ -36,6 +45,7 @@ gear.get('/', authOptional(), async (c) => {
     imageUrl: row.image_url,
     formats: JSON.parse((row.formats as string) || '[]'),
     shotCount: row.shot_count,
+    autoShotCount: row.auto_shot_count || 0,
     shotCounts: JSON.parse((row.shot_counts_json as string) || '{}'),
     mount: row.mount,
     externalUrl: row.external_url,
@@ -60,6 +70,14 @@ gear.get('/:id', authOptional(), async (c) => {
   // 获取该设备所属用户昵称和头像
   const author = await c.env.DB.prepare('SELECT id, nickname, avatar_url FROM users WHERE id = ?').bind(row.user_id).first<{ id: string; nickname: string; avatar_url: string }>();
 
+  // 自动统计该设备在影集中的照片数量
+  const autoShotCountResult = await c.env.DB.prepare(`
+    SELECT COUNT(f.id) as count 
+    FROM frames f 
+    JOIN rolls r ON f.roll_id = r.id 
+    WHERE r.user_id = ? AND (LOWER(r.camera) = LOWER(?) OR LOWER(f.camera) = LOWER(?))
+  `).bind(row.user_id, row.camera_model, row.camera_model).first<{ count: number }>();
+
   const data = {
     id: row.id,
     userId: row.user_id,
@@ -75,6 +93,7 @@ gear.get('/:id', authOptional(), async (c) => {
     imageUrl: row.image_url,
     formats: JSON.parse((row.formats as string) || '[]'),
     shotCount: row.shot_count,
+    autoShotCount: autoShotCountResult?.count || 0,
     shotCounts: JSON.parse((row.shot_counts_json as string) || '{}'),
     mount: row.mount,
     externalUrl: row.external_url,

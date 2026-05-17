@@ -12,6 +12,7 @@ export interface Gear {
   imageUrl: string;
   formats: string[];
   shotCount: number;
+  autoShotCount?: number;
   shotCounts: Record<string, number>;
   mount: string;
   externalUrl: string;

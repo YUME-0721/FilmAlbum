@@ -951,12 +951,11 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                         className="text-xl md:text-2xl font-headline font-bold text-on-surface cursor-pointer hover:text-primary transition-colors leading-tight"
                         onClick={() => navigate(`/roll/${roll.id}`)}
                       >
-                        <span className="text-primary/40 mr-2 font-mono text-lg md:text-xl">
+                        <span className="text-primary/40 mr-2 font-mono text-xl md:text-2xl align-baseline">
                           #{String((roll.sortOrder ?? 0) + 1).padStart(3, '0')}
                         </span>
                         {roll.title}
                       </h2>
-                      <span className="px-2 py-0.5 bg-secondary-container text-secondary text-[10px] font-label rounded-sm tracking-widest whitespace-nowrap">{roll.filmStock}</span>
                       {roll.status === 'SHOOTING' && (
                         <span className="px-2.5 py-0.5 bg-orange-500/10 text-orange-500 border border-orange-500/20 text-[10px] font-bold rounded-sm tracking-widest whitespace-nowrap animate-pulse flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
@@ -1302,10 +1301,13 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                               {item.mount}
                             </div>
                           )}
-                          {item.shotCount > 0 && (
-                            <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70">
+                          {((item.autoShotCount ?? 0) > 0 || item.shotCount > 0) && (
+                            <div className="px-2.5 py-1 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 text-xs font-medium text-white/70" title="快门统计 (自动统计影集照片数 / 手动备份快门数)">
                               <Timer size={14} />
-                              {item.shotCount} {t('gear.count')}
+                              <span>{item.autoShotCount || 0} 张 (自动)</span>
+                              {item.shotCount > 0 && (
+                                <span className="opacity-40 text-[10px]">/ 手动: {item.shotCount}</span>
+                              )}
                             </div>
                           )}
                         </div>

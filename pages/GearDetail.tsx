@@ -141,10 +141,10 @@ export default function GearDetail() {
       </header>
 
       {/* 主体布局 - 响应式双栏/单栏 */}
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 md:px-8 pt-24 flex flex-col md:flex-row gap-8 md:gap-16 items-stretch">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 md:px-8 pt-16 md:pt-20 flex flex-col md:flex-row gap-8 md:gap-16 items-stretch">
         
         {/* 左侧/上半部分：设备巨幅精美展示 */}
-        <div className="flex-1 flex flex-col items-center justify-center relative min-h-[40vh] md:min-h-[70vh]">
+        <div className="flex-1 flex flex-col items-center justify-center relative py-4 md:py-8 md:sticky md:top-20 h-fit">
           {/* Ambient blurred glow background */}
           <div className={`absolute w-[80%] h-[80%] max-w-[450px] max-h-[450px] rounded-full bg-radial-gradient ${getStatusGradient(gear.status)} blur-[80px] -z-10 pointer-events-none opacity-80`} />
           
@@ -158,7 +158,7 @@ export default function GearDetail() {
               <img 
                 src={gear.imageUrl} 
                 alt={gear.cameraModel}
-                className="max-h-[35vh] md:max-h-[50vh] w-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] filter hover:brightness-105 transition-all duration-500"
+                className="max-h-[30vh] md:max-h-[45vh] w-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] filter hover:brightness-105 transition-all duration-500"
               />
             ) : (
               <div className="w-64 h-64 md:w-80 md:h-80 bg-surface-container-low/30 border border-outline-variant/20 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant/40 shadow-2xl">
@@ -170,7 +170,7 @@ export default function GearDetail() {
         </div>
 
         {/* 右侧/下半部分：设备极其精致的图文介绍 */}
-        <div className="flex-1 flex flex-col justify-start py-4 md:py-12">
+        <div className="flex-1 flex flex-col justify-start py-2 md:py-8">
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -237,9 +237,16 @@ export default function GearDetail() {
               </div>
               <div className="bg-surface-container-low/20 border border-outline-variant/10 p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">已拍快门</span>
-                <span className="text-base font-bold text-on-surface mt-1">
-                  {gear.shotCount ? `${gear.shotCount} 张` : 'N/A'}
-                </span>
+                <div className="flex flex-col mt-0.5">
+                  <span className="text-base font-bold text-on-surface flex items-baseline gap-0.5">
+                    {gear.autoShotCount ?? 0} <span className="text-[10px] font-normal text-on-surface-variant">张 (自动)</span>
+                  </span>
+                  {gear.shotCount > 0 && (
+                    <span className="text-[9px] text-on-surface-variant/60 font-medium tracking-wider mt-0.5 whitespace-nowrap">
+                      手动设定: {gear.shotCount}张
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="bg-surface-container-low/20 border border-outline-variant/10 p-3 flex flex-col justify-between">
                 <span className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">主观评分</span>
