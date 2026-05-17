@@ -454,6 +454,23 @@ rolls.delete('/:id', authRequired(), requireLevel('lv2'), async (c) => {
   await c.env.DB.prepare('DELETE FROM frames WHERE roll_id = ?').bind(rollId).run();
   await c.env.DB.prepare('DELETE FROM rolls WHERE id = ?').bind(rollId).run();
 
+  // 3. 自动重新排序剩下的胶卷，保持 sort_order 连续递增 (0, 1, 2...) 避免删除产生序号空洞
+  try {
+    const remainingRolls = await c.env.DB.prepare(
+      'SELECT id FROM rolls WHERE user_id = ? ORDER BY sort_order ASC'
+    ).bind(userId).all<{ id: string }>();
+
+    if (remainingRolls.results && remainingRolls.results.length > 0) {
+      for (let i = 0; i < remainingRolls.results.length; i++) {
+        await c.env.DB.prepare(
+          'UPDATE rolls SET sort_order = ? WHERE id = ?'
+        ).bind(i, remainingRolls.results[i].id).run();
+      }
+    }
+  } catch (err) {
+    console.error('[Rolls] Failed to reindex remaining rolls after deletion:', err);
+  }
+
   return c.json({ success: true });
 });
 

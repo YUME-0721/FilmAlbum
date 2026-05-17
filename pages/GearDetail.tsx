@@ -144,7 +144,7 @@ export default function GearDetail() {
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 md:px-8 pt-16 md:pt-20 flex flex-col md:flex-row gap-8 md:gap-16 items-stretch">
         
         {/* 左侧/上半部分：设备巨幅精美展示 */}
-        <div className="flex-1 flex flex-col items-center justify-center relative py-4 md:py-8 md:sticky md:top-20 h-fit">
+        <div className="flex-1 flex flex-col items-center justify-center relative py-4 md:py-8">
           {/* Ambient blurred glow background */}
           <div className={`absolute w-[80%] h-[80%] max-w-[450px] max-h-[450px] rounded-full bg-radial-gradient ${getStatusGradient(gear.status)} blur-[80px] -z-10 pointer-events-none opacity-80`} />
           
