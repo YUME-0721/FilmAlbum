@@ -448,7 +448,7 @@ upload.get('/webdav/*', async (c) => {
   };
 
   try {
-    // 4. 请求真实的 WebDAV 服务器获取图片数据，手动处理重定向以防 Authorization 鉴权头泄露导致第三方存储报 400 错误
+    // 4. 请求真实的 WebDAV 服务器获取图片数据，采用循环跟随重定向，按需附带 Authorization 鉴权头部
     let response = await fetch(targetUrl, {
       method: 'GET',
       headers: {
@@ -457,20 +457,33 @@ upload.get('/webdav/*', async (c) => {
       redirect: 'manual'
     });
 
-    // 如果是重定向（Alist 挂载云盘时，获取文件会 302 重定向到真实的第三方云盘直链）
-    if ([301, 302, 307, 308].includes(response.status)) {
+    let redirectCount = 0;
+    const maxRedirects = 5;
+
+    // 循环处理重定向（如域名跳转或 Alist 302/307 挂载第三方云盘直链）
+    while ([301, 302, 307, 308].includes(response.status) && redirectCount < maxRedirects) {
       let redirectUrl = response.headers.get('Location');
-      if (redirectUrl) {
-        // 如果是相对路径，解析为绝对路径
-        if (redirectUrl.startsWith('/')) {
-          const baseOrigin = new URL(webdavUrl).origin;
-          redirectUrl = `${baseOrigin}${redirectUrl}`;
-        }
-        // 重新发起请求，不带 Authorization 鉴权头部，防止目标云盘报 400 Bad Request
-        response = await fetch(redirectUrl, {
-          method: 'GET'
-        });
+      if (!redirectUrl) break;
+
+      // 如果是相对路径，解析为绝对路径
+      if (redirectUrl.startsWith('/')) {
+        const baseOrigin = new URL(webdavUrl).origin;
+        redirectUrl = `${baseOrigin}${redirectUrl}`;
       }
+
+      // 判断重定向目标是否依然是 WebDAV 路径（包含 /dav/ 或 /dav）
+      // 如果仍是 WebDAV 路径，则必须附带 Authorization 鉴权头；否则（如第三方云盘直链）必须去掉防止报 400 错误
+      const isStillWebdav = redirectUrl.includes('/dav/') || redirectUrl.includes('/dav');
+
+      response = await fetch(redirectUrl, {
+        method: 'GET',
+        headers: isStillWebdav ? {
+          'Authorization': `Basic ${encodeBase64(webdavUsername + ':' + webdavPassword)}`
+        } : {},
+        redirect: 'manual'
+      });
+
+      redirectCount++;
     }
 
     if (!response.ok) {
