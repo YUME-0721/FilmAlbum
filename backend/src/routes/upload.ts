@@ -405,7 +405,18 @@ upload.delete('/', authRequired(), async (c) => {
  * 解决前端直接加载 WebDAV 资源时的 Mixed Content (HTTP/HTTPS)、跨域和鉴权问题
  */
 upload.get('/webdav/*', async (c) => {
-  const filePath = c.req.param('*');
+  let filePath = c.req.param('*') || '';
+  
+  // NOTE: 解决 Hono 子路由挂载时通配符参数可能会丢失的问题，通过完整路径进行安全提取
+  if (!filePath) {
+    const path = c.req.path;
+    const prefix = '/api/upload/webdav/';
+    const idx = path.indexOf(prefix);
+    if (idx !== -1) {
+      filePath = path.substring(idx + prefix.length);
+    }
+  }
+
   if (!filePath) {
     return c.text('文件路径不能为空', 400);
   }
