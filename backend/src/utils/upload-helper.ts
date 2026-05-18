@@ -145,6 +145,48 @@ export const cleanUrl = (url: string) => {
   return p.length === 2 ? `${p[0]}://${p[1].replace(/\/+/g, '/')}` : url.replace(/\/+/g, '/');
 };
 
+// 智能手动处理重定向的 fetch，保证 PUT/MKCOL 请求跨域名重定向时依然能安全透传 Authorization
+async function fetchWithRedirect(url: string, init: RequestInit, webdavUrl: string, authHeader: string): Promise<Response> {
+  let response = await fetch(url, {
+    ...init,
+    redirect: 'manual'
+  });
+
+  let redirectCount = 0;
+  const maxRedirects = 5;
+
+  while ([301, 302, 307, 308].includes(response.status) && redirectCount < maxRedirects) {
+    let redirectUrl = response.headers.get('Location');
+    if (!redirectUrl) break;
+
+    // 如果是相对路径，解析为绝对路径
+    if (redirectUrl.startsWith('/')) {
+      const baseOrigin = new URL(webdavUrl).origin;
+      redirectUrl = `${baseOrigin}${redirectUrl}`;
+    }
+
+    // 判断重定向目标是否依然是 WebDAV 路径
+    const isStillWebdav = redirectUrl.includes('/dav/') || redirectUrl.includes('/dav');
+
+    const headers = { ...init.headers } as Record<string, string>;
+    if (isStillWebdav) {
+      headers['Authorization'] = authHeader;
+    } else {
+      delete headers['Authorization'];
+    }
+
+    response = await fetch(redirectUrl, {
+      ...init,
+      headers,
+      redirect: 'manual'
+    });
+
+    redirectCount++;
+  }
+
+  return response;
+}
+
 async function ensureWebdavDir(baseUrl: string, path: string, headers: any) {
   const parts = path.split('/').filter(p => p);
   let currentPath = '';
@@ -152,7 +194,7 @@ async function ensureWebdavDir(baseUrl: string, path: string, headers: any) {
     currentPath += `/${part}`;
     // 使用 MKCOL 创建目录，忽略可能因目录已存在导致的错误
     const target = cleanUrl(`${baseUrl}/${currentPath}/`);
-    await fetch(target, { method: 'MKCOL', headers });
+    await fetchWithRedirect(target, { method: 'MKCOL', headers }, baseUrl, headers['Authorization']);
   }
 }
 
@@ -186,20 +228,20 @@ export async function uploadToWebDAV(c: any, options: UploadOptions) {
     'Content-Length': buffer.byteLength.toString()
   };
 
-  let response = await fetch(targetUrl, {
+  let response = await fetchWithRedirect(targetUrl, {
     method: 'PUT',
     headers,
     body: buffer
-  });
+  }, webdavUrl, headers['Authorization']);
 
   if (response.status === 409) {
     // 409 Conflict 通常意味着父目录不存在，尝试递归创建目录后重试
     await ensureWebdavDir(webdavUrl, finalPath, { 'Authorization': headers['Authorization'] });
-    response = await fetch(targetUrl, {
+    response = await fetchWithRedirect(targetUrl, {
       method: 'PUT',
       headers,
       body: buffer
-    });
+    }, webdavUrl, headers['Authorization']);
   }
 
   if (!response.ok) {

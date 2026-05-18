@@ -71,7 +71,7 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
 
     setSessions(prev => ({ ...prev, [rollId]: session }));
 
-    const CONCURRENCY_LIMIT = 3;
+    const CONCURRENCY_LIMIT = 1;
     let currentIdx = 0;
     
     const uploadWorker = async () => {
