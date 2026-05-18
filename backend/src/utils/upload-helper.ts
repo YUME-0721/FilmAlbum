@@ -140,7 +140,7 @@ export async function uploadToImgBed(c: any, options: UploadOptions) {
   return `${base}${result[0].src}`;
 }
 
-const cleanUrl = (url: string) => {
+export const cleanUrl = (url: string) => {
   const p = url.split('://');
   return p.length === 2 ? `${p[0]}://${p[1].replace(/\/+/g, '/')}` : url.replace(/\/+/g, '/');
 };
@@ -207,6 +207,8 @@ export async function uploadToWebDAV(c: any, options: UploadOptions) {
     throw new Error(`WebDAV上传失败 (${response.status}): ${errorText}`);
   }
 
-  // 返回完整的 WebDAV 文件 URL
-  return targetUrl;
+  // 返回完整的 WebDAV 代理服务 URL，解决跨域、鉴权和 Mixed Content 问题
+  const origin = new URL(c.req.url).origin;
+  const proxyUrl = cleanUrl(`${origin}/api/upload/webdav/${finalPath}/${fileName}`);
+  return proxyUrl;
 }

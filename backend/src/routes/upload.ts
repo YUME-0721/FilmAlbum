@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { authRequired } from '../middleware/auth';
-import { uploadToImgBed, uploadToWebDAV, getUploadStrategy, UploadType } from '../utils/upload-helper';
+import { uploadToImgBed, uploadToWebDAV, getUploadStrategy, UploadType, cleanUrl } from '../utils/upload-helper';
 
 const upload = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
 
@@ -349,8 +349,17 @@ upload.delete('/', authRequired(), async (c) => {
     if (storageType === 'webdav') {
       const webdavUsername = delMap['webdav_username'] || '';
       const webdavPassword = delMap['webdav_password'] || '';
-      // WebDAV URL is the full path usually
-      const response = await fetch(body.path, {
+      const webdavUrl      = delMap['webdav_url']       || '';
+      
+      // NOTE: 如果是代理 URL，将其还原为真实的 WebDAV 物理地址进行删除
+      let targetPath = body.path;
+      if (body.path.includes('/api/upload/webdav/')) {
+        const parts = body.path.split('/api/upload/webdav/');
+        const relativePath = parts[parts.length - 1];
+        targetPath = cleanUrl(`${webdavUrl}/${relativePath}`);
+      }
+
+      const response = await fetch(targetPath, {
         method: 'DELETE',
         headers: { 'Authorization': `Basic ${btoa(webdavUsername + ':' + webdavPassword)}` }
       });
@@ -388,6 +397,79 @@ upload.delete('/', authRequired(), async (c) => {
     }
   } catch (error) {
     return c.json({ success: false, error: `删除异常: ${String(error)}` }, 500);
+  }
+});
+
+/**
+ * GET /api/upload/webdav/* - WebDAV 图片代理服务
+ * 解决前端直接加载 WebDAV 资源时的 Mixed Content (HTTP/HTTPS)、跨域和鉴权问题
+ */
+upload.get('/webdav/*', async (c) => {
+  const filePath = c.req.param('*');
+  if (!filePath) {
+    return c.text('文件路径不能为空', 400);
+  }
+
+  // 1. 从数据库读取 WebDAV 配置
+  const settings = await c.env.DB.prepare(
+    "SELECT key, value FROM system_settings WHERE key IN ('webdav_url', 'webdav_username', 'webdav_password')"
+  ).all<{ key: string; value: string }>();
+  const config = settings.results.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {} as Record<string, string>);
+
+  const webdavUrl      = config['webdav_url']       || '';
+  const webdavUsername = config['webdav_username']  || '';
+  const webdavPassword = config['webdav_password']  || '';
+
+  if (!webdavUrl || !webdavUsername || !webdavPassword) {
+    return c.text('WebDAV 配置不完整，无法代理访问', 400);
+  }
+
+  // 2. 拼接真实的 WebDAV 请求地址
+  const targetUrl = cleanUrl(`${webdavUrl}/${filePath}`);
+
+  // 3. 处理可能包含非 ASCII 字符的 Basic Auth
+  const encodeBase64 = (str: string) => {
+    try {
+      return btoa(unescape(encodeURIComponent(str)));
+    } catch {
+      return btoa(str);
+    }
+  };
+
+  try {
+    // 4. 请求真实的 WebDAV 服务器获取图片数据
+    const response = await fetch(targetUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${encodeBase64(webdavUsername + ':' + webdavPassword)}`
+      }
+    });
+
+    if (!response.ok) {
+      return c.text(`无法从 WebDAV 获取文件: ${response.statusText}`, response.status as any);
+    }
+
+    // 5. 组装响应流返回给前端
+    const contentType = response.headers.get('Content-Type') || 'application/octet-stream';
+    const contentLength = response.headers.get('Content-Length');
+
+    const headers: Record<string, string> = {
+      'Content-Type': contentType,
+      'Cache-Control': 'public, max-age=31536000', // 缓存 1 年，因为文件名是带时间戳的唯一文件名
+    };
+
+    if (contentLength) {
+      headers['Content-Length'] = contentLength;
+    }
+
+    // 直接流式返回数据
+    return new Response(response.body, {
+      status: 200,
+      headers
+    });
+  } catch (error: any) {
+    console.error('WebDAV Proxy Error:', error);
+    return c.text(`WebDAV 代理异常: ${error.message || String(error)}`, 500);
   }
 });
 
