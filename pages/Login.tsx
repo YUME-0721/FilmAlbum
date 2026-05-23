@@ -86,6 +86,7 @@ export default function Login() {
     setShowNotification(true);
     setNotificationMessage(t('common.success'));
     setNotificationType('success');
+    setIsConfigOpen(false); // 保存成功后自动收起菜单
   };
 
   // 保存 API 服务器地址
@@ -106,6 +107,7 @@ export default function Login() {
     setShowNotification(true);
     setNotificationMessage(t('common.success'));
     setNotificationType('success');
+    setIsConfigOpen(false); // 保存成功后自动收起菜单
   };
 
   // 检查登录状态，已登录则重定向

@@ -500,17 +500,10 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
     }
   }, [activeTab, fetchUserPosts, userPosts.length]);
 
-  // 监听路由变化，当从其他页面返回时重新获取相册列表
+  // 当路由或导航位置发生变化（例如从其他页面返回空间）时，重新获取相册列表以保持最新
   React.useEffect(() => {
-    // 使用 setInterval 定期检查路由变化，确保相册列表数据保持最新
-    const interval = setInterval(() => {
-      fetchRolls();
-    }, 5000); // 每5秒检查一次
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [fetchRolls]);
+    fetchRolls();
+  }, [location.pathname, fetchRolls]);
 
   /** 关注/取消关注 */
   const handleFollow = async () => {
