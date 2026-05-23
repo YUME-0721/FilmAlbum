@@ -306,6 +306,12 @@ export default function Admin() {
   const [newUser, setNewUser] = useState({ email: '', password: '', nickname: '', level: 'lv1' });
   const [createStatus, setCreateStatus] = useState({ type: '', message: '' });
 
+  // 超级管理员修改选定用户登录密码的状态管理
+  const [selectedUserForPassword, setSelectedUserForPassword] = useState<any | null>(null);
+  const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordChangeStatus, setPasswordChangeStatus] = useState({ type: '', message: '' });
+
   // 图片存储配置状态
   const [imgBed, setImgBed] = useState({ 
     storage_type: 'img_bed',
@@ -591,6 +597,34 @@ export default function Admin() {
       }
     } catch (err: any) {
       setCreateStatus({ type: 'error', message: err.message || 'Error' });
+    }
+  };
+
+  // 超级管理员提交更新选定用户的登录密码
+  const handleUpdateUserPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserForPassword) return;
+    if (newPasswordVal.trim().length < 6) {
+      setPasswordChangeStatus({ type: 'error', message: adminLang === 'zh-CN' ? '密码长度至少 6 位' : 'Password must be at least 6 characters' });
+      return;
+    }
+    
+    setPasswordChangeStatus({ type: 'loading', message: at('saving') });
+    try {
+      const res = await put(`/admin/users/${selectedUserForPassword.id}/password`, { password: newPasswordVal }, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.success) {
+        setPasswordChangeStatus({ type: 'success', message: adminLang === 'zh-CN' ? '密码已更新' : 'Password updated successfully' });
+        setTimeout(() => {
+          setShowPasswordModal(false);
+          setSelectedUserForPassword(null);
+          setNewPasswordVal('');
+          setPasswordChangeStatus({ type: '', message: '' });
+        }, 1500);
+      } else {
+        setPasswordChangeStatus({ type: 'error', message: res.error || at('updateFailed') });
+      }
+    } catch (err: any) {
+      setPasswordChangeStatus({ type: 'error', message: err.message || at('updateFailed') });
     }
   };
 
@@ -1223,6 +1257,7 @@ export default function Admin() {
                           <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('level')}</th>
                           <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('albums')}</th>
                           <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('joined')}</th>
+                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{adminLang === 'zh-CN' ? '操作' : 'Actions'}</th>
                         </tr>
                       </thead>
                       <tbody className={dividerCls + " divide-y"}>
@@ -1248,6 +1283,19 @@ export default function Admin() {
                               </span>
                             </td>
                             <td className="px-8 py-5 text-xs opacity-50 font-medium">{new Date(user.createdAt).toLocaleDateString()}</td>
+                            <td className="px-8 py-5">
+                              <button 
+                                onClick={() => {
+                                  setSelectedUserForPassword(user);
+                                  setNewPasswordVal('');
+                                  setShowPasswordModal(true);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded-xl text-xs font-bold transition-all active:scale-95"
+                              >
+                                <Pencil size={12} />
+                                {adminLang === 'zh-CN' ? '修改密码' : 'Password'}
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1854,6 +1902,65 @@ export default function Admin() {
                 {at('confirm')}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 修改密码对话框 Modal */}
+      {showPasswordModal && selectedUserForPassword && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className={`w-full max-w-md rounded-[32px] border p-8 relative ${cardBg} animate-in zoom-in-95 duration-300 shadow-2xl`}>
+            <button
+              onClick={() => { setShowPasswordModal(false); setSelectedUserForPassword(null); }}
+              className={`absolute top-6 right-6 p-2 rounded-xl transition-all ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-white/70' : 'bg-gray-100 hover:bg-gray-200 text-gray-500'}`}
+            >
+              <X size={18} />
+            </button>
+            <div className="mb-6">
+              <h3 className="text-xl font-black tracking-tight text-blue-500">修改用户密码</h3>
+              <p className={`text-xs font-medium mt-1 ${mutedText}`}>修改 {selectedUserForPassword.nickname} 的登录密码</p>
+            </div>
+            {passwordChangeStatus.message && (
+              <div className={`mb-6 px-4 py-3 rounded-2xl text-xs font-bold ${
+                passwordChangeStatus.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500' :
+                passwordChangeStatus.type === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-500' :
+                'bg-blue-500/10 border border-blue-500/20 text-blue-500 animate-pulse'
+              }`}>
+                {passwordChangeStatus.message}
+              </div>
+            )}
+            <form onSubmit={handleUpdateUserPassword} className="space-y-6">
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>新密码 (New Password)</label>
+                <input
+                  type="password"
+                  required
+                  autoFocus
+                  value={newPasswordVal}
+                  onChange={(e) => setNewPasswordVal(e.target.value)}
+                  className={inputCls}
+                  placeholder="请输入该用户的新密码 (至少6位)"
+                />
+              </div>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => { setShowPasswordModal(false); setSelectedUserForPassword(null); }}
+                  className={`flex-1 py-3.5 border rounded-2xl text-sm font-bold transition-all active:scale-95 ${
+                    isDarkMode ? 'border-white/10 hover:bg-white/5 text-white/75' : 'border-gray-200 hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  {at('cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordChangeStatus.type === 'loading'}
+                  className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {at('confirm')}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

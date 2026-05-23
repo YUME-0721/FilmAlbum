@@ -360,6 +360,21 @@ export default function Settings() {
                 </button>
               </div>
             </div>
+
+            {/* 系统管理后台 */}
+            <div className="pt-8 mt-8 border-t border-outline-variant/15 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-3">
+                {t('settings.systemAdmin')}
+              </label>
+              <button
+                type="button"
+                onClick={() => navigate('/admin')}
+                className="w-full py-3.5 text-sm font-bold tracking-widest uppercase bg-surface-container-low border border-outline-variant hover:bg-surface-container hover:border-primary text-primary transition-all flex items-center justify-center gap-2 group active:scale-[0.98] rounded-xl"
+              >
+                <span>{t('settings.goToAdmin')}</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </button>
+            </div>
           </div>
         )}
 

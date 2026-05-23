@@ -42,6 +42,10 @@ export const translations = {
       completed: '已完成',
       processing: '处理中...',
       clear: '清除',
+      zoomIn: '放大',
+      zoomOut: '缩小',
+      rotate: '旋转',
+      reset: '还原',
     },
     login: {
       welcome: '欢迎回来，继续你的胶片旅程',
@@ -300,6 +304,8 @@ export const translations = {
       connectSuccess: '连接成功',
       connectFailed: '连接失败，请检查地址是否正确或后端服务是否已启动',
       invalidUrl: '请输入有效的服务器地址 (必须以 http:// 或 https:// 开头)',
+      systemAdmin: '系统管理',
+      goToAdmin: '进入系统管理后台',
     },
     search: {
       placeholder: '搜索任何想看的内容：摄影师、作品标题、标签...',
@@ -401,6 +407,10 @@ export const translations = {
       completed: 'Completed',
       processing: 'Processing...',
       clear: 'Clear',
+      zoomIn: 'Zoom In',
+      zoomOut: 'Zoom Out',
+      rotate: 'Rotate',
+      reset: 'Reset',
     },
     login: {
       welcome: 'Welcome back, continue your film journey',
@@ -659,6 +669,8 @@ export const translations = {
       connectSuccess: 'Connection successful',
       connectFailed: 'Connection failed, please check the URL or if the backend service is running',
       invalidUrl: 'Please enter a valid URL (must start with http:// or https://)',
+      systemAdmin: 'System Admin',
+      goToAdmin: 'Go to Admin Console',
     },
     search: {
       placeholder: 'Search for photographers, titles, tags...',

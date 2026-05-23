@@ -196,6 +196,35 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
     setRotation((prev) => (prev + 90) % 360);
   }, []);
 
+  // 计算在 90/270 度旋转下的智能铺满自适应缩放因子
+  const getRotationScale = useCallback(() => {
+    if (rotation !== 90 && rotation !== 270) return 1;
+    if (!imgRef.current) {
+      // 兜底降级方案：若 DOM 节点未就绪，使用长宽比倒数进行基本收缩
+      return lastAspectRatio > 1 ? 1 / lastAspectRatio : 1;
+    }
+
+    const w_orig = imgRef.current.clientWidth || 100;
+    const h_orig = imgRef.current.clientHeight || 100;
+
+    // 可用视窗宽高上限（预留安全边隙）
+    // 宽屏模式下有展开侧边栏需避开
+    const sidebarWidth = (showSidebar && window.innerWidth > window.innerHeight) ? 320 : 0;
+    const w_avail = (window.innerWidth - sidebarWidth) * 0.92;
+    const h_avail = window.innerHeight * (borderType === 'none' ? 0.85 : 0.72);
+
+    // 旋转后立起来：原本的渲染高变为新宽，原本的渲染宽变为新高
+    const w_new = h_orig;
+    const h_new = w_orig;
+
+    // 分别计算在宽度、高度两个方向上铺满可视区且不溢出的最大可用缩放倍率
+    const scaleW = w_avail / w_new;
+    const scaleH = h_avail / h_new;
+
+    // 取其中较小的值，使图片恰好顶满最大的一边且全图完整可见不超出屏幕
+    return Math.min(scaleW, scaleH);
+  }, [rotation, lastAspectRatio, showSidebar, borderType]);
+
   // 鼠标拖动与触屏平移（Pan）处理器
   const handleMouseDown = (e: React.MouseEvent) => {
     if (scale <= 1) return;
@@ -211,12 +240,16 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
     const newY = e.clientY - dragStartRef.current.y;
     
     // 限制拖拽边界，防止图片完全被拖出可视区。
-    // 在当前 scale 下，图片可移动的最大物理偏移范围
+    // 在当前旋转缩放状态下，图片可移动的最大物理溢出偏移范围
     let boundX = 0;
     let boundY = 0;
     if (imgRef.current) {
-      boundX = (imgRef.current.clientWidth * (scale - 1)) / 2;
-      boundY = (imgRef.current.clientHeight * (scale - 1)) / 2;
+      const rotScale = getRotationScale();
+      const currentScale = scale * rotScale;
+      if (scale > 1) {
+        boundX = (imgRef.current.clientWidth * currentScale - imgRef.current.clientWidth * rotScale) / 2;
+        boundY = (imgRef.current.clientHeight * currentScale - imgRef.current.clientHeight * rotScale) / 2;
+      }
     }
     
     setPosition({
@@ -245,8 +278,12 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
     let boundX = 0;
     let boundY = 0;
     if (imgRef.current) {
-      boundX = (imgRef.current.clientWidth * (scale - 1)) / 2;
-      boundY = (imgRef.current.clientHeight * (scale - 1)) / 2;
+      const rotScale = getRotationScale();
+      const currentScale = scale * rotScale;
+      if (scale > 1) {
+        boundX = (imgRef.current.clientWidth * currentScale - imgRef.current.clientWidth * rotScale) / 2;
+        boundY = (imgRef.current.clientHeight * currentScale - imgRef.current.clientHeight * rotScale) / 2;
+      }
     }
 
     setPosition({
@@ -627,7 +664,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                         transition: isDragging 
                           ? 'opacity 0.3s ease-in-out' 
                           : 'opacity 0.3s ease-in-out, transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                        transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg) scale(${scale * ((rotation === 90 || rotation === 270) && lastAspectRatio > 1 ? 1 / lastAspectRatio : 1)})`,
+                        transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg) scale(${scale * getRotationScale()})`,
                         transformOrigin: 'center center',
                         cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in',
                         touchAction: scale > 1 ? 'none' : 'auto'

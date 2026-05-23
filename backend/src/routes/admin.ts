@@ -172,6 +172,30 @@ admin.put('/users/:id/level', adminAuthRequired(), async (c) => {
   return c.json({ success: true, message: '用户等级已更新' });
 });
 
+/** PUT /api/admin/users/:id/password - 超级管理员修改指定用户的密码 */
+admin.put('/users/:id/password', adminAuthRequired(), async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json<{ password?: string }>();
+
+  if (!body.password || body.password.trim().length < 6) {
+    return c.json({ success: false, error: '新密码不能为空且长度至少为 6 位' }, 400);
+  }
+
+  // 检查目标用户是否存在
+  const user = await c.env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(id).first();
+  if (!user) {
+    return c.json({ success: false, error: '用户不存在' }, 404);
+  }
+
+  // 哈希加密密码
+  const passwordHash = await hashPassword(body.password);
+  
+  // 更新密码哈希
+  await c.env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(passwordHash, id).run();
+
+  return c.json({ success: true, message: '用户密码更新成功' });
+});
+
 /** POST /api/admin/users - 手动创建用户 */
 admin.post('/users', adminAuthRequired(), async (c) => {
   const body = await c.req.json<{ email: string; password: string; nickname: string; level: string }>();
