@@ -46,8 +46,13 @@ export default function Settings() {
 
     setIsTestingUrl(true);
     try {
-      const cleanUrl = targetUrl.replace(/\/$/, '');
-      const response = await fetch(`${cleanUrl}/api/health`, { method: 'GET' });
+      let cleanUrl = targetUrl.replace(/\/$/, '');
+      if (cleanUrl.startsWith('http') && !cleanUrl.endsWith('/api')) {
+        cleanUrl += '/api';
+      }
+      const healthUrl = cleanUrl.startsWith('http') ? `${cleanUrl}/health` : `${cleanUrl || window.location.origin}/api/health`;
+
+      const response = await fetch(healthUrl, { method: 'GET' });
       if (!response.ok) {
         throw new Error('Connection error');
       }

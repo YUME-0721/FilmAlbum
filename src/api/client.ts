@@ -7,9 +7,19 @@
 export function getApiBaseUrl(): string {
   const customUrl = localStorage.getItem('api_server_url');
   if (customUrl) {
-    return customUrl.trim().replace(/\/$/, '');
+    let trimmed = customUrl.trim().replace(/\/$/, '');
+    if (!trimmed.endsWith('/api')) {
+      trimmed += '/api';
+    }
+    return trimmed;
   }
-  return (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+
+  let defaultUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+  defaultUrl = defaultUrl.trim().replace(/\/$/, '');
+  if (defaultUrl.startsWith('http') && !defaultUrl.endsWith('/api')) {
+    defaultUrl += '/api';
+  }
+  return defaultUrl;
 }
 
 /** API 统一响应类型 */
