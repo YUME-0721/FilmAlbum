@@ -574,22 +574,32 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
 
       {/* 主内容区 */}
       <div className="absolute inset-0 flex items-center justify-center p-4">
+        {/* NOTE: 提升 Z-Index 至 z-40 解决在旋转 90/270 度立起图片时，由于 Stacking Context 层叠顺位图片将翻页按钮覆盖遮挡的 Bug。
+            同时配合精美的毛玻璃圆形背板（Glassmorphism）和微缩放交互，使得哪怕在纯白/纯黑的极亮/极暗背景相片上，翻页箭头也依然保持无与伦比的高辨识度与极奢手感。 */}
         <button
           onClick={(e) => { e.stopPropagation(); goToFrame(currentFrame > 0 ? currentFrame - 1 : frames.length - 1); }}
-          className={`absolute left-2 md:left-8 top-1/2 -translate-y-1/2 p-2 z-10 transition-colors ${
-            borderType === 'black' ? 'text-black/30 hover:text-black' : 'text-white/30 hover:text-white'
+          className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center backdrop-blur-md shadow-2xl border active:scale-95 transition-all z-40 ${
+            borderType === 'black' 
+              ? 'bg-white/40 border-black/5 text-black/60 hover:bg-white/80 hover:text-black shadow-black/5' 
+              : 'bg-black/35 border-white/10 text-white/70 hover:bg-black/55 hover:text-white shadow-black/40'
           }`}
+          title={t('common.prev') || '上一张'}
         >
-          <ChevronLeft className="w-8 h-8 md:w-12 md:h-12" />
+          <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
         </button>
 
         <button
           onClick={(e) => { e.stopPropagation(); goToFrame(currentFrame < frames.length - 1 ? currentFrame + 1 : 0); }}
-          className={`absolute top-1/2 -translate-y-1/2 p-2 z-10 transition-colors ${
-            showSidebar && isDesktop ? 'right-[336px]' : 'right-2 md:right-8'
-          } ${borderType === 'black' ? 'text-black/30 hover:text-black' : 'text-white/30 hover:text-white'}`}
+          className={`absolute top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center backdrop-blur-md shadow-2xl border active:scale-95 transition-all z-40 ${
+            showSidebar && isDesktop ? 'right-[336px]' : 'right-4 md:right-8'
+          } ${
+            borderType === 'black' 
+              ? 'bg-white/40 border-black/5 text-black/60 hover:bg-white/80 hover:text-black shadow-black/5' 
+              : 'bg-black/35 border-white/10 text-white/70 hover:bg-black/55 hover:text-white shadow-black/40'
+          }`}
+          title={t('common.next') || '下一张'}
         >
-          <ChevronRight className="w-8 h-8 md:w-12 md:h-12" />
+          <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
         </button>
 
         {/* 图片显示区 */}

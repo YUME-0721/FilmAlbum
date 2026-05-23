@@ -854,7 +854,7 @@ export default function Admin() {
       </div>
 
       {/* 导航菜单 */}
-      <nav className="flex md:flex-col items-center md:items-stretch justify-around md:justify-start h-full md:h-auto gap-1 md:gap-2">
+      <nav className="flex md:flex-col items-center md:items-stretch justify-around md:justify-start h-full md:h-auto gap-0.5 md:gap-2 w-full md:w-auto">
         {[
           { id: 'system',     icon: Settings2, label: at('tabSystem') },
           { id: 'users',      icon: Users,     label: at('tabUsers') },
@@ -865,14 +865,14 @@ export default function Admin() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 px-3 md:px-4 py-2 md:py-3.5 rounded-2xl text-[10px] md:text-sm font-bold transition-all duration-300 ${
+            className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3 px-1 md:px-4 py-1.5 md:py-3.5 rounded-xl md:rounded-2xl text-[9px] md:text-sm font-bold transition-all duration-300 flex-1 md:flex-initial min-w-0 ${
               activeTab === tab.id
                 ? (isDarkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600')
                 : (isDarkMode ? 'text-white/50 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')
             }`}
           >
-            <tab.icon size={18} className={activeTab === tab.id ? "scale-110 transition-transform" : "transition-transform"} />
-            <span>{tab.label}</span>
+            <tab.icon className={`w-4 h-4 md:w-[18px] md:h-[18px] shrink-0 ${activeTab === tab.id ? "scale-110 transition-transform" : "transition-transform"}`} />
+            <span className="truncate max-w-full">{tab.label}</span>
           </button>
         ))}
       </nav>
@@ -1023,7 +1023,7 @@ export default function Admin() {
     <div className={`min-h-screen ${bg} ${text} transition-colors duration-500 flex`}>
       <Sidebar />
 
-      <div className="flex-1 md:ml-64 pb-20 md:pb-0 min-h-screen flex flex-col relative">
+      <div className="flex-1 md:ml-64 pb-32 md:pb-8 min-h-screen flex flex-col relative">
         {/* Decorative Background */}
         <div className="absolute inset-0 pointer-events-none fixed">
           <div className={`absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[150px] opacity-20 ${isDarkMode ? 'bg-blue-600/30' : 'bg-blue-300/40'}`} />
@@ -1040,7 +1040,7 @@ export default function Admin() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* 系统基础设置 */}
                 <div className={`rounded-[32px] border ${cardBg} overflow-hidden flex flex-col`}>
-                  <div className={`px-8 py-6 border-b ${dividerCls} flex items-center gap-4 ${isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}`}>
+                  <div className={`px-5 md:px-8 py-5 md:py-6 border-b ${dividerCls} flex items-center gap-4 ${isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}`}>
                     <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500">
                       <Settings2 size={24} />
                     </div>
@@ -1049,7 +1049,7 @@ export default function Admin() {
                       <p className={`text-xs font-medium mt-1 ${mutedText}`}>System Preferences</p>
                     </div>
                   </div>
-                  <div className="p-8 space-y-8 flex-1">
+                  <div className="p-5 md:p-8 space-y-6 md:space-y-8 flex-1">
                     <div className="flex items-center justify-between gap-6 p-4 rounded-2xl bg-black/5 dark:bg-white/5 transition-colors hover:bg-black/10 dark:hover:bg-white/10">
                       <div>
                         <p className="font-bold text-base">{at('openRegistration')}</p>
@@ -1116,7 +1116,7 @@ export default function Admin() {
 
                 {/* SMTP 设置 */}
                 <div className={`rounded-[32px] border ${cardBg} overflow-hidden flex flex-col`}>
-                  <div className={`px-8 py-6 border-b ${dividerCls} flex items-center gap-4 ${isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}`}>
+                  <div className={`px-5 md:px-8 py-5 md:py-6 border-b ${dividerCls} flex items-center gap-4 ${isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}`}>
                     <div className="p-3 rounded-2xl bg-violet-500/10 text-violet-500">
                       <Mail size={24} />
                     </div>
@@ -1125,7 +1125,7 @@ export default function Admin() {
                       <p className={`text-xs font-medium mt-1 ${mutedText}`}>Email Configuration</p>
                     </div>
                   </div>
-                  <div className="p-8 space-y-6 flex-1">
+                  <div className="p-5 md:p-8 space-y-6 flex-1">
                     <div>
                       <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>{at('smtpFrom')}</label>
                       <input type="text" placeholder={at('smtpFromPlaceholder')} value={smtp.smtp_from} onChange={(e) => setSmtp(p => ({ ...p, smtp_from: e.target.value }))} className={inputCls} />
@@ -1148,7 +1148,7 @@ export default function Admin() {
               </div>
 
               {/* 胶卷基础设置 */}
-              <div className={`rounded-[32px] border ${cardBg} p-8 shadow-sm`}>
+              <div className={`rounded-[32px] border ${cardBg} p-5 md:p-8 shadow-sm`}>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500">
                     <Film size={24} />
@@ -1183,7 +1183,7 @@ export default function Admin() {
               </div>
 
               {/* 等级设置区域 */}
-              <div className={`rounded-[32px] border ${cardBg} p-8 shadow-sm`}>
+              <div className={`rounded-[32px] border ${cardBg} p-5 md:p-8 shadow-sm`}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                   <div className="flex items-center gap-4">
                     <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500">
@@ -1208,7 +1208,7 @@ export default function Admin() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {userLevels.map((level, idx) => (
-                    <div key={level.value} className={`p-6 rounded-[24px] border ${isDarkMode ? 'bg-white/[0.02] border-white/5 hover:border-blue-500/30' : 'bg-gray-50/50 border-gray-100 hover:border-blue-300'} transition-all duration-300 group relative flex flex-col`}>
+                    <div key={level.value} className={`p-5 md:p-6 rounded-[24px] border ${isDarkMode ? 'bg-white/[0.02] border-white/5 hover:border-blue-500/30' : 'bg-gray-50/50 border-gray-100 hover:border-blue-300'} transition-all duration-300 group relative flex flex-col`}>
                       <button 
                         onClick={() => {
                           const next = [...userLevels];
@@ -1386,7 +1386,7 @@ export default function Admin() {
 
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 <div className="lg:col-span-1">
-                  <div className={`rounded-[32px] border ${cardBg} p-8 space-y-6 flex flex-col h-full`}>
+                  <div className={`rounded-[32px] border ${cardBg} p-5 md:p-8 space-y-6 flex flex-col h-full`}>
                     <div>
                       <h2 className="font-black text-lg tracking-tight text-blue-500">{at('createUser')}</h2>
                       <p className={`text-xs font-medium mt-1 ${mutedText}`}>Add new member</p>
@@ -1404,57 +1404,112 @@ export default function Admin() {
                 </div>
                 <div className="lg:col-span-3">
                   <div className={`rounded-[32px] border ${cardBg} overflow-hidden`}>
-                    <table className="w-full text-left text-sm">
-                      <thead className={isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}>
-                        <tr className={`border-b ${dividerCls}`}>
-                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('id')}</th>
-                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('user')}</th>
-                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('level')}</th>
-                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('albums')}</th>
-                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('joined')}</th>
-                          <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{adminLang === 'zh-CN' ? '操作' : 'Actions'}</th>
-                        </tr>
-                      </thead>
-                      <tbody className={dividerCls + " divide-y"}>
-                        {users.map(user => (
-                          <tr key={user.id} className={`transition-colors ${isDarkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50'}`}>
-                            <td className="px-8 py-5 font-mono text-xs opacity-50">#{String(user.id).padStart(4, '0')}</td>
-                            <td className="px-8 py-5">
-                              <div className="font-bold">{user.nickname}</div>
-                              <div className="text-xs opacity-50">{user.email}</div>
-                            </td>
-                            <td className="px-8 py-5">
-                              <select value={user.level} onChange={(e) => handleUpdateUserLevel(String(user.id), e.target.value)} className="bg-transparent border-none text-xs font-bold text-blue-500 outline-none cursor-pointer focus:ring-0 p-0">
+                    {/* 桌面端用户列表表格 */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className={isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}>
+                          <tr className={`border-b ${dividerCls}`}>
+                            <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('id')}</th>
+                            <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('user')}</th>
+                            <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('level')}</th>
+                            <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('albums')}</th>
+                            <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{at('joined')}</th>
+                            <th className={`px-8 py-5 text-[10px] uppercase font-bold tracking-widest ${mutedText}`}>{adminLang === 'zh-CN' ? '操作' : 'Actions'}</th>
+                          </tr>
+                        </thead>
+                        <tbody className={dividerCls + " divide-y"}>
+                          {users.map(user => (
+                            <tr key={user.id} className={`transition-colors ${isDarkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50'}`}>
+                              <td className="px-8 py-5 font-mono text-xs opacity-50">#{String(user.id).padStart(4, '0')}</td>
+                              <td className="px-8 py-5">
+                                <div className="font-bold">{user.nickname}</div>
+                                <div className="text-xs opacity-50">{user.email}</div>
+                              </td>
+                              <td className="px-8 py-5">
+                                <select value={user.level} onChange={(e) => handleUpdateUserLevel(String(user.id), e.target.value)} className="bg-transparent border-none text-xs font-bold text-blue-500 outline-none cursor-pointer focus:ring-0 p-0">
+                                  {userLevels.map(l => <option key={l.value} value={l.value} className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>{l.label}</option>)}
+                                </select>
+                              </td>
+                              <td className="px-8 py-5">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                                  user.rollCount > 0 
+                                    ? (isDarkMode ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') 
+                                    : (isDarkMode ? 'bg-white/5 text-white/30' : 'bg-gray-100 text-gray-400')
+                                }`}>
+                                  {user.rollCount || 0}
+                                </span>
+                              </td>
+                              <td className="px-8 py-5 text-xs opacity-50 font-medium">{new Date(user.createdAt).toLocaleDateString()}</td>
+                              <td className="px-8 py-5">
+                                <button 
+                                  onClick={() => {
+                                    setSelectedUserForPassword(user);
+                                    setNewPasswordVal('');
+                                    setShowPasswordModal(true);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded-xl text-xs font-bold transition-all active:scale-95"
+                                >
+                                  <Pencil size={12} />
+                                  {adminLang === 'zh-CN' ? '修改密码' : 'Password'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* 移动端用户列表卡片组 */}
+                    <div className="block md:hidden divide-y divide-inherit">
+                      {users.map(user => (
+                        <div key={user.id} className="p-5 flex flex-col gap-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs opacity-50">#{String(user.id).padStart(4, '0')}</span>
+                              <span className="font-bold text-sm">{user.nickname}</span>
+                            </div>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                              user.rollCount > 0 
+                                ? (isDarkMode ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') 
+                                : (isDarkMode ? 'bg-white/5 text-white/30' : 'bg-gray-100 text-gray-400')
+                            }`}>
+                              {user.rollCount || 0} {adminLang === 'zh-CN' ? '影集' : 'Albums'}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col gap-2 text-xs">
+                            <div className="flex justify-between items-center">
+                              <span className={mutedText}>{adminLang === 'zh-CN' ? '账号/邮箱' : 'Email'}</span>
+                              <span className="opacity-80 font-medium truncate max-w-[200px]">{user.email}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className={mutedText}>{adminLang === 'zh-CN' ? '用户等级' : 'User Level'}</span>
+                              <select value={user.level} onChange={(e) => handleUpdateUserLevel(String(user.id), e.target.value)} className="bg-transparent border-none text-xs font-bold text-blue-500 outline-none cursor-pointer focus:ring-0 p-0 text-right">
                                 {userLevels.map(l => <option key={l.value} value={l.value} className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>{l.label}</option>)}
                               </select>
-                            </td>
-                            <td className="px-8 py-5">
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                                user.rollCount > 0 
-                                  ? (isDarkMode ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') 
-                                  : (isDarkMode ? 'bg-white/5 text-white/30' : 'bg-gray-100 text-gray-400')
-                              }`}>
-                                {user.rollCount || 0}
-                              </span>
-                            </td>
-                            <td className="px-8 py-5 text-xs opacity-50 font-medium">{new Date(user.createdAt).toLocaleDateString()}</td>
-                            <td className="px-8 py-5">
-                              <button 
-                                onClick={() => {
-                                  setSelectedUserForPassword(user);
-                                  setNewPasswordVal('');
-                                  setShowPasswordModal(true);
-                                }}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded-xl text-xs font-bold transition-all active:scale-95"
-                              >
-                                <Pencil size={12} />
-                                {adminLang === 'zh-CN' ? '修改密码' : 'Password'}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className={mutedText}>{adminLang === 'zh-CN' ? '注册时间' : 'Joined Date'}</span>
+                              <span className="opacity-50">{new Date(user.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 border-t border-dashed border-inherit flex justify-end">
+                            <button 
+                              onClick={() => {
+                                setSelectedUserForPassword(user);
+                                setNewPasswordVal('');
+                                setShowPasswordModal(true);
+                              }}
+                              className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded-xl text-xs font-bold transition-all active:scale-95"
+                            >
+                              <Pencil size={12} />
+                              {adminLang === 'zh-CN' ? '修改用户密码' : 'Change Password'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1474,9 +1529,9 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className={`rounded-[32px] border ${cardBg} p-8 shadow-sm`}>
+              <div className={`rounded-[32px] border ${cardBg} p-5 md:p-8 shadow-sm`}>
                 <div className="flex flex-col gap-6">
-                  <div className={`p-8 rounded-[24px] ${isDarkMode ? 'bg-white/[0.02] border-white/5' : 'bg-gray-50 border-gray-100'} border`}>
+                  <div className={`p-5 md:p-8 rounded-[24px] ${isDarkMode ? 'bg-white/[0.02] border-white/5' : 'bg-gray-50 border-gray-100'} border`}>
                     <div className="flex items-start gap-4 mb-8">
                       <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500">
                         <ShieldAlert size={20} />
@@ -1860,7 +1915,7 @@ export default function Admin() {
           {/* 图床配置 TAB */}
           {activeTab === 'imgbed' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-              <div className={`rounded-[32px] border ${cardBg} p-8 space-y-10`}>
+              <div className={`rounded-[32px] border ${cardBg} p-5 md:p-8 space-y-10`}>
                 <div>
                   <h3 className="text-sm font-black uppercase tracking-widest text-amber-500 mb-6 flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-amber-500/10">
@@ -1938,7 +1993,8 @@ export default function Admin() {
                     </div>
                     上传策略 / Upload Strategies
                   </h3>
-                  <div className={`overflow-hidden border rounded-[24px] ${isDarkMode ? 'border-white/5 bg-[#1a1a1a]/50' : 'border-gray-100 bg-gray-50/50'}`}>
+                  {/* 桌面端上传策略表格 */}
+                  <div className={`hidden md:block overflow-hidden border rounded-[24px] ${isDarkMode ? 'border-white/5 bg-[#1a1a1a]/50' : 'border-gray-100 bg-gray-50/50'}`}>
                     <table className="w-full text-left text-sm border-collapse">
                       <thead className={isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-100/50'}>
                         <tr className={`border-b ${dividerCls}`}>
@@ -1990,6 +2046,64 @@ export default function Admin() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* 移动端上传策略卡片组 */}
+                  <div className="block md:hidden space-y-4">
+                    {[
+                      { key: 'avatar', label: '用户头像' },
+                      { key: 'roll', label: '影集原图' },
+                      { key: 'preview', label: '影集预览' },
+                      { key: 'gear', label: '设备图像' },
+                      { key: 'film_stock', label: '胶卷型号' },
+                      { key: 'post', label: at('strategyPost') },
+                    ].map((item) => (
+                      <div key={item.key} className={`p-5 rounded-2xl border ${isDarkMode ? 'border-white/5 bg-[#1a1a1a]/50' : 'border-gray-100 bg-gray-50/50'} flex flex-col gap-4`}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-sm text-amber-500">{item.label}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] opacity-60">{adminLang === 'zh-CN' ? '启用压缩' : 'Compress'}</span>
+                            <button
+                              onClick={(e) => setImgBed(p => ({ ...p, [`${item.key}_compress`]: (imgBed as any)[`${item.key}_compress`] === 'true' ? 'false' : 'true' }))}
+                              className={`relative inline-flex h-6 w-11 rounded-full transition-all duration-300 ease-in-out shadow-inner ${
+                                (imgBed as any)[`${item.key}_compress`] === 'true' ? 'bg-amber-500' : isDarkMode ? 'bg-white/20' : 'bg-gray-300'
+                              }`}
+                            >
+                              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition duration-300 ease-in-out mt-1 ml-1 ${
+                                (imgBed as any)[`${item.key}_compress`] === 'true' ? 'translate-x-5' : 'translate-x-0'
+                              }`} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase mb-1.5 opacity-50">路径模板 (Path Template)</label>
+                            <input
+                              type="text"
+                              value={(imgBed as any)[`${item.key}_path`]}
+                              onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_path`]: e.target.value }))}
+                              className={inputCls}
+                              placeholder="{userId}/"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase mb-1.5 opacity-50">独立存储渠道 (Channel)</label>
+                            <select
+                              value={(imgBed as any)[`${item.key}_channel`]}
+                              onChange={(e) => setImgBed(p => ({ ...p, [`${item.key}_channel`]: e.target.value }))}
+                              className={inputCls}
+                            >
+                              <option value="" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>跟随全局 (Global)</option>
+                              <option value="telegram" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>Telegram</option>
+                              <option value="cfr2" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>CloudFlare R2</option>
+                              <option value="s3" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>S3</option>
+                              <option value="discord" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>Discord</option>
+                              <option value="huggingface" className={isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white'}>HuggingFace</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   <p className={`mt-4 ml-2 text-[10px] font-medium tracking-wide opacity-50`}>{at('imgBedPathDesc')}</p>
                 </div>
