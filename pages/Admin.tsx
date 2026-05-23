@@ -312,6 +312,78 @@ export default function Admin() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordChangeStatus, setPasswordChangeStatus] = useState({ type: '', message: '' });
 
+  // API 服务器地址状态与方法
+  const [apiServerUrl, setApiServerUrl] = useState(localStorage.getItem('api_server_url') || '');
+  const [isTestingUrl, setIsTestingUrl] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+
+  // 保存 API 服务器地址 (同步本地 LocalStorage 与后端 D1 数据库)
+  const handleSaveApiUrl = async () => {
+    const trimmed = apiServerUrl.trim();
+    if (trimmed && !/^https?:\/\//.test(trimmed)) {
+      alert(adminLang === 'zh-CN' ? '请输入合法的 API 地址 (必须以 http:// 或 https:// 开头)' : 'Please enter a valid API URL (must start with http:// or https://)');
+      return;
+    }
+    if (trimmed) {
+      localStorage.setItem('api_server_url', trimmed);
+    } else {
+      localStorage.removeItem('api_server_url');
+    }
+    if (token) {
+      await handleUpdateSetting('api_base_url', trimmed);
+    }
+    alert(adminLang === 'zh-CN' ? 'API 服务器地址已保存并生效' : 'API server URL saved successfully');
+    setIsConfigOpen(false);
+  };
+
+  // 重置为默认 API 地址
+  const handleResetApiUrl = async () => {
+    localStorage.removeItem('api_server_url');
+    setApiServerUrl('');
+    if (token) {
+      await handleUpdateSetting('api_base_url', '');
+    }
+    alert(adminLang === 'zh-CN' ? '已重置为默认 API 地址' : 'Reset to default API URL successfully');
+    setIsConfigOpen(false);
+  };
+
+  // 测试 API 连接可用性
+  const handleTestConnection = async (urlToTest: string) => {
+    let targetUrl = urlToTest.trim();
+    if (!targetUrl) {
+      targetUrl = window.location.origin;
+    }
+
+    if (targetUrl && !/^https?:\/\//.test(targetUrl)) {
+      alert(adminLang === 'zh-CN' ? '无效的 API 地址' : 'Invalid API URL');
+      return;
+    }
+
+    setIsTestingUrl(true);
+    try {
+      let cleanUrl = targetUrl.replace(/\/$/, '');
+      if (cleanUrl.startsWith('http') && !cleanUrl.endsWith('/api')) {
+        cleanUrl += '/api';
+      }
+      const healthUrl = cleanUrl.startsWith('http') ? `${cleanUrl}/health` : `${cleanUrl || window.location.origin}/api/health`;
+
+      const response = await fetch(healthUrl, { method: 'GET' });
+      if (!response.ok) {
+        throw new Error('Connection error');
+      }
+      const data = await response.json();
+      if (data && data.status === 'ok') {
+        alert(adminLang === 'zh-CN' ? '连接成功！' : 'Connected successfully!');
+      } else {
+        throw new Error('Health check not OK');
+      }
+    } catch {
+      alert(adminLang === 'zh-CN' ? '连接失败，请检查 API 地址是否正确或跨域是否允许' : 'Connection failed. Please check the URL or CORS settings');
+    } finally {
+      setIsTestingUrl(false);
+    }
+  };
+
   // 图片存储配置状态
   const [imgBed, setImgBed] = useState({ 
     storage_type: 'img_bed',
@@ -488,6 +560,9 @@ export default function Admin() {
       if (settingsRes.success && settingsRes.data) {
         const s = settingsRes.data as Record<string, string>;
         setSystemSettings(s as any);
+        if (s['api_base_url']) {
+          setApiServerUrl(s['api_base_url']);
+        }
         // 将图床和 SMTP 配置回填到对应表单（密文不展示）
         setImgBed({
           storage_type:      s['storage_type']      || 'img_bed',
@@ -850,6 +925,7 @@ export default function Admin() {
         </div>
         
         <div className="absolute top-6 right-6 flex gap-3 z-10">
+           <button onClick={() => setIsConfigOpen(!isConfigOpen)} className={`p-3 rounded-2xl backdrop-blur-md transition-all hover:scale-110 ${isConfigOpen ? 'text-blue-500 rotate-90' : ''} ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-white/50 hover:bg-white shadow-sm'}`} title="API 配置"><Settings2 size={18} /></button>
            <button onClick={toggleLanguage} className={`p-3 rounded-2xl backdrop-blur-md transition-all hover:scale-110 ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-white/50 hover:bg-white shadow-sm'}`}><Languages size={18} /></button>
            <button onClick={toggleTheme} className={`p-3 rounded-2xl backdrop-blur-md transition-all hover:scale-110 ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-amber-400' : 'bg-white/50 hover:bg-white shadow-sm text-blue-600'}`}>{isDarkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
         </div>
@@ -866,6 +942,47 @@ export default function Admin() {
           </div>
 
           <div className={`rounded-[32px] border p-8 backdrop-blur-2xl ${cardBg}`}>
+            {isConfigOpen && (
+              <div className="mb-6 p-5 rounded-2xl bg-black/5 dark:bg-white/5 border border-outline-variant/10 space-y-4 animate-in slide-in-from-top-4 duration-300">
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>
+                    API 服务器地址 (API URL)
+                  </label>
+                  <input
+                    type="text"
+                    value={apiServerUrl}
+                    onChange={(e) => setApiServerUrl(e.target.value)}
+                    placeholder="https://api.example.com"
+                    className={inputCls}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveApiUrl}
+                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-md"
+                  >
+                    保存并生效
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTestConnection(apiServerUrl)}
+                    disabled={isTestingUrl}
+                    className={`px-4 rounded-xl text-xs font-bold border transition-all disabled:opacity-50 ${isDarkMode ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                  >
+                    {isTestingUrl ? '...' : '测试'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetApiUrl}
+                    className="py-2.5 px-3 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 active:scale-[0.98] rounded-xl text-xs font-bold transition-all"
+                  >
+                    重置
+                  </button>
+                </div>
+              </div>
+            )}
+
             {loginError && (
               <div className="mb-6 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold animate-in slide-in-from-top-2">
                 {loginError}
@@ -955,6 +1072,44 @@ export default function Admin() {
                         <option value="zh-CN">简体中文</option>
                         <option value="en-US">English</option>
                       </select>
+                    </div>
+
+                    {/* API 服务器地址配置 */}
+                    <div className={`pt-6 border-t ${dividerCls}`}>
+                      <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ml-1 ${mutedText}`}>{at('apiSettings') || 'API 服务器配置'}</label>
+                      <div className="space-y-4">
+                        <input
+                          type="text"
+                          value={apiServerUrl}
+                          onChange={(e) => setApiServerUrl(e.target.value)}
+                          placeholder={at('apiBaseUrlPlaceholder') || 'https://api.example.com'}
+                          className={inputCls}
+                        />
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={handleSaveApiUrl}
+                            className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-2xl text-xs font-bold shadow-lg shadow-blue-500/20 transition-all"
+                          >
+                            {at('saveApi') || '保存 API 配置'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleTestConnection(apiServerUrl)}
+                            disabled={isTestingUrl}
+                            className={`px-4 rounded-2xl text-xs font-bold border transition-all disabled:opacity-50 ${isDarkMode ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                          >
+                            {isTestingUrl ? '...' : '测试'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleResetApiUrl}
+                            className="py-3 px-6 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 active:scale-[0.98] rounded-2xl text-xs font-bold transition-all"
+                          >
+                            重置
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -7,7 +7,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../src/context/AuthContext.tsx';
 import Notification from '../components/Notification.tsx';
 import { sendCode } from '../src/api/auth.ts';
-import { Eye, EyeOff, Settings } from 'lucide-react';
+import { Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { useSettings } from '../src/context/SettingsContext';
 
@@ -32,83 +32,6 @@ export default function Login() {
   const navigate = useNavigate();
   const { login, register, isLoggedIn, isLoading } = useAuth();
 
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [apiServerUrl, setApiServerUrl] = useState(localStorage.getItem('api_server_url') || '');
-  const [isTestingUrl, setIsTestingUrl] = useState(false);
-
-  // 测试连接
-  const handleTestConnection = async (urlToTest: string) => {
-    let targetUrl = urlToTest.trim();
-    if (!targetUrl) {
-      targetUrl = window.location.origin;
-    }
-
-    if (targetUrl && !/^https?:\/\//.test(targetUrl)) {
-      setShowNotification(true);
-      setNotificationMessage(t('settings.invalidUrl'));
-      setNotificationType('error');
-      return;
-    }
-
-    setIsTestingUrl(true);
-    try {
-      let cleanUrl = targetUrl.replace(/\/$/, '');
-      if (cleanUrl.startsWith('http') && !cleanUrl.endsWith('/api')) {
-        cleanUrl += '/api';
-      }
-      const healthUrl = cleanUrl.startsWith('http') ? `${cleanUrl}/health` : `${cleanUrl || window.location.origin}/api/health`;
-
-      const response = await fetch(healthUrl, { method: 'GET' });
-      if (!response.ok) {
-        throw new Error('Connection error');
-      }
-      const data = await response.json();
-      if (data && data.status === 'ok') {
-        setShowNotification(true);
-        setNotificationMessage(t('settings.connectSuccess'));
-        setNotificationType('success');
-      } else {
-        throw new Error('Health check not OK');
-      }
-    } catch {
-      setShowNotification(true);
-      setNotificationMessage(t('settings.connectFailed'));
-      setNotificationType('error');
-    } finally {
-      setIsTestingUrl(false);
-    }
-  };
-
-  // 恢复默认 API 服务器
-  const handleResetUrl = () => {
-    localStorage.removeItem('api_server_url');
-    setApiServerUrl('');
-    setShowNotification(true);
-    setNotificationMessage(t('common.success'));
-    setNotificationType('success');
-    setIsConfigOpen(false); // 保存成功后自动收起菜单
-  };
-
-  // 保存 API 服务器地址
-  const handleSaveUrl = () => {
-    const trimmed = apiServerUrl.trim();
-    if (trimmed && !/^https?:\/\//.test(trimmed)) {
-      setShowNotification(true);
-      setNotificationMessage(t('settings.invalidUrl'));
-      setNotificationType('error');
-      return;
-    }
-
-    if (trimmed) {
-      localStorage.setItem('api_server_url', trimmed);
-    } else {
-      localStorage.removeItem('api_server_url');
-    }
-    setShowNotification(true);
-    setNotificationMessage(t('common.success'));
-    setNotificationType('success');
-    setIsConfigOpen(false); // 保存成功后自动收起菜单
-  };
 
   // 检查登录状态，已登录则重定向
   useEffect(() => {
@@ -244,15 +167,15 @@ export default function Login() {
   return (
     <main className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-8 py-16">
       <div className="w-full max-w-md relative">
-        {/* 右上角服务器设置齿轮按钮 */}
+        {/* 右上角进入系统管理后台按钮 */}
         <button
           type="button"
-          onClick={() => setIsConfigOpen(!isConfigOpen)}
-          className={`absolute right-0 top-0 p-2 rounded-full text-on-surface-variant hover:text-primary transition-all duration-300 hover:bg-surface-container ${isConfigOpen ? 'rotate-90 text-primary' : ''}`}
-          title={t('settings.title')}
-          aria-label={t('settings.title')}
+          onClick={() => navigate('/admin')}
+          className="absolute right-0 top-0 p-2 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container active:scale-95 transition-all duration-300 flex items-center justify-center"
+          title={t('settings.goToAdmin') || '进入系统管理后台'}
+          aria-label={t('settings.goToAdmin') || '进入系统管理后台'}
         >
-          <Settings size={20} />
+          <ShieldAlert size={20} />
         </button>
 
         {/* Logo 区域 */}
@@ -264,48 +187,6 @@ export default function Login() {
             {isRegister ? t('login.createAccount') : t('login.welcome')}
           </p>
         </div>
-
-        {/* 动态 API 服务器配置区域 */}
-        {isConfigOpen && (
-          <div className="mb-8 p-4 bg-surface-container-low border border-outline-variant/30 rounded-lg space-y-4 transition-all duration-300">
-            <div>
-              <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
-                {t('settings.apiServerUrl')}
-              </label>
-              <input
-                type="text"
-                value={apiServerUrl}
-                onChange={(e) => setApiServerUrl(e.target.value)}
-                placeholder={t('settings.apiServerUrlPlaceholder')}
-                className="w-full bg-surface-container border-b border-outline-variant focus:border-primary text-on-surface py-2 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors"
-              />
-            </div>
-            <div className="flex gap-2 text-xs">
-              <button
-                type="button"
-                onClick={handleSaveUrl}
-                className="flex-1 bg-primary text-on-primary py-2 font-bold uppercase tracking-wider hover:bg-primary-dim transition-colors"
-              >
-                {t('common.save')}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTestConnection(apiServerUrl)}
-                disabled={isTestingUrl}
-                className="flex-1 bg-surface-container border border-outline-variant hover:bg-surface-container-high py-2 text-on-surface transition-colors disabled:opacity-50"
-              >
-                {isTestingUrl ? t('common.loading') : t('settings.testConnection')}
-              </button>
-              <button
-                type="button"
-                onClick={handleResetUrl}
-                className="flex-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 py-2 transition-colors"
-              >
-                {t('settings.resetDefault')}
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* 登录/注册切换 */}
         {openRegistration ? (
