@@ -69,9 +69,10 @@ async function request<T>(
     ...options
   };
 
-  // 如果本地存在 auth_token，则携带在 Authorization 头中以支持跨域/移动端自部署
+  // NOTE: 如果本地存在 auth_token，且请求头部未显式传递自定义 Authorization（例如管理员后台接口的专属 Token），
+  // 则默认在 Authorization 头中携带它以支持跨域/移动端自部署，避免普通用户 Token 暴力覆盖管理员专属 Token。
   const token = localStorage.getItem('auth_token');
-  if (token) {
+  if (token && !(config.headers as Record<string, string>)['Authorization']) {
     (config.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
 

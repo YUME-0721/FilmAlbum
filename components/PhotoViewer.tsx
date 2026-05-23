@@ -631,7 +631,8 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                   ref={borderContainerRef}
                   className={`mx-auto w-fit max-w-full ${borderType === 'none' ? '' : borderType === 'white' ? 'bg-white p-[5%] pb-[5%]' : 'bg-black p-[5%] pb-[5%]'} shadow-2xl transition-colors duration-500`}
                 >
-                  <div className="flex justify-center relative overflow-hidden" style={{ minHeight: '200px' }}>
+                  {/* NOTE: 在无边框或非放大状态下，不启用 overflow-hidden。这彻底解决了横版照片在旋转 90/270 度立起来时，顶部与底部被该父容器硬编码截断的 Bug。只有在带边框且处于放大拖动状态时（scale > 1 && borderType !== 'none'），才启用溢出限制，防止图像溢出到卡纸白框之外。 */}
+                  <div className={`flex justify-center relative ${(scale > 1 && borderType !== 'none') ? 'overflow-hidden' : ''}`} style={{ minHeight: '200px' }}>
                     {isImageLoading && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-sm z-10">
                         <div className="animate-pulse text-white/20 text-xs font-bold uppercase tracking-widest">Loading...</div>
