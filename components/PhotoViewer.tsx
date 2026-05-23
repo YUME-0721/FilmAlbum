@@ -86,6 +86,8 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
+  // NOTE: 全屏滑动翻页所需的触摸起始点 ref，覆盖图片上下方的空白区域
+  const swipeTouchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // 监听边框容器宽度，用于动态计算比例
   useEffect(() => {
@@ -530,10 +532,41 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
     }
   };
 
+  // NOTE: 全屏滑动翻页处理器。覆盖整个查看器屏幕（含图片上下方空白），
+  // 仅在未放大（scale <= 1）时识别横向滑动翻页，已放大时不拦截，交给内部拖拽 Pan 处理。
+  const handleFullscreenTouchStart = (e: React.TouchEvent) => {
+    if (scale > 1 || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    swipeTouchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const handleFullscreenTouchEnd = (e: React.TouchEvent) => {
+    if (scale > 1 || !swipeTouchStartRef.current || e.changedTouches.length !== 1) {
+      swipeTouchStartRef.current = null;
+      return;
+    }
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - swipeTouchStartRef.current.x;
+    const dy = touch.clientY - swipeTouchStartRef.current.y;
+    swipeTouchStartRef.current = null;
+    // 只有当横向滑动距离 > 50px 且横向位移明显大于纵向时，才识别为翻页手势
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx > 0) {
+        goToFrame(currentFrame > 0 ? currentFrame - 1 : frames.length - 1);
+      } else {
+        goToFrame(currentFrame < frames.length - 1 ? currentFrame + 1 : 0);
+      }
+    }
+  };
+
   return (
-    <div className={`fixed inset-0 z-50 overflow-hidden transition-colors duration-500 ${
-      borderType === 'black' ? 'bg-white/95' : 'bg-black/90'
-    } backdrop-blur-2xl`}>
+    <div
+      className={`fixed inset-0 z-50 overflow-hidden transition-colors duration-500 ${
+        borderType === 'black' ? 'bg-white/95' : 'bg-black/90'
+      } backdrop-blur-2xl`}
+      onTouchStart={handleFullscreenTouchStart}
+      onTouchEnd={handleFullscreenTouchEnd}
+    >
       {/* 导出进度提示 */}
       <AnimatePresence>
         {isExporting && (
@@ -576,9 +609,10 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       <div className="absolute inset-0 flex items-center justify-center p-4">
         {/* NOTE: 提升 Z-Index 至 z-40 解决在旋转 90/270 度立起图片时，由于 Stacking Context 层叠顺位图片将翻页按钮覆盖遮挡的 Bug。
             同时配合精美的毛玻璃圆形背板（Glassmorphism）和微缩放交互，使得哪怕在纯白/纯黑的极亮/极暗背景相片上，翻页箭头也依然保持无与伦比的高辨识度与极奢手感。 */}
+        {/* NOTE: 移动端依靠左右滑动手势翻页（onDragEnd），因此在小屏幕下隐藏翻页按钮（hidden md:flex），避免遮挡图片内容。 */}
         <button
           onClick={(e) => { e.stopPropagation(); goToFrame(currentFrame > 0 ? currentFrame - 1 : frames.length - 1); }}
-          className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center backdrop-blur-md shadow-2xl border active:scale-95 transition-all z-40 ${
+          className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 rounded-full hidden md:flex items-center justify-center backdrop-blur-md shadow-2xl border active:scale-95 transition-all z-40 ${
             borderType === 'black' 
               ? 'bg-white/40 border-black/5 text-black/60 hover:bg-white/80 hover:text-black shadow-black/5' 
               : 'bg-black/35 border-white/10 text-white/70 hover:bg-black/55 hover:text-white shadow-black/40'
@@ -590,7 +624,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
 
         <button
           onClick={(e) => { e.stopPropagation(); goToFrame(currentFrame < frames.length - 1 ? currentFrame + 1 : 0); }}
-          className={`absolute top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center backdrop-blur-md shadow-2xl border active:scale-95 transition-all z-40 ${
+          className={`absolute top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 rounded-full hidden md:flex items-center justify-center backdrop-blur-md shadow-2xl border active:scale-95 transition-all z-40 ${
             showSidebar && isDesktop ? 'right-[336px]' : 'right-4 md:right-8'
           } ${
             borderType === 'black' 
