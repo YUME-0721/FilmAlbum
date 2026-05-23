@@ -27,6 +27,76 @@ export default function Settings() {
   const { user, logout } = useAuth();
   const { themeMode, language, setThemeMode, setLanguage, isDarkMode } = useSettings();
 
+  const [apiServerUrl, setApiServerUrl] = useState(localStorage.getItem('api_server_url') || '');
+  const [isTestingUrl, setIsTestingUrl] = useState(false);
+
+  // 测试连接
+  const handleTestConnection = async (urlToTest: string) => {
+    let targetUrl = urlToTest.trim();
+    if (!targetUrl) {
+      targetUrl = window.location.origin;
+    }
+
+    if (targetUrl && !/^https?:\/\//.test(targetUrl)) {
+      setShowNotification(true);
+      setNotificationMessage(t('settings.invalidUrl'));
+      setNotificationType('error');
+      return;
+    }
+
+    setIsTestingUrl(true);
+    try {
+      const cleanUrl = targetUrl.replace(/\/$/, '');
+      const response = await fetch(`${cleanUrl}/api/health`, { method: 'GET' });
+      if (!response.ok) {
+        throw new Error('Connection error');
+      }
+      const data = await response.json();
+      if (data && data.status === 'ok') {
+        setShowNotification(true);
+        setNotificationMessage(t('settings.connectSuccess'));
+        setNotificationType('success');
+      } else {
+        throw new Error('Health check not OK');
+      }
+    } catch {
+      setShowNotification(true);
+      setNotificationMessage(t('settings.connectFailed'));
+      setNotificationType('error');
+    } finally {
+      setIsTestingUrl(false);
+    }
+  };
+
+  // 恢复默认 API 服务器
+  const handleResetUrl = () => {
+    localStorage.removeItem('api_server_url');
+    setApiServerUrl('');
+    setShowNotification(true);
+    setNotificationMessage(t('common.success'));
+    setNotificationType('success');
+  };
+
+  // 保存 API 服务器地址
+  const handleSaveUrl = () => {
+    const trimmed = apiServerUrl.trim();
+    if (trimmed && !/^https?:\/\//.test(trimmed)) {
+      setShowNotification(true);
+      setNotificationMessage(t('settings.invalidUrl'));
+      setNotificationType('error');
+      return;
+    }
+
+    if (trimmed) {
+      localStorage.setItem('api_server_url', trimmed);
+    } else {
+      localStorage.removeItem('api_server_url');
+    }
+    setShowNotification(true);
+    setNotificationMessage(t('common.success'));
+    setNotificationType('success');
+  };
+
   // 发送验证码
   const handleSendCode = async () => {
     if (!user?.email) {
@@ -244,6 +314,44 @@ export default function Settings() {
                   }`}
                 >
                   {t('settings.system')}
+                </button>
+              </div>
+            </div>
+
+            {/* 自定义后端服务器地址 */}
+            <div className="pt-6 border-t border-outline-variant/15">
+              <label className="block text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">
+                {t('settings.apiServerUrl')}
+              </label>
+              <input
+                type="text"
+                value={apiServerUrl}
+                onChange={(e) => setApiServerUrl(e.target.value)}
+                placeholder={t('settings.apiServerUrlPlaceholder')}
+                className="w-full bg-surface-container-low border-b border-outline-variant focus:border-primary text-on-surface py-3 px-0 text-sm font-body placeholder:text-outline outline-none transition-colors mb-4"
+              />
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={handleSaveUrl}
+                  className="flex-1 py-3 text-sm font-bold tracking-widest uppercase bg-primary text-on-primary hover:bg-primary-dim transition-colors"
+                >
+                  {t('common.save')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTestConnection(apiServerUrl)}
+                  disabled={isTestingUrl}
+                  className="flex-1 py-3 text-sm font-body bg-surface-container-low border border-outline-variant hover:bg-surface-container transition-colors disabled:opacity-50"
+                >
+                  {isTestingUrl ? t('common.loading') : t('settings.testConnection')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetUrl}
+                  className="flex-1 py-3 text-sm font-body bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors"
+                >
+                  {t('settings.resetDefault')}
                 </button>
               </div>
             </div>

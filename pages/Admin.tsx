@@ -534,7 +534,9 @@ export default function Admin() {
       }
       if (usersRes.success && usersRes.data) setUsers(usersRes.data.users);
     } catch (err: any) {
-      if (err.message?.includes('401') || err.message?.includes('403')) handleLogout();
+      if (err.status === 401 || err.status === 403 || err.message?.includes('401') || err.message?.includes('403')) {
+        handleLogout();
+      }
     } finally {
       setIsLoading(false);
     }

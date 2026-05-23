@@ -14,6 +14,7 @@ export interface AuthUser {
   followersCount?: number;
   followingCount?: number;
   likesCount?: number;
+  token?: string;
 }
 
 /** 注册 */

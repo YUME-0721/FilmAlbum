@@ -48,6 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await apiLogin(email, password);
     if (result.success && result.data) {
       setUser(result.data);
+      if (result.data.token) {
+        localStorage.setItem('auth_token', result.data.token);
+      }
     } else {
       throw new Error(result.error || '登录失败');
     }
@@ -62,8 +65,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await apiLogout();
-    setUser(null);
+    try {
+      await apiLogout();
+    } catch {
+      // 忽略网络错误以保证本地必定登出成功
+    } finally {
+      localStorage.removeItem('auth_token');
+      setUser(null);
+    }
   }, []);
 
   return (

@@ -297,7 +297,8 @@ auth.post('/login', async (c) => {
       nickname: user.nickname,
       avatarUrl: user.avatar_url,
       bio: user.bio,
-      level: user.level
+      level: user.level,
+      token: token
     }
   });
 });

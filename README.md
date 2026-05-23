@@ -52,7 +52,7 @@
 点击 **Variables** 标签页，添加以下变量：
 | 变量名称 | 说明 |
 | :--- | :--- |
-| `VITE_API_BASE_URL` | **你的后端 API 域名**。例如 `https://api.yourdomain.com`（必须以 https:// 开头） |
+| `VITE_API_BASE_URL` | **后端 API 默认域名 (可选)**。例如 `https://api.yourdomain.com`。若不填，用户也可在页面端通过 `⚙️` 齿轮按钮直接输入后端服务器地址连接。 |
 
 ### 第三步：触发自动化部署
 1.  在 GitHub 仓库页面点击顶部的 **Actions** -> **Deploy to Cloudflare**。
@@ -61,14 +61,20 @@
 
 ---
 
-## ⚠️ 部署后必做：绑定自定义域名
+## 🌐 绑定自定义域名或动态配置 API 地址
 
-由于浏览器对 `.workers.dev` 和 `.pages.dev` 之间的 Cookie 跨域限制，**你必须使用自定义域名才能正常登录**。
+由于浏览器对默认的 `.workers.dev` 和 `.pages.dev` 域名有跨域 Cookie 限制，我们提供了**两种非常灵活的连接方案**：
 
-1.  **后端绑定**：在 Cloudflare 中为 `film-album-api` 绑定你在 `VITE_API_BASE_URL` 中填写的域名。
-    - 路径：`Workers -> film-album-api -> Triggers -> Custom Domains -> Add`。
-2.  **前端绑定**：同理，为 `film-album-web` 绑定你的前端主域名（如 `yourdomain.com`）。
-3.  **完成**：访问你的前端域名，进入 `/admin` 登录即可。
+### 方案 A：前端界面动态配置 (推荐，适合自部署/移动端/免去绑定自定义域名的用户)
+1. **访问前端**：打开你的前端地址（如默认的 `.pages.dev`）。
+2. **配置后端地址**：在登录页右上角点击 **齿轮 `⚙️` 图标**，输入你的后端 API 地址（支持 `.workers.dev` 默认域名或自定义域名，需以 `http://` 或 `https://` 开头）。
+3. **完成连接**：点击**测试连接**，连接成功后保存。此时系统会自动启用跨域的 `Bearer Token` 认证模式进行无缝鉴权，**完全不依赖 Cookie 同源限制，无需强制绑定域名**。
+
+### 方案 B：传统同源自定义域名绑定 (基于安全 Cookie)
+1. **后端绑定**：在 Cloudflare 中为 `film-album-api` 绑定你在 `VITE_API_BASE_URL` 中填写的域名。
+   - 路径：`Workers -> film-album-api -> Triggers -> Custom Domains -> Add`。
+2. **前端绑定**：同理，为 `film-album-web` 绑定你的前端主域名（如 `yourdomain.com`）。
+3. **完成**：使用浏览器直接访问前端主域名即可（由 HttpOnly Cookie 维护安全会话）。
 
 ---
 

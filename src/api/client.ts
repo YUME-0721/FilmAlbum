@@ -3,8 +3,14 @@
  * 封装 fetch 请求，统一处理错误、JSON 解析和 Cookie 携带
  */
 
-// NOTE: 开发环境使用 Vite 代理，生产环境需配置正确的 API 地址
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// NOTE: 动态获取 API 服务器地址，优先从 localStorage 读取，支持自部署与跨域
+export function getApiBaseUrl(): string {
+  const customUrl = localStorage.getItem('api_server_url');
+  if (customUrl) {
+    return customUrl.trim().replace(/\/$/, '');
+  }
+  return (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+}
 
 /** API 统一响应类型 */
 export interface ApiResponse<T = unknown> {
@@ -20,15 +26,27 @@ export interface ApiResponse<T = unknown> {
 }
 
 /**
+ * API 自定义错误类，携带 HTTP 状态码
+ */
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+/**
  * 通用请求方法
- * 自动携带 Cookie（HttpOnly JWT），统一错误处理
+ * 自动携带 Cookie（HttpOnly JWT）或 Authorization 标头，统一错误处理
  */
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  // 确保 API_BASE_URL 不带尾部斜杠，endpoint 带头部斜杠
-  const base = API_BASE_URL.replace(/\/$/, '');
+  // 确保 API 基准地址不带尾部斜杠，endpoint 带头部斜杠
+  const base = getApiBaseUrl();
   const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${base}${path}`;
 
@@ -41,6 +59,12 @@ async function request<T>(
     ...options
   };
 
+  // 如果本地存在 auth_token，则携带在 Authorization 头中以支持跨域/移动端自部署
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    (config.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+
   // FormData 请求不设置 Content-Type（浏览器自动处理 boundary）
   if (options.body instanceof FormData) {
     const headers = { ...options.headers } as Record<string, string>;
@@ -52,7 +76,11 @@ async function request<T>(
     const response = await fetch(url, config);
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `请求失败 (${response.status})`);
+      // 401 (未授权/过期) 或 403 (无权限/令牌无效) 时，主动清理本地无效的 adminToken 缓存，实现双重保险
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+      }
+      throw new ApiError(errorData.error || `请求失败 (${response.status})`, response.status);
     }
     const data = await response.json() as ApiResponse<T>;
 
