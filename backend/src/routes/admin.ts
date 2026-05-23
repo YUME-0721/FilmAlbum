@@ -49,16 +49,19 @@ admin.post('/login', async (c) => {
     return c.json({ success: false, error: '密码错误' }, 401);
   }
 
-  // NOTE: 管理员 Token 使用独立的 role 字段标识身份，与普通用户 Token 区分
+  // NOTE: 管理员 Token 必须使用独立的 role 字段标识身份，与普通用户 Token 区分。
+  // 此处原先硬编码拼接 Base64 在一些 Edge 环境（如 Cloudflare Workers）下，由于
+  // 字符串处理多字节导致二进制签名比对失败，引发后续所有管理员 GET 请求 403 权限不足。
+  // 现统一改用底层的标准 signJwt 进行安全且环境兼容的 JWT 生成。
   const secret = await getJwtSecret(c.env);
-  const payload = { role: 'admin', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 24 * 3600 };
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const body64 = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(`${header}.${body64}`));
-  const sigStr = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const adminToken = `${header}.${body64}.${sigStr}`;
+  const payload = { 
+    sub: 'admin',
+    email: 'admin@films.com',
+    role: 'admin', 
+    iat: Math.floor(Date.now() / 1000), 
+    exp: Math.floor(Date.now() / 1000) + 24 * 3600 
+  };
+  const adminToken = await signJwt(payload as any, secret);
 
   return c.json({
     success: true,
