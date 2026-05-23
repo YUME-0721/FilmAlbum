@@ -136,6 +136,7 @@ export const translations = {
       aperture: '光圈',
       shutterSpeed: '快门',
       iso: '感光度',
+      exposureCompensation: '曝光补偿',
       form: {
         title: '影集标题',
         stock: '胶卷型号',
@@ -204,6 +205,7 @@ export const translations = {
         aperture: '例如: f/2.8',
         shutterSpeed: '例如: 1/60s',
         iso: '例如: 400',
+        exposureCompensation: '例如: +0.3 或 -0.7',
         emptyDesc: '可在影集设置中添加'
       },
       viewOriginal: '查看原图',
@@ -493,6 +495,7 @@ export const translations = {
       aperture: 'Aperture',
       shutterSpeed: 'Shutter',
       iso: 'ISO',
+      exposureCompensation: 'Exposure Comp.',
       form: {
         title: 'Title',
         stock: 'Film Stock',
@@ -561,6 +564,7 @@ export const translations = {
         aperture: 'e.g.: f/2.8',
         shutterSpeed: 'e.g.: 1/60s',
         iso: 'e.g.: 400',
+        exposureCompensation: 'e.g.: +0.3 or -0.7',
         emptyDesc: 'Can be added in album settings'
       },
       viewOriginal: 'View Original',

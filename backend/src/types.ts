@@ -71,6 +71,7 @@ export interface Frame {
   aperture: string;
   shutterSpeed: string;
   iso: string;
+  exposureCompensation?: string;
   description: string;
   sortOrder: number;
   createdAt: string;

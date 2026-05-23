@@ -36,6 +36,7 @@ export interface FrameItem {
   aperture: string;
   shutterSpeed: string;
   iso: string;
+  exposureCompensation?: string;
   description: string;
   sortOrder: number;
   shotDate?: string;

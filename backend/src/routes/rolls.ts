@@ -63,6 +63,7 @@ rolls.get('/', authOptional(), async (c) => {
            (SELECT json_group_array(json_object(
              'id', id, 'imageUrl', image_url, 'previewUrl', preview_url, 'frameNumber', frame_number,
              'aperture', aperture, 'shutterSpeed', shutter_speed, 'iso', iso,
+             'exposureCompensation', exposure_compensation,
              'description', description, 'sortOrder', sort_order, 'tags', tags,
              'shotDate', shot_date, 'location', location, 'camera', camera, 'lens', lens,
              'fileSize', file_size, 'fileFormat', file_format
@@ -169,6 +170,7 @@ rolls.get('/:id', authOptional(), async (c) => {
         aperture: f.aperture,
         shutterSpeed: f.shutter_speed,
         iso: f.iso,
+        exposureCompensation: f.exposure_compensation,
         description: f.description,
         sortOrder: f.sort_order,
         shotDate: f.shot_date,
@@ -241,6 +243,7 @@ rolls.get('/frame/:frameId', authOptional(), async (c) => {
         aperture: f.aperture,
         shutterSpeed: f.shutter_speed,
         iso: f.iso,
+        exposureCompensation: f.exposure_compensation,
         description: f.description,
         sortOrder: f.sort_order,
         shotDate: f.shot_date,
@@ -491,6 +494,7 @@ rolls.post('/:id/frames', authRequired(), requireLevel('lv2'), async (c) => {
       aperture?: string;
       shutterSpeed?: string;
       iso?: string;
+      exposureCompensation?: string;
       description?: string;
       fileSize?: number;
       fileFormat?: string;
@@ -522,6 +526,7 @@ rolls.post('/:id/frames', authRequired(), requireLevel('lv2'), async (c) => {
       aperture: frame.aperture ?? '',
       shutterSpeed: frame.shutterSpeed ?? '',
       iso: frame.iso ?? '',
+      exposureCompensation: frame.exposureCompensation ?? '0',
       description: frame.description ?? '',
       sortOrder: order,
       fileSize: frame.fileSize ?? 0,
@@ -532,12 +537,12 @@ rolls.post('/:id/frames', authRequired(), requireLevel('lv2'), async (c) => {
 
   const statements = createdFrames.map((frame) => {
     return c.env.DB.prepare(
-      `INSERT INTO frames (id, roll_id, image_url, preview_url, frame_number, aperture, shutter_speed, iso, description, sort_order, file_size, file_format)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO frames (id, roll_id, image_url, preview_url, frame_number, aperture, shutter_speed, iso, exposure_compensation, description, sort_order, file_size, file_format)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       frame.id, frame.rollId, frame.imageUrl,
       frame.previewUrl, frame.frameNumber, frame.aperture,
-      frame.shutterSpeed, frame.iso,
+      frame.shutterSpeed, frame.iso, frame.exposureCompensation,
       frame.description, frame.sortOrder, frame.fileSize, frame.fileFormat
     );
   });
@@ -754,6 +759,7 @@ rolls.put('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async
     aperture?: string;
     shutterSpeed?: string;
     iso?: string;
+    exposureCompensation?: string;
     shotDate?: string;
     location?: string;
     camera?: string;
@@ -768,6 +774,7 @@ rolls.put('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async
     aperture: 'aperture',
     shutterSpeed: 'shutter_speed',
     iso: 'iso',
+    exposureCompensation: 'exposure_compensation',
     shotDate: 'shot_date',
     location: 'location',
     camera: 'camera',

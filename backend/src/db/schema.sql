@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS frames (
   aperture TEXT DEFAULT '',
   shutter_speed TEXT DEFAULT '',
   iso TEXT DEFAULT '',
+  exposure_compensation TEXT DEFAULT '0',
   description TEXT DEFAULT '',
   file_size INTEGER DEFAULT 0,
   file_format TEXT DEFAULT '',

@@ -60,8 +60,13 @@ app.route('/api/search', searchRoutes);
 app.route('/api/system', systemRoutes);
 app.route('/api/admin', adminRoutes);
 
-// 健康检查
-app.get('/api/health', (c) => {
+// 健康检查并自动修补数据库 schema (曝光补偿字段)
+app.get('/api/health', async (c) => {
+  try {
+    await c.env.DB.prepare("ALTER TABLE frames ADD COLUMN exposure_compensation TEXT DEFAULT '0'").run();
+  } catch {
+    // 忽略已存在列的报错
+  }
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 

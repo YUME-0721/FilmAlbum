@@ -6,12 +6,39 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Download, Share2, X, Info, ChevronLeft, ChevronRight,
-  Camera, Calendar, MapPin, Eye, Check
+  Camera, Calendar, MapPin, Eye, Check, ZoomIn, ZoomOut, RotateCw, RefreshCw
 } from 'lucide-react';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { updateFrame, type RollDetail, type FrameItem } from '../src/api/rolls.ts';
 import { getFilmStocks, type FilmStock } from '../src/api/film-stocks.ts';
 import { commonBrands } from '../src/constants/brands';
+
+/** 格式化曝光补偿数值 */
+export function formatExposureCompensation(val: string | undefined | null): string {
+  if (val === undefined || val === null || val.trim() === '') return '';
+  const clean = val.trim();
+  if (clean === '0' || clean === '0.0') return '0';
+  // 若无前导正负号且为正数，则添加前缀 "+"
+  if (!clean.startsWith('+') && !clean.startsWith('-')) {
+    const num = parseFloat(clean);
+    if (!isNaN(num) && num > 0) {
+      return `+${clean}`;
+    }
+  }
+  return clean;
+}
+
+/** 获取拼接后的曝光参数字符串 (光圈、快门、ISO、曝光补偿) */
+export function getExposureString(f: any): string {
+  const parts = [f.aperture, f.shutterSpeed, f.iso ? `ISO ${f.iso}` : ''];
+  if (f.exposureCompensation && f.exposureCompensation !== '0' && f.exposureCompensation !== '0.0') {
+    const comp = formatExposureCompensation(f.exposureCompensation);
+    if (comp) {
+      parts.push(`EV ${comp}`);
+    }
+  }
+  return parts.filter(Boolean).join('  ');
+}
 
 interface PhotoViewerProps {
   roll: RollDetail;
@@ -52,6 +79,13 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
   const imgRef = useRef<HTMLImageElement>(null);
   const borderContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+
+  // 自由缩放（放大镜功能）与旋转交互状态
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
 
   // 监听边框容器宽度，用于动态计算比例
   useEffect(() => {
@@ -132,7 +166,98 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
     setSlideDirection(targetIndex > currentFrame ? 1 : -1);
     setCurrentFrame(targetIndex);
     onFrameChange?.(targetIndex);
+    // 切换照片时，重置所有缩放、位移和旋转角度
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+    setRotation(0);
   }, [currentFrame, onFrameChange]);
+
+  // 双击图片放大或还原
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (scale > 1) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+    } else {
+      setScale(2.5);
+      setPosition({ x: 0, y: 0 });
+    }
+  }, [scale]);
+
+  // 一键重置图片显示视图
+  const handleResetView = useCallback(() => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+    setRotation(0);
+  }, []);
+
+  // 顺时针旋转 90 度
+  const handleRotate = useCallback(() => {
+    setRotation((prev) => (prev + 90) % 360);
+  }, []);
+
+  // 鼠标拖动与触屏平移（Pan）处理器
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (scale <= 1) return;
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || scale <= 1) return;
+    e.preventDefault();
+    const newX = e.clientX - dragStartRef.current.x;
+    const newY = e.clientY - dragStartRef.current.y;
+    
+    // 限制拖拽边界，防止图片完全被拖出可视区。
+    // 在当前 scale 下，图片可移动的最大物理偏移范围
+    let boundX = 0;
+    let boundY = 0;
+    if (imgRef.current) {
+      boundX = (imgRef.current.clientWidth * (scale - 1)) / 2;
+      boundY = (imgRef.current.clientHeight * (scale - 1)) / 2;
+    }
+    
+    setPosition({
+      x: boundX > 0 ? Math.max(-boundX, Math.min(boundX, newX)) : 0,
+      y: boundY > 0 ? Math.max(-boundY, Math.min(boundY, newY)) : 0
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (scale <= 1 || e.touches.length !== 1) return;
+    setIsDragging(true);
+    const touch = e.touches[0];
+    dragStartRef.current = { x: touch.clientX - position.x, y: touch.clientY - position.y };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || scale <= 1 || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const newX = touch.clientX - dragStartRef.current.x;
+    const newY = touch.clientY - dragStartRef.current.y;
+
+    let boundX = 0;
+    let boundY = 0;
+    if (imgRef.current) {
+      boundX = (imgRef.current.clientWidth * (scale - 1)) / 2;
+      boundY = (imgRef.current.clientHeight * (scale - 1)) / 2;
+    }
+
+    setPosition({
+      x: boundX > 0 ? Math.max(-boundX, Math.min(boundX, newX)) : 0,
+      y: boundY > 0 ? Math.max(-boundY, Math.min(boundY, newY)) : 0
+    });
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
 
   const handleUpdateFrameData = async (frameId: string, field: string, value: any) => {
     try {
@@ -289,7 +414,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
       const camera = borderOptions.showCamera ? (frame.camera || roll.camera) : '';
       const lens = borderOptions.showLens ? (frame.lens || roll.lens) : '';
       const date = borderOptions.showDate ? (frame.shotDate || roll.shotDate) : '';
-      const exposure = borderOptions.showExposure ? [frame.aperture, frame.shutterSpeed, frame.iso ? `ISO ${frame.iso}` : ''].filter(Boolean).join('  ') : '';
+      const exposure = borderOptions.showExposure ? getExposureString(frame) : '';
 
       const hasLeft = !!(camera || lens);
       const hasRight = !!(date || exposure);
@@ -453,7 +578,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
-                drag="x"
+                drag={scale > 1 ? false : "x"}
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.6}
                 onDragEnd={(_, info) => {
@@ -488,12 +613,26 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                       onError={() => {
                         setIsImageLoading(false);
                       }}
+                      onDoubleClick={handleDoubleClick}
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={handleMouseUp}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                       style={{ 
                         aspectRatio: lastAspectRatio,
                         opacity: isImageLoading ? 0 : 1,
-                        transition: 'opacity 0.3s ease-in-out'
+                        transition: isDragging 
+                          ? 'opacity 0.3s ease-in-out' 
+                          : 'opacity 0.3s ease-in-out, transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                        transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg) scale(${scale * ((rotation === 90 || rotation === 270) && lastAspectRatio > 1 ? 1 / lastAspectRatio : 1)})`,
+                        transformOrigin: 'center center',
+                        cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in',
+                        touchAction: scale > 1 ? 'none' : 'auto'
                       }}
-                      className={`object-contain shadow-2xl ${borderType === 'none' ? 'max-w-full max-h-[85vh]' : 'max-h-[72vh] w-auto'}`}
+                      className={`object-contain shadow-2xl select-none ${borderType === 'none' ? 'max-w-full max-h-[85vh]' : 'max-h-[72vh] w-auto'}`}
                     />
                   </div>
                   {/* 边框信息层 */}
@@ -581,17 +720,17 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                         {/* 右列：日期与曝光 */}
                         {(borderOptions.showDate || borderOptions.showExposure) && (
                           <div className="flex flex-col items-start text-left">
-                            {borderOptions.showDate && (frames[currentFrame].shotDate || roll.shotDate) && borderOptions.showExposure && (frames[currentFrame].aperture || frames[currentFrame].shutterSpeed || frames[currentFrame].iso) ? (
+                            {borderOptions.showDate && (frames[currentFrame].shotDate || roll.shotDate) && borderOptions.showExposure && getExposureString(frames[currentFrame]) ? (
                               <>
                                 <span className="font-semibold tracking-tight leading-[1.1]" style={{ fontSize: `${containerWidth * 0.024}px` }}>{frames[currentFrame].shotDate || roll.shotDate}</span>
                                 <span className="opacity-60 font-medium tracking-tight leading-[1.1]" style={{ fontSize: `${containerWidth * 0.016}px` }}>
-                                  {[frames[currentFrame].aperture, frames[currentFrame].shutterSpeed, frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : ''].filter(Boolean).join('  ')}
+                                  {getExposureString(frames[currentFrame])}
                                 </span>
                               </>
                             ) : (
                               <span className="font-semibold tracking-tight leading-none" style={{ fontSize: `${containerWidth * 0.026}px` }}>
                                 {(borderOptions.showDate && (frames[currentFrame].shotDate || roll.shotDate)) || 
-                                 (borderOptions.showExposure && [frames[currentFrame].aperture, frames[currentFrame].shutterSpeed, frames[currentFrame].iso ? `ISO ${frames[currentFrame].iso}` : ''].filter(Boolean).join('  '))}
+                                 (borderOptions.showExposure && getExposureString(frames[currentFrame]))}
                               </span>
                             )}
                           </div>
@@ -604,6 +743,67 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
             )}
           </AnimatePresence>
         </motion.div>
+
+        {/* 高颜值悬浮毛玻璃控制条 */}
+        {frames[currentFrame] && !isImageLoading && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 py-1.5 px-4 rounded-full bg-black/60 border border-white/10 backdrop-blur-md shadow-2xl z-30 select-none transition-all hover:bg-black/70 hover:border-white/20">
+            {/* 缩小 */}
+            <button
+              onClick={() => setScale(prev => Math.max(prev - 0.5, 1))}
+              disabled={scale <= 1}
+              className={`p-1.5 rounded-full transition-all ${
+                scale <= 1 
+                  ? 'text-white/20 cursor-not-allowed' 
+                  : 'text-white/70 hover:text-white hover:bg-white/10 hover:scale-105 active:scale-95'
+              }`}
+              title={t('common.zoomOut') || '缩小'}
+            >
+              <ZoomOut size={15} />
+            </button>
+
+            {/* 缩放比例 */}
+            <span className="text-[11px] font-bold text-white/75 min-w-[36px] text-center font-mono">
+              {Math.round(scale * 100)}%
+            </span>
+
+            {/* 放大 */}
+            <button
+              onClick={() => setScale(prev => Math.min(prev + 0.5, 4))}
+              disabled={scale >= 4}
+              className={`p-1.5 rounded-full transition-all ${
+                scale >= 4 
+                  ? 'text-white/20 cursor-not-allowed' 
+                  : 'text-white/70 hover:text-white hover:bg-white/10 hover:scale-105 active:scale-95'
+              }`}
+              title={t('common.zoomIn') || '放大'}
+            >
+              <ZoomIn size={15} />
+            </button>
+
+            {/* 分割线 */}
+            <div className="w-[1px] h-3 bg-white/10" />
+
+            {/* 旋转 */}
+            <button
+              onClick={handleRotate}
+              className="p-1.5 rounded-full text-white/70 hover:text-white hover:bg-white/10 hover:scale-105 active:scale-95 transition-all"
+              title={t('common.rotate') || '旋转'}
+            >
+              <RotateCw size={15} />
+            </button>
+
+            {/* 一键复位 */}
+            {(scale > 1 || rotation !== 0) && (
+              <button
+                onClick={handleResetView}
+                className="p-1.5 rounded-full text-primary hover:text-white hover:bg-white/10 hover:scale-105 active:scale-95 transition-all animate-fade-in"
+                title={t('common.reset') || '重置'}
+              >
+                <RefreshCw size={15} />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* 张数指示 */}
         <div className={`absolute bottom-4 left-4 text-sm z-10 transition-colors ${
@@ -757,7 +957,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pl-1">{t('roll.exposure')}</h4>
                   <div className="bg-surface-container/30 border border-white/5 backdrop-blur-md rounded-2xl p-1.5 flex flex-col">
-                       {['aperture', 'shutterSpeed', 'iso'].map(field => (
+                       {['aperture', 'shutterSpeed', 'iso', 'exposureCompensation'].map(field => (
                           <div key={field} className="flex justify-between items-center px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group rounded-xl">
                              <span className="text-xs text-white/40">{t(`roll.${field}`)}</span>
                              {editingField?.field === field ? (
@@ -765,6 +965,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                                    autoFocus
                                    className="bg-primary/20 text-white text-xs text-right px-2 py-1 rounded border border-primary/50 outline-none w-24"
                                    value={editValue}
+                                   placeholder={field === 'exposureCompensation' ? t('roll.placeholders.exposureCompensation') : (t(`roll.placeholders.${field}`) || '')}
                                    onChange={e => setEditValue(e.target.value)}
                                    onBlur={() => handleUpdateFrameData(frames[currentFrame].id, field, editValue)}
                                    onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()}
@@ -774,7 +975,9 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
                                    className="text-xs text-white/80 cursor-pointer group-hover:text-primary transition-colors"
                                    onClick={() => { setEditingField({ frameId: frames[currentFrame].id, field }); setEditValue((frames[currentFrame] as any)[field] || ''); }}
                                 >
-                                   {(frames[currentFrame] as any)[field] || t('roll.noData')}
+                                   {field === 'exposureCompensation' 
+                                     ? (formatExposureCompensation((frames[currentFrame] as any)[field]) || '0') 
+                                     : ((frames[currentFrame] as any)[field] || t('roll.noData'))}
                                 </span>
                              )}
                           </div>
