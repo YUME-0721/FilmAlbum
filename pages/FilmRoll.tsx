@@ -111,6 +111,20 @@ export default function FilmRoll() {
   const is135 = baseFormat === '135';
   const filmStockText = (roll.filmStock || (is135 ? 'KODAK 135' : 'KODAK 120')).toUpperCase();
 
+  const formatRatioMap: Record<string, number> = {
+    '半格': 2 / 3,
+    '35mm': 3 / 2,
+    '135': 3 / 2,
+    'xpan': 65 / 24,
+    '620': 3 / 2,
+    '630': 3 / 2,
+    '645': 4 / 3,
+    '6x6': 1,
+    '6x7': 7 / 6,
+    '6x9': 3 / 2
+  };
+  const aspectRatio = formatRatioMap[formatName] || 3 / 2;
+
   const [isGeneratingIndex, setIsGeneratingIndex] = useState(false);
   const [indexProgress, setIndexProgress] = useState(0);
 
@@ -797,8 +811,8 @@ export default function FilmRoll() {
                       layout: { type: "spring", stiffness: 300, damping: 30 },
                       opacity: { duration: 0.2 }
                     }}
-                    className={`group relative aspect-[3/2] bg-[#0b0b0b] rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-500 flex flex-col justify-between ${
-                      is135 ? 'p-1 pb-1.5' : 'p-2.5 pb-3'
+                    className={`group relative w-full h-auto bg-[#0b0b0b] rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-500 flex flex-col ${
+                      is135 ? 'p-0.5 pb-1.5' : 'p-1.5 pb-2.5'
                     } ${isSelectionMode && selectedFrameIds.includes(frame.id) ? 'ring-4 ring-primary ring-inset' : ''} ${isSortMode ? 'ring-2 ring-primary/30' : ''}`}
                     onClick={() => {
                       if (isSelectionMode) toggleSelection(frame.id);
@@ -807,64 +821,66 @@ export default function FilmRoll() {
                     }}
                   >
                     {is135 ? (
-                      /* 135 底片模式：顶部与底部白色小圆角齿孔带 */
+                      /* 135 底片模式：顶部与底部独立且对称的圆角齿孔带 (在照片外部) */
                       <>
-                        <div className="relative w-full h-[12%] flex items-center justify-between px-3 select-none pointer-events-none">
+                        <div className="w-full h-8 flex items-center justify-between px-3 select-none relative bg-[#0b0b0b] shrink-0 pointer-events-none">
                           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2">
                             {[...Array(6)].map((_, i) => (
-                              <div key={i} className="w-[8%] h-2.5 bg-white/95 rounded-[1.5px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]" />
+                              <div key={i} className="w-[8%] h-3 bg-white/95 rounded-[1.5px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]" />
                             ))}
                           </div>
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span className="text-[7.5px] font-mono font-bold tracking-[0.2em] text-[#c5a86a]/40 bg-[#0b0b0b]/90 px-1 py-0.5 rounded-sm">
+                            <span className="text-[7.5px] font-mono font-bold tracking-[0.2em] text-[#c5a86a]/40 bg-[#0b0b0b] px-1 py-0.5 rounded-sm">
                               {filmStockText}
                             </span>
                           </div>
                         </div>
 
-                        <div className="flex-1 w-full overflow-hidden bg-zinc-950 relative">
+                        {/* 照片居中展示：由照片的 aspectRatio 决定高度，无拉伸裁剪，100%完整展示 */}
+                        <div className="w-full overflow-hidden bg-zinc-950 relative shrink-0" style={{ aspectRatio }}>
                           <img
                             src={frame.previewUrl || frame.imageUrl}
                             alt={frame.frameNumber}
-                            className={`w-full h-full object-cover transition-transform duration-700 ${isSelectionMode ? '' : 'group-hover:scale-105'}`}
+                            className={`w-full h-full object-contain transition-transform duration-700 ${isSelectionMode ? '' : 'group-hover:scale-105'}`}
                             loading="lazy"
                             referrerPolicy="no-referrer"
                           />
                         </div>
 
-                        <div className="relative w-full h-[14%] flex items-center justify-between px-3 select-none pointer-events-none">
+                        <div className="w-full h-9 flex items-center justify-between px-3 select-none relative bg-[#0b0b0b] shrink-0 pointer-events-none">
                           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2">
                             {[...Array(6)].map((_, i) => (
-                              <div key={i} className="w-[8%] h-2.5 bg-white/95 rounded-[1.5px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]" />
+                              <div key={i} className="w-[8%] h-3 bg-white/95 rounded-[1.5px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]" />
                             ))}
                           </div>
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span className="text-[8.5px] font-mono font-bold tracking-wider text-[#c5a86a] bg-[#0b0b0b]/95 px-2 py-0.5 rounded-sm">
+                            <span className="text-[8.5px] font-mono font-bold tracking-wider text-[#c5a86a] bg-[#0b0b0b] px-2 py-0.5 rounded-sm">
                               ▶ {frameNum}
                             </span>
                           </div>
                         </div>
                       </>
                     ) : (
-                      /* 120 底片模式：黑卡纸边框与居中对齐 */
+                      /* 120 底片模式：黑卡纸边框 (在照片外部) */
                       <>
-                        <div className="w-full h-[10%] flex items-center justify-center select-none pb-1.5 pointer-events-none">
+                        <div className="w-full h-7 flex items-center justify-center select-none bg-[#0b0b0b] shrink-0 pointer-events-none">
                           <span className="text-[9px] font-mono font-bold tracking-[0.25em] text-white/35 uppercase">
                             {filmStockText}
                           </span>
                         </div>
 
-                        <div className="flex-1 w-full overflow-hidden bg-zinc-950 relative">
+                        {/* 照片由自适应 aspectRatio 撑开，无拉伸裁剪 */}
+                        <div className="w-full overflow-hidden bg-zinc-950 relative shrink-0" style={{ aspectRatio }}>
                           <img
                             src={frame.previewUrl || frame.imageUrl}
                             alt={frame.frameNumber}
-                            className={`w-full h-full object-cover transition-transform duration-700 ${isSelectionMode ? '' : 'group-hover:scale-105'}`}
+                            className={`w-full h-full object-contain transition-transform duration-700 ${isSelectionMode ? '' : 'group-hover:scale-105'}`}
                             loading="lazy"
                             referrerPolicy="no-referrer"
                           />
                         </div>
 
-                        <div className="w-full h-[12%] flex items-center justify-center select-none pt-1.5 pointer-events-none">
+                        <div className="w-full h-8 flex items-center justify-center select-none bg-[#0b0b0b] shrink-0 pointer-events-none">
                           <span className="text-[10px] font-mono font-bold tracking-widest text-[#c5a86a] uppercase">
                             ▶ {frameNum}
                           </span>
@@ -903,9 +919,9 @@ export default function FilmRoll() {
                       </div>
                     )}
 
-                    {/* 悬浮曝光参数 (非选择模式且非排序模式下优雅显现) */}
+                    {/* 悬浮曝光参数 (非选择模式且非排序模式下在照片区域上方优雅显现) */}
                     {!isSelectionMode && !isSortMode && (
-                      <div className="absolute bottom-10 left-2.5 right-2.5 p-2 bg-black/80 backdrop-blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 flex justify-between items-center text-[10px] text-white/95 font-mono tracking-tight pointer-events-none z-10">
+                      <div className="absolute bottom-12 left-2.5 right-2.5 p-2 bg-black/80 backdrop-blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 flex justify-between items-center text-[10px] text-white/95 font-mono tracking-tight pointer-events-none z-10">
                         <span className="opacity-60 truncate max-w-[55%]">
                           {frame.lens || roll.lens || 'N/A'}
                         </span>
