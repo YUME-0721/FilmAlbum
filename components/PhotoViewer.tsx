@@ -642,7 +642,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
           initial={{ opacity: 0, x: 0 }}
           animate={{ opacity: 1, x: showSidebar && isDesktop ? -116 : 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="relative max-w-[75vw] max-h-[85vh] flex flex-col items-center"
+          className="relative w-full max-w-[92vw] md:max-w-[75vw] max-h-[85vh] flex flex-col items-center"
           onClick={(e) => e.stopPropagation()}
         >
           <AnimatePresence mode="wait" custom={slideDirection} initial={false}>

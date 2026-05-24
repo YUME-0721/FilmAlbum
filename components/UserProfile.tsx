@@ -619,7 +619,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       camera: roll.camera,
       lens: roll.lens,
       shotDate: roll.shotDate,
-      endDate: roll.shotDate, // 假设endDate与shotDate相同，实际应用中可能需要从API获取
+      endDate: roll.endDate || roll.shotDate, // 优先使用从 API 获取到的真实结束日期
       format: roll.format,
       filmType: roll.filmType,
       tags: roll.tags,

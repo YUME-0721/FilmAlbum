@@ -29,6 +29,7 @@ const FALLBACK_ROLL: RollDetail = {
   camera: '',
   lens: '',
   shotDate: '',
+  endDate: '',
   format: '135',
   filmType: 'COLOR_NEGATIVE',
   tags: [],
@@ -191,7 +192,7 @@ export default function FilmRoll() {
         rowHeight = photoH + borderTop + borderBottom;
       }
 
-      const headerHeight = 200;
+      const headerHeight = 360;
       const rowGap = 80;
       const canvasHeight = headerHeight + edgeMargin + rowHeight * rows + rowGap * (rows - 1) + edgeMargin;
 
@@ -210,56 +211,67 @@ export default function FilmRoll() {
       ctx.fillStyle = '#0a0a0a';
       ctx.fillRect(0, 0, canvasWidth, headerHeight);
 
-      // 绘制光圈艺术 Logo
+      // 绘制自适应放大的光圈艺术 Logo
+      const logoX = edgeMargin + 90;
+      const logoY = headerHeight / 2;
       ctx.strokeStyle = 'rgba(255,255,255,0.06)';
       ctx.lineWidth = 1;
-      for (let r_logo = 25; r_logo <= 65; r_logo += 10) {
+      for (let r_logo = 40; r_logo <= 110; r_logo += 15) {
         ctx.beginPath();
-        ctx.arc(edgeMargin + 60, headerHeight / 2, r_logo, 0, Math.PI * 2);
+        ctx.arc(logoX, logoY, r_logo, 0, Math.PI * 2);
         ctx.stroke();
       }
       ctx.strokeStyle = '#c5a86a';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.arc(edgeMargin + 60, headerHeight / 2, 45, 0, Math.PI * 2);
+      ctx.arc(logoX, logoY, 75, 0, Math.PI * 2);
       ctx.stroke();
 
       ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = 1.5;
       for (let i = 0; i < 8; i++) {
         const angle = (i * Math.PI) / 4;
-        const x1 = edgeMargin + 60 + Math.cos(angle) * 25;
-        const y1 = headerHeight / 2 + Math.sin(angle) * 25;
-        const x2 = edgeMargin + 60 + Math.cos(angle + 0.5) * 45;
-        const y2 = headerHeight / 2 + Math.sin(angle + 0.5) * 45;
+        const x1 = logoX + Math.cos(angle) * 40;
+        const y1 = logoY + Math.sin(angle) * 40;
+        const x2 = logoX + Math.cos(angle + 0.5) * 75;
+        const y2 = logoY + Math.sin(angle + 0.5) * 75;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.stroke();
       }
 
+      // 左侧品牌信息 (自适应调大字体)
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 36px "Inter", -apple-system, sans-serif';
+      ctx.font = 'bold 72px "Inter", -apple-system, sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText('FILMER', edgeMargin + 140, headerHeight / 2 - 18);
+      ctx.fillText('FilmAlbum', edgeMargin + 210, logoY - 30);
 
       ctx.fillStyle = '#c5a86a';
-      ctx.font = 'bold 13px "Inter", -apple-system, sans-serif';
-      ctx.fillText('CONTACT SHEET', edgeMargin + 140, headerHeight / 2 + 18);
-
-      ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 24px "Inter", -apple-system, sans-serif';
+      ctx.fillText('CONTACT SHEET', edgeMargin + 210, logoY + 45);
+
+      // 右侧影集详情 (自适应调大字体)
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 56px "Inter", -apple-system, sans-serif';
       ctx.textAlign = 'right';
-      ctx.fillText((roll.title || 'UNTITLED').toUpperCase(), canvasWidth - edgeMargin, headerHeight / 2 - 25);
+      ctx.textBaseline = 'middle';
+      ctx.fillText((roll.title || 'UNTITLED').toUpperCase(), canvasWidth - edgeMargin, logoY - 50);
 
       ctx.fillStyle = '#8e8e93';
-      ctx.font = '500 14px "Inter", -apple-system, sans-serif';
+      ctx.font = '500 28px "Inter", -apple-system, sans-serif';
       const archiveText = `FORMAT: ${roll.format.toUpperCase()}   •   STOCK: ${(roll.filmStock || 'GENERIC').toUpperCase()}   •   CAMERA: ${(roll.camera || 'N/A').toUpperCase()}`;
-      ctx.fillText(archiveText, canvasWidth - edgeMargin, headerHeight / 2 + 5);
+      ctx.fillText(archiveText, canvasWidth - edgeMargin, logoY + 20);
 
-      ctx.font = '500 14px "Inter", -apple-system, sans-serif';
-      const dateText = `DATE: ${roll.shotDate || 'N/A'}   •   TOTAL FRAMES: ${frames.length}`;
-      ctx.fillText(dateText, canvasWidth - edgeMargin, headerHeight / 2 + 30);
+      ctx.font = '500 28px "Inter", -apple-system, sans-serif';
+      // 智能处理双日期显示：shotDate ~ endDate
+      let displayDate = roll.shotDate || 'N/A';
+      if (roll.endDate && roll.endDate !== roll.shotDate) {
+        displayDate = `${roll.shotDate} ~ ${roll.endDate}`;
+      }
+      const dateText = `DATE: ${displayDate}   •   TOTAL FRAMES: ${frames.length}`;
+      ctx.fillText(dateText, canvasWidth - edgeMargin, logoY + 75);
 
       setIndexProgress(85);
 
@@ -442,6 +454,7 @@ export default function FilmRoll() {
             camera: response.data.camera || '',
             lens: response.data.lens || '',
             shotDate: response.data.shotDate || '',
+            endDate: response.data.endDate || '',
             filmType: response.data.filmType || '',
             format: response.data.format || '',
             tags: response.data.tags || [],

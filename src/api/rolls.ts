@@ -17,6 +17,7 @@ export interface RollListItem {
   lens: string;
   location: string;
   shotDate: string;
+  endDate?: string;
   format: string;
   filmType: string;
   status: string;
@@ -56,6 +57,7 @@ export interface RollDetail {
   lens: string;
   location: string;
   shotDate: string;
+  endDate?: string;
   format: string;
   filmType: string;
   status: string;
@@ -99,6 +101,7 @@ export function createRoll(data: {
   lens?: string;
   location?: string;
   shotDate?: string;
+  endDate?: string;
   format?: string;
   filmType?: string;
   status?: string;
