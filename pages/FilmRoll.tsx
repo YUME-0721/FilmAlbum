@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from '../src/hooks/useTranslation';
 import FilmStockManager from '../components/FilmStockManager';
 import RollForm from '../components/RollForm';
+import { useSettings } from '../src/context/SettingsContext';
 import { 
   ArrowLeft, ImagePlus, Pencil, Download, Trash2, Camera, Calendar, 
   MapPin, ArrowUp, ArrowDown, CloudUpload, Info, CheckCircle2, Circle, X, ArrowUpDown, Check
@@ -41,6 +42,7 @@ const FALLBACK_ROLL: RollDetail = {
 
 export default function FilmRoll() {
   const { t } = useTranslation();
+  const { rollFormats } = useSettings();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [roll, setRoll] = useState<RollDetail>(FALLBACK_ROLL);
@@ -62,6 +64,45 @@ export default function FilmRoll() {
   const [isSortMode, setIsSortMode] = useState(false);
   const [selectedFrameIds, setSelectedFrameIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  // 监听大屏模式 (桌面端)
+  useEffect(() => {
+    const checkScreen = () => setIsLargeScreen(window.innerWidth >= 1024);
+    checkScreen();
+    window.addEventListener('resize', checkScreen);
+    return () => window.removeEventListener('resize', checkScreen);
+  }, []);
+
+  // 提取当前胶卷子规格对应的桌面端排版列数
+  const getColsForFormat = () => {
+    const formatName = roll.format;
+    // 1. 尝试从管理员系统设置中匹配最新的 frameCols 配置
+    const currentFormatDef = rollFormats?.find(f => f.frames.includes(formatName));
+    if (currentFormatDef?.frameCols && currentFormatDef.frameCols[formatName] !== undefined) {
+      return currentFormatDef.frameCols[formatName];
+    }
+    
+    // 2. 健壮性默认 Fallback 映射：
+    // 半格一行12张，135/35mm一行6张，xpan/620/630一行1张，645一行4张，6x6/6x7一行3张，6x9一行2张
+    const defaultColsMap: Record<string, number> = {
+      '半格': 12,
+      '135': 6,
+      '35mm': 6,
+      'xpan': 1,
+      '620': 1,
+      '630': 1,
+      '645': 4,
+      '6x6': 3,
+      '6x7': 3,
+      '6x9': 2
+    };
+    
+    return defaultColsMap[formatName] || 4; // 缺省使用默认的 4 张排版
+  };
+
+  const desktopCols = getColsForFormat();
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -400,7 +441,10 @@ export default function FilmRoll() {
             <p className="text-sm text-on-surface-variant mt-2">{t('profile.roll.noPhotoDesc')}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-6">
+          <div 
+            className={`grid gap-6 ${isLargeScreen ? '' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}
+            style={isLargeScreen ? { gridTemplateColumns: `repeat(${desktopCols}, minmax(0, 1fr))` } : undefined}
+          >
             <AnimatePresence mode="popLayout">
               {frames.map((frame, index) => (
                 <motion.div

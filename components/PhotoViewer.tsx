@@ -612,10 +612,10 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
         {/* NOTE: 移动端依靠左右滑动手势翻页（onDragEnd），因此在小屏幕下隐藏翻页按钮（hidden md:flex），避免遮挡图片内容。 */}
         <button
           onClick={(e) => { e.stopPropagation(); goToFrame(currentFrame > 0 ? currentFrame - 1 : frames.length - 1); }}
-          className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 rounded-full hidden md:flex items-center justify-center backdrop-blur-md shadow-2xl border active:scale-95 transition-all z-40 ${
+          className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 hidden md:flex items-center justify-center active:scale-95 transition-all z-40 ${
             borderType === 'black' 
-              ? 'bg-white/40 border-black/5 text-black/60 hover:bg-white/80 hover:text-black shadow-black/5' 
-              : 'bg-black/35 border-white/10 text-white/70 hover:bg-black/55 hover:text-white shadow-black/40'
+              ? 'text-black/35 hover:text-black/80 hover:scale-110' 
+              : 'text-white/40 hover:text-white hover:scale-110'
           }`}
           title={t('common.prev') || '上一张'}
         >
@@ -624,12 +624,12 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
 
         <button
           onClick={(e) => { e.stopPropagation(); goToFrame(currentFrame < frames.length - 1 ? currentFrame + 1 : 0); }}
-          className={`absolute top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 rounded-full hidden md:flex items-center justify-center backdrop-blur-md shadow-2xl border active:scale-95 transition-all z-40 ${
+          className={`absolute top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 hidden md:flex items-center justify-center active:scale-95 transition-all z-40 ${
             showSidebar && isDesktop ? 'right-[336px]' : 'right-4 md:right-8'
           } ${
             borderType === 'black' 
-              ? 'bg-white/40 border-black/5 text-black/60 hover:bg-white/80 hover:text-black shadow-black/5' 
-              : 'bg-black/35 border-white/10 text-white/70 hover:bg-black/55 hover:text-white shadow-black/40'
+              ? 'text-black/35 hover:text-black/80 hover:scale-110' 
+              : 'text-white/40 hover:text-white hover:scale-110'
           }`}
           title={t('common.next') || '下一张'}
         >
@@ -828,7 +828,7 @@ export default function PhotoViewer({ roll, frames: initialFrames, initialIndex,
 
         {/* 高颜值悬浮毛玻璃控制条 */}
         {frames[currentFrame] && !isImageLoading && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 py-1.5 px-4 rounded-full bg-black/60 border border-white/10 backdrop-blur-md shadow-2xl z-30 select-none transition-all hover:bg-black/70 hover:border-white/20">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 py-1.5 px-4 rounded-full bg-black/60 border border-white/10 backdrop-blur-md shadow-2xl z-30 select-none transition-all hover:bg-black/70 hover:border-white/20">
             {/* 缩小 */}
             <button
               onClick={() => setScale(prev => Math.max(prev - 0.5, 1))}

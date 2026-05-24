@@ -223,7 +223,7 @@ INSERT OR IGNORE INTO system_settings (key, value) VALUES ('api_base_url', '');
 /* 用户等级配置：JSON 数组，包含 label, value, description, roll_limit, gear_limit, can_post, can_comment 等权限 */
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('user_levels', '[{"value":"lv1","label":"LV1","description":"只读权限","roll_limit":0,"gear_limit":0,"can_post":false,"can_comment":false},{"value":"lv2","label":"LV2","description":"标准权限","roll_limit":10,"gear_limit":5,"can_post":true,"can_comment":true},{"value":"lv3","label":"LV3","description":"无限制","roll_limit":999,"gear_limit":999,"can_post":true,"can_comment":true}]');
 /* 胶卷配置 */
-INSERT OR IGNORE INTO system_settings (key, value) VALUES ('roll_formats', '[{"format":"135","label":"35mm (135)","frames":["半格","35mm","xpan"]},{"format":"120","label":"中画幅 (120)","frames":["620","630","645","6x6","6x7","6x9"]}]');
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('roll_formats', '[{"format":"135","label":"35mm (135)","frames":["半格","35mm","xpan"],"frameCols":{"半格":12,"35mm":6,"xpan":1}},{"format":"120","label":"中画幅 (120)","frames":["620","630","645","6x6","6x7","6x9"],"frameCols":{"620":1,"630":1,"645":4,"6x6":3,"6x7":3,"6x9":2}}]');
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('film_types', '["彩色负片","黑白负片","彩色反转片","黑白反转片"]');
 
 /* 索引优化 */

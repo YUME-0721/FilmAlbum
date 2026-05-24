@@ -16,7 +16,7 @@ interface SettingsContextType {
   isDarkMode: boolean;
   openRegistration: boolean;
   lv2RollLimit: number;
-  rollFormats: {format: string, label: string, frames: string[]}[];
+  rollFormats: {format: string, label: string, frames: string[], frameCols?: Record<string, number>}[];
   filmTypes: string[];
 }
 
@@ -53,7 +53,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [openRegistration, setOpenRegistration] = useState(true);
   const [lv2RollLimit, setLv2RollLimit] = useState(10);
-  const [rollFormats, setRollFormats] = useState<{format: string, label: string, frames: string[]}[]>([{"format":"135","label":"35mm (135)","frames":["半格","35mm","xpan"]},{"format":"120","label":"中画幅 (120)","frames":["620","630","645","6x6","6x7","6x9"]}]);
+  const [rollFormats, setRollFormats] = useState<{format: string, label: string, frames: string[], frameCols?: Record<string, number>}[]>([{"format":"135","label":"35mm (135)","frames":["半格","35mm","xpan"],"frameCols":{"半格":12,"35mm":6,"xpan":1}},{"format":"120","label":"中画幅 (120)","frames":["620","630","645","6x6","6x7","6x9"],"frameCols":{"620":1,"630":1,"645":4,"6x6":3,"6x7":3,"6x9":2}}]);
   const [filmTypes, setFilmTypes] = useState<string[]>(["彩色负片","黑白负片","彩色反转片","黑白反转片"]);
   const [isLoaded, setIsLoaded] = useState(false);
 
