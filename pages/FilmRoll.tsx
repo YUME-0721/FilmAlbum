@@ -104,6 +104,322 @@ export default function FilmRoll() {
 
   const desktopCols = getColsForFormat();
 
+  const [isGeneratingIndex, setIsGeneratingIndex] = useState(false);
+  const [indexProgress, setIndexProgress] = useState(0);
+
+  const preloadImage = (url: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = url;
+      img.onload = () => resolve(img);
+      img.onerror = (e) => reject(e);
+    });
+  };
+
+  const generateContactSheet = async () => {
+    if (frames.length === 0) return;
+    setIsGeneratingIndex(true);
+    setIndexProgress(5);
+
+    try {
+      const loadedImages: HTMLImageElement[] = [];
+      for (let i = 0; i < frames.length; i++) {
+        const frame = frames[i];
+        const url = frame.previewUrl || frame.imageUrl;
+        try {
+          const img = await preloadImage(url);
+          loadedImages.push(img);
+        } catch (err) {
+          console.error(`Failed to load image at index ${i}:`, err);
+          loadedImages.push(null as any);
+        }
+        const progress = Math.round(5 + (i / frames.length) * 55);
+        setIndexProgress(progress);
+      }
+
+      setIndexProgress(65);
+      
+      const formatName = roll.format;
+      const baseFormatDef = rollFormats?.find(f => f.frames.includes(formatName));
+      const baseFormat = baseFormatDef ? baseFormatDef.format : '135';
+      const is135 = baseFormat === '135';
+
+      const formatRatioMap: Record<string, number> = {
+        '半格': 2 / 3,
+        '35mm': 3 / 2,
+        '135': 3 / 2,
+        'xpan': 65 / 24,
+        '620': 3 / 2,
+        '630': 3 / 2,
+        '645': 4 / 3,
+        '6x6': 1,
+        '6x7': 7 / 6,
+        '6x9': 3 / 2
+      };
+      const aspectRatio = formatRatioMap[formatName] || 3 / 2;
+
+      const canvasWidth = 3600;
+      const edgeMargin = 100;
+      const usableWidth = canvasWidth - edgeMargin * 2;
+      const cols = desktopCols || 6;
+      const rows = Math.ceil(frames.length / cols);
+      const gap = 40;
+
+      const itemWidth = (usableWidth - gap * (cols - 1)) / cols;
+
+      let rowHeight = 0;
+      let P_mm = 1;
+      let sprocketW = 0, sprocketH = 0, pitch = 0;
+      let borderLeft = 0, borderTop = 0, borderBottom = 0;
+      let photoW = 0, photoH = 0;
+
+      if (is135) {
+        photoW = itemWidth - 16;
+        photoH = photoW / aspectRatio;
+        P_mm = photoH / 24;
+        rowHeight = Math.round(P_mm * 35);
+        sprocketW = Math.round(P_mm * 2.8);
+        sprocketH = Math.round(P_mm * 2);
+        pitch = P_mm * 4.75;
+      } else {
+        borderLeft = 16;
+        borderTop = 28;
+        borderBottom = 28;
+        photoW = itemWidth - borderLeft * 2;
+        photoH = photoW / aspectRatio;
+        rowHeight = photoH + borderTop + borderBottom;
+      }
+
+      const headerHeight = 200;
+      const rowGap = 80;
+      const canvasHeight = headerHeight + edgeMargin + rowHeight * rows + rowGap * (rows - 1) + edgeMargin;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get 2D context');
+
+      setIndexProgress(75);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // 页头背景
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvasWidth, headerHeight);
+
+      // 绘制光圈艺术 Logo
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      for (let r_logo = 25; r_logo <= 65; r_logo += 10) {
+        ctx.beginPath();
+        ctx.arc(edgeMargin + 60, headerHeight / 2, r_logo, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = '#c5a86a';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(edgeMargin + 60, headerHeight / 2, 45, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI) / 4;
+        const x1 = edgeMargin + 60 + Math.cos(angle) * 25;
+        const y1 = headerHeight / 2 + Math.sin(angle) * 25;
+        const x2 = edgeMargin + 60 + Math.cos(angle + 0.5) * 45;
+        const y2 = headerHeight / 2 + Math.sin(angle + 0.5) * 45;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 36px "Inter", -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('FILMER', edgeMargin + 140, headerHeight / 2 - 18);
+
+      ctx.fillStyle = '#c5a86a';
+      ctx.font = 'bold 13px "Inter", -apple-system, sans-serif';
+      ctx.fillText('CONTACT SHEET', edgeMargin + 140, headerHeight / 2 + 18);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 24px "Inter", -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText((roll.title || 'UNTITLED').toUpperCase(), canvasWidth - edgeMargin, headerHeight / 2 - 25);
+
+      ctx.fillStyle = '#8e8e93';
+      ctx.font = '500 14px "Inter", -apple-system, sans-serif';
+      const archiveText = `FORMAT: ${roll.format.toUpperCase()}   •   STOCK: ${(roll.filmStock || 'GENERIC').toUpperCase()}   •   CAMERA: ${(roll.camera || 'N/A').toUpperCase()}`;
+      ctx.fillText(archiveText, canvasWidth - edgeMargin, headerHeight / 2 + 5);
+
+      ctx.font = '500 14px "Inter", -apple-system, sans-serif';
+      const dateText = `DATE: ${roll.shotDate || 'N/A'}   •   TOTAL FRAMES: ${frames.length}`;
+      ctx.fillText(dateText, canvasWidth - edgeMargin, headerHeight / 2 + 30);
+
+      setIndexProgress(85);
+
+      const filmStockText = (roll.filmStock || (is135 ? 'KODAK 135' : 'KODAK 120')).toUpperCase();
+
+      for (let r = 0; r < rows; r++) {
+        const rowY = headerHeight + edgeMargin + r * (rowHeight + rowGap);
+
+        if (is135) {
+          ctx.fillStyle = '#0b0b0b';
+          ctx.fillRect(edgeMargin, rowY, usableWidth, rowHeight);
+
+          ctx.strokeStyle = 'rgba(197, 168, 106, 0.15)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(edgeMargin, rowY + P_mm * 1.5);
+          ctx.lineTo(edgeMargin + usableWidth, rowY + P_mm * 1.5);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(edgeMargin, rowY + rowHeight - P_mm * 1.5);
+          ctx.lineTo(edgeMargin + usableWidth, rowY + rowHeight - P_mm * 1.5);
+          ctx.stroke();
+
+          const sprocketTopY = rowY + P_mm * 3.75;
+          const sprocketBottomY = rowY + rowHeight - P_mm * 5.75;
+          
+          ctx.fillStyle = '#ffffff';
+          const totalSprockets = Math.floor(usableWidth / pitch);
+
+          for (let s = 0; s < totalSprockets; s++) {
+            const sprocketX = edgeMargin + s * pitch + (pitch - sprocketW) / 2;
+            drawRoundedRect(ctx, sprocketX, sprocketTopY, sprocketW, sprocketH, P_mm * 0.5);
+            drawRoundedRect(ctx, sprocketX, sprocketBottomY, sprocketW, sprocketH, P_mm * 0.5);
+          }
+
+          for (let c = 0; c < cols; c++) {
+            const index = r * cols + c;
+            if (index >= frames.length) break;
+
+            const centerX = edgeMargin + c * (itemWidth + gap) + itemWidth / 2;
+            const photoX = centerX - photoW / 2;
+            const photoY = rowY + P_mm * 5.5;
+
+            const img = loadedImages[index];
+            if (img) {
+              ctx.drawImage(img, photoX, photoY, photoW, photoH);
+            } else {
+              ctx.fillStyle = '#222222';
+              ctx.fillRect(photoX, photoY, photoW, photoH);
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 14px "Inter", sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText('NO IMAGE', centerX, photoY + photoH / 2);
+            }
+
+            ctx.fillStyle = '#c5a86a';
+            ctx.font = `bold ${Math.round(P_mm * 1.5)}px "Inter", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            const frameNumStr = `▶ ${String(index + 1).padStart(2, '0')}`;
+            ctx.fillText(frameNumStr, centerX, rowY + rowHeight - P_mm * 3.5);
+
+            ctx.font = `500 ${Math.round(P_mm * 1.1)}px "Inter", sans-serif`;
+            ctx.fillText(filmStockText, centerX, rowY + P_mm * 1.8);
+          }
+        } else {
+          for (let c = 0; c < cols; c++) {
+            const index = r * cols + c;
+            if (index >= frames.length) break;
+
+            const gridX = edgeMargin + c * (itemWidth + gap);
+            const centerX = gridX + itemWidth / 2;
+
+            ctx.fillStyle = '#0b0b0b';
+            ctx.fillRect(gridX, rowY, itemWidth, rowHeight);
+
+            const photoX = gridX + borderLeft;
+            const photoY = rowY + borderTop;
+            const img = loadedImages[index];
+
+            if (img) {
+              const imgRatio = img.naturalWidth / img.naturalHeight;
+              let targetW = photoW;
+              let targetH = photoH;
+              let drawX = photoX;
+              let drawY = photoY;
+
+              if (imgRatio > aspectRatio) {
+                targetH = photoW / imgRatio;
+                drawY = photoY + (photoH - targetH) / 2;
+              } else {
+                targetW = photoH * imgRatio;
+                drawX = photoX + (photoW - targetW) / 2;
+              }
+
+              ctx.drawImage(img, drawX, drawY, targetW, targetH);
+            } else {
+              ctx.fillStyle = '#222222';
+              ctx.fillRect(photoX, photoY, photoW, photoH);
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 14px "Inter", sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText('NO IMAGE', centerX, photoY + photoH / 2);
+            }
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+            ctx.font = '500 12px "Inter", -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(filmStockText, centerX, rowY + borderTop / 2);
+
+            ctx.fillStyle = '#c5a86a';
+            ctx.font = 'bold 13px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            const frameNumStr = `▶ ${String(index + 1).padStart(2, '0')}`;
+            ctx.fillText(frameNumStr, centerX, rowY + rowHeight - borderBottom / 2);
+          }
+        }
+      }
+
+      setIndexProgress(95);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${roll.title}_ContactSheet.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          setIndexProgress(100);
+          setTimeout(() => setIsGeneratingIndex(false), 800);
+        }
+      }, 'image/jpeg', 0.93);
+
+    } catch (error) {
+      console.error('Failed to generate contact sheet:', error);
+      alert('生成索引图失败，请稍后重试');
+      setIsGeneratingIndex(false);
+    }
+  };
+
+  const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    ctx.fill();
+  };
+
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -346,7 +662,7 @@ export default function FilmRoll() {
                       : t('common.upload')}
                   </span>
                 </button>
-                <button onClick={() => {/* TODO: Implement roll export */}} className="p-2.5 hover:bg-surface-variant rounded-xl transition-colors border border-outline-variant/30" title="Export Roll">
+                <button onClick={generateContactSheet} className="p-2.5 hover:bg-surface-variant rounded-xl transition-colors border border-outline-variant/30" title="Export Roll">
                   <Download size={20} />
                 </button>
                 <button onClick={() => setShowEditModal(true)} className="p-2.5 hover:bg-surface-variant rounded-xl transition-colors border border-outline-variant/30">
@@ -583,6 +899,36 @@ export default function FilmRoll() {
         {toast && (
           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl z-[120] flex items-center gap-3 ${toast.type === 'success' ? 'bg-primary text-on-primary' : 'bg-error text-on-error'}`}>
              <span className="text-sm font-bold">{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 索引图生成进度提示 */}
+      <AnimatePresence>
+        {isGeneratingIndex && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/75 backdrop-blur-md"
+          >
+            <div className="w-80 space-y-5 p-8 rounded-3xl bg-surface-container/60 border border-white/10 backdrop-blur-2xl shadow-2xl">
+              <div className="flex justify-between items-center text-white text-sm font-bold uppercase tracking-widest">
+                <span>正在生成底片索引图...</span>
+                <span className="font-mono text-primary text-base">{indexProgress}%</span>
+              </div>
+              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${indexProgress}%` }}
+                  className="h-full bg-primary"
+                  transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+                />
+              </div>
+              <p className="text-white/40 text-[10px] text-center leading-relaxed">
+                正在加载底片图像并进行国标比例渲染，高分辨率大图正在导出，请耐心等候...
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
