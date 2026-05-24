@@ -105,6 +105,12 @@ export default function FilmRoll() {
 
   const desktopCols = getColsForFormat();
 
+  const formatName = roll.format;
+  const baseFormatDef = rollFormats?.find(f => f.frames.includes(formatName));
+  const baseFormat = baseFormatDef ? baseFormatDef.format : '135';
+  const is135 = baseFormat === '135';
+  const filmStockText = (roll.filmStock || (is135 ? 'KODAK 135' : 'KODAK 120')).toUpperCase();
+
   const [isGeneratingIndex, setIsGeneratingIndex] = useState(false);
   const [indexProgress, setIndexProgress] = useState(0);
 
@@ -181,7 +187,7 @@ export default function FilmRoll() {
         P_mm = photoH / 24;
         rowHeight = Math.round(P_mm * 35);
         sprocketW = Math.round(P_mm * 2.8);
-        sprocketH = Math.round(P_mm * 2);
+        sprocketH = Math.round(P_mm * 2.4);
         pitch = P_mm * 4.75;
       } else {
         borderLeft = 16;
@@ -296,8 +302,8 @@ export default function FilmRoll() {
           ctx.lineTo(edgeMargin + usableWidth, rowY + rowHeight - P_mm * 1.5);
           ctx.stroke();
 
-          const sprocketTopY = rowY + P_mm * 3.75;
-          const sprocketBottomY = rowY + rowHeight - P_mm * 5.75;
+          const sprocketTopY = rowY + P_mm * 2.0;
+          const sprocketBottomY = rowY + rowHeight - P_mm * 2.0 - sprocketH;
           
           ctx.fillStyle = '#ffffff';
           const totalSprockets = Math.floor(usableWidth / pitch);
@@ -775,79 +781,143 @@ export default function FilmRoll() {
             style={isLargeScreen ? { gridTemplateColumns: `repeat(${desktopCols}, minmax(0, 1fr))` } : undefined}
           >
             <AnimatePresence mode="popLayout">
-              {frames.map((frame, index) => (
-                <motion.div
-                  key={frame.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{
-                    layout: { type: "spring", stiffness: 300, damping: 30 },
-                    opacity: { duration: 0.2 }
-                  }}
-                  className={`group relative aspect-[3/2] bg-surface-container rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-500 ${isSelectionMode && selectedFrameIds.includes(frame.id) ? 'ring-4 ring-primary ring-inset' : ''} ${isSortMode ? 'ring-2 ring-primary/30' : ''}`}
-                  onClick={() => {
-                    if (isSelectionMode) toggleSelection(frame.id);
-                    else if (isSortMode) return; // In sort mode, only use buttons
-                    else navigate(`/frame/${frame.id}`);
-                  }}
-                >
-                  <img
-                    src={frame.previewUrl || frame.imageUrl}
-                    alt={frame.frameNumber}
-                    className={`w-full h-full object-cover transition-transform duration-700 ${isSelectionMode ? '' : 'group-hover:scale-110'}`}
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                  />
-                  
-                  {/* 选择模式指示器 */}
-                  {isSelectionMode && (
-                    <div className="absolute top-3 right-3 z-10">
-                      {selectedFrameIds.includes(frame.id) ? (
-                        <CheckCircle2 className="text-primary bg-white rounded-full" size={24} />
-                      ) : (
-                        <Circle className="text-white/50" size={24} />
-                      )}
-                    </div>
-                  )}
-  
-                  {/* 操作浮层：仅在排序模式下显示 */}
-                  {isSortMode && (
-                    <div className="absolute inset-0 bg-black/40 transition-opacity flex items-center justify-center gap-4 opacity-100">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'up'); }} 
-                        disabled={index === 0} 
-                        className={`p-3 bg-white/20 hover:bg-white/40 rounded-xl text-white disabled:opacity-20 transition-all hover:scale-110 active:scale-90 ${isSortMode ? 'bg-primary/40' : ''}`}
-                      >
-                        <ArrowUp size={24} />
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'down'); }} 
-                        disabled={index === frames.length - 1} 
-                        className={`p-3 bg-white/20 hover:bg-white/40 rounded-xl text-white disabled:opacity-20 transition-all hover:scale-110 active:scale-90 ${isSortMode ? 'bg-primary/40' : ''}`}
-                      >
-                        <ArrowDown size={24} />
-                      </button>
-                    </div>
-                  )}
-  
-                  {/* 底部信息 */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                    <div className="flex justify-between items-center text-white font-medium text-xs">
-                      <span className="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-mono tracking-tighter">
-                        {frame.frameNumber && frame.frameNumber !== '00' && frame.frameNumber !== '0' 
-                          ? frame.frameNumber 
-                          : (index + 1).toString().padStart(2, '0')}
-                      </span>
-                      <div className="flex gap-2 opacity-80">
-                        {frame.aperture && <span>{frame.aperture}</span>}
-                        {frame.shutterSpeed && <span>{frame.shutterSpeed}</span>}
+              {frames.map((frame, index) => {
+                const frameNum = frame.frameNumber && frame.frameNumber !== '00' && frame.frameNumber !== '0' 
+                  ? frame.frameNumber 
+                  : (index + 1).toString().padStart(2, '0');
+
+                return (
+                  <motion.div
+                    key={frame.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{
+                      layout: { type: "spring", stiffness: 300, damping: 30 },
+                      opacity: { duration: 0.2 }
+                    }}
+                    className={`group relative aspect-[3/2] bg-[#0b0b0b] rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-500 flex flex-col justify-between ${
+                      is135 ? 'p-1 pb-1.5' : 'p-2.5 pb-3'
+                    } ${isSelectionMode && selectedFrameIds.includes(frame.id) ? 'ring-4 ring-primary ring-inset' : ''} ${isSortMode ? 'ring-2 ring-primary/30' : ''}`}
+                    onClick={() => {
+                      if (isSelectionMode) toggleSelection(frame.id);
+                      else if (isSortMode) return;
+                      else navigate(`/frame/${frame.id}`);
+                    }}
+                  >
+                    {is135 ? (
+                      /* 135 底片模式：顶部与底部白色小圆角齿孔带 */
+                      <>
+                        <div className="relative w-full h-[12%] flex items-center justify-between px-3 select-none pointer-events-none">
+                          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2">
+                            {[...Array(6)].map((_, i) => (
+                              <div key={i} className="w-[8%] h-2.5 bg-white/95 rounded-[1.5px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]" />
+                            ))}
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className="text-[7.5px] font-mono font-bold tracking-[0.2em] text-[#c5a86a]/40 bg-[#0b0b0b]/90 px-1 py-0.5 rounded-sm">
+                              {filmStockText}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex-1 w-full overflow-hidden bg-zinc-950 relative">
+                          <img
+                            src={frame.previewUrl || frame.imageUrl}
+                            alt={frame.frameNumber}
+                            className={`w-full h-full object-cover transition-transform duration-700 ${isSelectionMode ? '' : 'group-hover:scale-105'}`}
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+
+                        <div className="relative w-full h-[14%] flex items-center justify-between px-3 select-none pointer-events-none">
+                          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2">
+                            {[...Array(6)].map((_, i) => (
+                              <div key={i} className="w-[8%] h-2.5 bg-white/95 rounded-[1.5px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]" />
+                            ))}
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className="text-[8.5px] font-mono font-bold tracking-wider text-[#c5a86a] bg-[#0b0b0b]/95 px-2 py-0.5 rounded-sm">
+                              ▶ {frameNum}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      /* 120 底片模式：黑卡纸边框与居中对齐 */
+                      <>
+                        <div className="w-full h-[10%] flex items-center justify-center select-none pb-1.5 pointer-events-none">
+                          <span className="text-[9px] font-mono font-bold tracking-[0.25em] text-white/35 uppercase">
+                            {filmStockText}
+                          </span>
+                        </div>
+
+                        <div className="flex-1 w-full overflow-hidden bg-zinc-950 relative">
+                          <img
+                            src={frame.previewUrl || frame.imageUrl}
+                            alt={frame.frameNumber}
+                            className={`w-full h-full object-cover transition-transform duration-700 ${isSelectionMode ? '' : 'group-hover:scale-105'}`}
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+
+                        <div className="w-full h-[12%] flex items-center justify-center select-none pt-1.5 pointer-events-none">
+                          <span className="text-[10px] font-mono font-bold tracking-widest text-[#c5a86a] uppercase">
+                            ▶ {frameNum}
+                          </span>
+                        </div>
+                      </>
+                    )}
+
+                    {/* 选择模式指示器 */}
+                    {isSelectionMode && (
+                      <div className="absolute top-3 right-3 z-10">
+                        {selectedFrameIds.includes(frame.id) ? (
+                          <CheckCircle2 className="text-primary bg-white rounded-full shadow-lg" size={24} />
+                        ) : (
+                          <Circle className="text-white/50 bg-black/30 rounded-full" size={24} />
+                        )}
                       </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                    )}
+
+                    {/* 操作浮层：仅在排序模式下显示 */}
+                    {isSortMode && (
+                      <div className="absolute inset-0 bg-black/60 transition-opacity flex items-center justify-center gap-4 opacity-100 z-10">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'up'); }} 
+                          disabled={index === 0} 
+                          className="p-3 bg-white/20 hover:bg-white/40 rounded-xl text-white disabled:opacity-20 transition-all hover:scale-110 active:scale-90"
+                        >
+                          <ArrowUp size={24} />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleMoveFrame(index, 'down'); }} 
+                          disabled={index === frames.length - 1} 
+                          className="p-3 bg-white/20 hover:bg-white/40 rounded-xl text-white disabled:opacity-20 transition-all hover:scale-110 active:scale-90"
+                        >
+                          <ArrowDown size={24} />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* 悬浮曝光参数 (非选择模式且非排序模式下优雅显现) */}
+                    {!isSelectionMode && !isSortMode && (
+                      <div className="absolute bottom-10 left-2.5 right-2.5 p-2 bg-black/80 backdrop-blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 flex justify-between items-center text-[10px] text-white/95 font-mono tracking-tight pointer-events-none z-10">
+                        <span className="opacity-60 truncate max-w-[55%]">
+                          {frame.lens || roll.lens || 'N/A'}
+                        </span>
+                        <div className="flex gap-2 shrink-0">
+                          {frame.aperture && <span>{frame.aperture}</span>}
+                          {frame.shutterSpeed && <span>{frame.shutterSpeed}</span>}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </div>
         )}
