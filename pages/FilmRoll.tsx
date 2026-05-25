@@ -261,37 +261,37 @@ export default function FilmRoll() {
         ctx.stroke();
       }
 
-      // 左侧品牌信息 (自适应调大字体)
+      // 左侧品牌信息 (NOTE: 为适配 3600px 的超大画幅，将品牌字号从 72px 调大至 92px，副标题调大至 36px，并在视觉上微调垂直分布间距，呈现稳重大气的联系单页头)
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 72px "Inter", -apple-system, sans-serif';
+      ctx.font = 'bold 92px "Inter", -apple-system, sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText('FilmAlbum', edgeMargin + 210, logoY - 30);
+      ctx.fillText('FilmAlbum', edgeMargin + 210, logoY - 35);
 
       ctx.fillStyle = '#c5a86a';
-      ctx.font = 'bold 24px "Inter", -apple-system, sans-serif';
-      ctx.fillText('CONTACT SHEET', edgeMargin + 210, logoY + 45);
+      ctx.font = 'bold 36px "Inter", -apple-system, sans-serif';
+      ctx.fillText('CONTACT SHEET', edgeMargin + 210, logoY + 55);
 
-      // 右侧影集详情 (自适应调大字体)
+      // 右侧影集详情 (NOTE: 将相册标题字号从 56px 放大至 88px，拍摄细节/日期字号从 28px 放大至 42px。高像素下能够提供完美的极简排版美学与阅读舒适度)
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 56px "Inter", -apple-system, sans-serif';
+      ctx.font = 'bold 88px "Inter", -apple-system, sans-serif';
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
-      ctx.fillText((roll.title || 'UNTITLED').toUpperCase(), canvasWidth - edgeMargin, logoY - 50);
+      ctx.fillText((roll.title || 'UNTITLED').toUpperCase(), canvasWidth - edgeMargin, logoY - 45);
 
       ctx.fillStyle = '#8e8e93';
-      ctx.font = '500 28px "Inter", -apple-system, sans-serif';
+      ctx.font = '500 42px "Inter", -apple-system, sans-serif';
       const archiveText = `FORMAT: ${roll.format.toUpperCase()}   •   STOCK: ${(roll.filmStock || 'GENERIC').toUpperCase()}   •   CAMERA: ${(roll.camera || 'N/A').toUpperCase()}`;
-      ctx.fillText(archiveText, canvasWidth - edgeMargin, logoY + 20);
+      ctx.fillText(archiveText, canvasWidth - edgeMargin, logoY + 25);
 
-      ctx.font = '500 28px "Inter", -apple-system, sans-serif';
+      ctx.font = '500 42px "Inter", -apple-system, sans-serif';
       // 智能处理双日期显示：shotDate ~ endDate
       let displayDate = roll.shotDate || 'N/A';
       if (roll.endDate && roll.endDate !== roll.shotDate) {
         displayDate = `${roll.shotDate} ~ ${roll.endDate}`;
       }
       const dateText = `DATE: ${displayDate}   •   TOTAL FRAMES: ${frames.length}`;
-      ctx.fillText(dateText, canvasWidth - edgeMargin, logoY + 75);
+      ctx.fillText(dateText, canvasWidth - edgeMargin, logoY + 80);
 
       setIndexProgress(85);
 
@@ -349,14 +349,17 @@ export default function FilmRoll() {
             }
 
             ctx.fillStyle = '#c5a86a';
-            ctx.font = `bold ${Math.round(P_mm * 1.5)}px "Inter", sans-serif`;
+            ctx.font = `bold ${Math.round(P_mm * 1.4)}px "Inter", sans-serif`;
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
+            // NOTE: 将帧号文字移到底部黑边区域 (33.0 ~ 35.0 P_mm)，避免与底部齿孔重合
+            ctx.textBaseline = 'bottom';
             const frameNumStr = `▶ ${String(index + 1).padStart(2, '0')}`;
-            ctx.fillText(frameNumStr, centerX, rowY + rowHeight - P_mm * 3.5);
+            ctx.fillText(frameNumStr, centerX, rowY + rowHeight - P_mm * 0.4);
 
+            // NOTE: 将胶卷型号文字移到顶部黑边区域 (0 ~ 2.0 P_mm)，避免与顶部齿孔重合
             ctx.font = `500 ${Math.round(P_mm * 1.1)}px "Inter", sans-serif`;
-            ctx.fillText(filmStockText, centerX, rowY + P_mm * 1.8);
+            ctx.textBaseline = 'top';
+            ctx.fillText(filmStockText, centerX, rowY + P_mm * 0.4);
           }
         } else {
           for (let c = 0; c < cols; c++) {
@@ -824,13 +827,15 @@ export default function FilmRoll() {
                       /* 135 底片模式：顶部与底部独立且对称的圆角齿孔带 (在照片外部) */
                       <>
                         <div className="w-full h-8 flex items-center justify-between px-3 select-none relative bg-[#0b0b0b] shrink-0 pointer-events-none">
-                          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2">
+                          {/* NOTE: 齿孔向下偏移 (bottom-[5px])，从而为顶部留出充足的黑边空间以显示文字，避免悬浮错位重合 */}
+                          <div className="absolute inset-x-0 bottom-[5px] flex justify-between px-2">
                             {[...Array(6)].map((_, i) => (
                               <div key={i} className="w-[8%] h-3 bg-white/95 rounded-[1.5px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]" />
                             ))}
                           </div>
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span className="text-[7.5px] font-mono font-bold tracking-[0.2em] text-[#c5a86a]/40 bg-[#0b0b0b] px-1 py-0.5 rounded-sm">
+                          {/* NOTE: 将文字绝对定位在顶部黑边区域，不使用背景遮罩，使排版更真实自然 */}
+                          <div className="absolute top-[3px] left-1/2 -translate-x-1/2 pointer-events-none">
+                            <span className="text-[7.5px] font-mono font-bold tracking-[0.2em] text-[#c5a86a]/40">
                               {filmStockText}
                             </span>
                           </div>
@@ -848,13 +853,15 @@ export default function FilmRoll() {
                         </div>
 
                         <div className="w-full h-9 flex items-center justify-between px-3 select-none relative bg-[#0b0b0b] shrink-0 pointer-events-none">
-                          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2">
+                          {/* NOTE: 齿孔向上偏移 (top-[6px])，从而为底部留出充足的黑边空间以显示帧号，避免悬浮错位重合 */}
+                          <div className="absolute inset-x-0 top-[6px] flex justify-between px-2">
                             {[...Array(6)].map((_, i) => (
                               <div key={i} className="w-[8%] h-3 bg-white/95 rounded-[1.5px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]" />
                             ))}
                           </div>
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span className="text-[8.5px] font-mono font-bold tracking-wider text-[#c5a86a] bg-[#0b0b0b] px-2 py-0.5 rounded-sm">
+                          {/* NOTE: 将文字绝对定位在底部黑边区域，移除背景遮罩，呈现更真实的胶片边框排版 */}
+                          <div className="absolute bottom-[3px] left-1/2 -translate-x-1/2 pointer-events-none">
+                            <span className="text-[8.5px] font-mono font-bold tracking-wider text-[#c5a86a]">
                               ▶ {frameNum}
                             </span>
                           </div>
