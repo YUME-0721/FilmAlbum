@@ -827,14 +827,14 @@ export default function FilmRoll() {
                       /* 135 底片模式：顶部与底部独立且对称的圆角齿孔带 (在照片外部) */
                       <>
                         <div className="w-full h-8 flex items-center justify-between px-3 select-none relative bg-[#0b0b0b] shrink-0 pointer-events-none">
-                          {/* NOTE: 齿孔向下偏移 (bottom-[5px])，从而为顶部留出充足的黑边空间以显示文字，避免悬浮错位重合 */}
-                          <div className="absolute inset-x-0 bottom-[5px] flex justify-between px-2">
+                          {/* NOTE: 齿孔向下偏移，使用标准 bottom-1 并辅以 style 确保在底部留出充足黑边空间，避免重合 */}
+                          <div className="absolute inset-x-0 bottom-1 flex justify-between px-2" style={{ bottom: '4px' }}>
                             {[...Array(6)].map((_, i) => (
                               <div key={i} className="w-[8%] h-3 bg-white/95 rounded-[1.5px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]" />
                             ))}
                           </div>
-                          {/* NOTE: 将文字绝对定位在顶部黑边区域，不使用背景遮罩，使排版更真实自然 */}
-                          <div className="absolute top-[3px] left-1/2 -translate-x-1/2 pointer-events-none">
+                          {/* NOTE: 文字绝对定位在顶部黑边区域，使用 top-0.5 并辅以 style 确保渲染位置万无一失，呈现真实的边缘字效 */}
+                          <div className="absolute top-0.5 left-1/2 -translate-x-1/2 pointer-events-none" style={{ top: '2px' }}>
                             <span className="text-[7.5px] font-mono font-bold tracking-[0.2em] text-[#c5a86a]/40">
                               {filmStockText}
                             </span>
@@ -853,14 +853,14 @@ export default function FilmRoll() {
                         </div>
 
                         <div className="w-full h-9 flex items-center justify-between px-3 select-none relative bg-[#0b0b0b] shrink-0 pointer-events-none">
-                          {/* NOTE: 齿孔向上偏移 (top-[6px])，从而为底部留出充足的黑边空间以显示帧号，避免悬浮错位重合 */}
-                          <div className="absolute inset-x-0 top-[6px] flex justify-between px-2">
+                          {/* NOTE: 齿孔向上偏移，使用标准 top-1 并辅以 style 确保在顶部留出空间 */}
+                          <div className="absolute inset-x-0 top-1 flex justify-between px-2" style={{ top: '4px' }}>
                             {[...Array(6)].map((_, i) => (
                               <div key={i} className="w-[8%] h-3 bg-white/95 rounded-[1.5px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]" />
                             ))}
                           </div>
-                          {/* NOTE: 将文字绝对定位在底部黑边区域，移除背景遮罩，呈现更真实的胶片边框排版 */}
-                          <div className="absolute bottom-[3px] left-1/2 -translate-x-1/2 pointer-events-none">
+                          {/* NOTE: 文字绝对定位在底部黑边区域，使用 bottom-0.5 并辅以 style 确保渲染位置稳固 */}
+                          <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 pointer-events-none" style={{ bottom: '2px' }}>
                             <span className="text-[8.5px] font-mono font-bold tracking-wider text-[#c5a86a]">
                               ▶ {frameNum}
                             </span>
@@ -926,13 +926,10 @@ export default function FilmRoll() {
                       </div>
                     )}
 
-                    {/* 悬浮曝光参数 (非选择模式且非排序模式下在照片区域上方优雅显现) */}
-                    {!isSelectionMode && !isSortMode && (
-                      <div className="absolute bottom-12 left-2.5 right-2.5 p-2 bg-black/80 backdrop-blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 flex justify-between items-center text-[10px] text-white/95 font-mono tracking-tight pointer-events-none z-10">
-                        <span className="opacity-60 truncate max-w-[55%]">
-                          {frame.lens || roll.lens || 'N/A'}
-                        </span>
-                        <div className="flex gap-2 shrink-0">
+                    {/* 悬浮曝光参数 (非选择模式且非排序模式下，若有光圈或快门参数，则在照片区域上方优雅显现，已按需删除镜头信息以防视觉繁琐) */}
+                    {!isSelectionMode && !isSortMode && (frame.aperture || frame.shutterSpeed) && (
+                      <div className="absolute bottom-12 left-2.5 right-2.5 p-2 bg-black/80 backdrop-blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 flex justify-center items-center text-[10px] text-white/95 font-mono tracking-tight pointer-events-none z-10">
+                        <div className="flex gap-2.5 shrink-0 justify-center">
                           {frame.aperture && <span>{frame.aperture}</span>}
                           {frame.shutterSpeed && <span>{frame.shutterSpeed}</span>}
                         </div>
