@@ -1,0 +1,4 @@
+/* NOTE: NativeWind v4 全局 CSS 入口 —— 引入 Tailwind CSS 三大指令 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

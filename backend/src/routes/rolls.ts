@@ -189,6 +189,174 @@ rolls.get('/:id', authOptional(), async (c) => {
   });
 });
 
+/** GET /api/rolls/:id/contact-sheet - 生成 SVG 格式联系单（索引图），供移动端下载分享 */
+rolls.get('/:id/contact-sheet', authOptional(), async (c) => {
+  const rollId = c.req.param('id');
+
+  const roll = await c.env.DB.prepare(
+    `SELECT r.*, u.nickname as author_name FROM rolls r JOIN users u ON r.user_id = u.id WHERE r.id = ?`
+  ).bind(rollId).first<Record<string, unknown>>();
+
+  if (!roll) {
+    return c.json({ success: false, error: '胶卷不存在' }, 404);
+  }
+
+  const framesResult = await c.env.DB.prepare(
+    'SELECT * FROM frames WHERE roll_id = ? ORDER BY sort_order'
+  ).bind(rollId).all<Record<string, unknown>>();
+
+  const frames = framesResult.results ?? [];
+
+  // NOTE: 以下 SVG 结构完全对应网页端 Canvas 联系单的布局：头部信息 + 胶片条（含齿孔）+ 每格图片 + 帧号
+  const formatName = String(roll.format || '135');
+
+  // 画幅宽高比映射（与网页端保持一致）
+  const formatRatioMap: Record<string, number> = {
+    '半格': 2 / 3,
+    '35mm': 3 / 2,
+    '135': 3 / 2,
+    'xpan': 65 / 24,
+    '620': 3 / 2,
+    '630': 3 / 2,
+    '645': 4 / 3,
+    '6x6': 1,
+    '6x7': 7 / 6,
+    '6x9': 3 / 2
+  };
+
+  // 每行列数映射（与网页端 desktopCols 对应）
+  const defaultColsMap: Record<string, number> = {
+    '半格': 12, '135': 6, '35mm': 6, 'xpan': 1,
+    '620': 1, '630': 1, '645': 4, '6x6': 3, '6x7': 3, '6x9': 2
+  };
+
+  const aspectRatio = formatRatioMap[formatName] ?? 1.5;
+  const cols = defaultColsMap[formatName] ?? 6;
+
+  // 画布宽度固定为 1800，与网页端 3600 等比缩放 0.5
+  const canvasWidth = 1800;
+  const edgeMargin = 50;
+  const usableWidth = canvasWidth - edgeMargin * 2;
+  const gap = 20;
+  const rows = Math.ceil(frames.length / cols);
+
+  const itemWidth = (usableWidth - gap * (cols - 1)) / cols;
+  const photoW = itemWidth - 8;
+  const photoH = photoW / aspectRatio;
+
+  // 135 格式专有参数：胶片条高度 = 照片高度 + 顶部/底部黑边
+  const is135 = ['135', '35mm', '半格', 'xpan'].includes(formatName);
+  let rowHeight: number;
+  let borderTop = 14;
+  let borderBottom = 14;
+  if (is135) {
+    const P_mm = photoH / 24;
+    rowHeight = Math.round(P_mm * 35);
+    borderTop = Math.round(P_mm * 5.5);
+    borderBottom = rowHeight - borderTop - photoH;
+  } else {
+    rowHeight = photoH + borderTop + borderBottom;
+  }
+
+  const headerHeight = 180;
+  const rowGap = 40;
+  const canvasHeight = headerHeight + edgeMargin + rowHeight * rows + rowGap * (rows - 1) + edgeMargin;
+
+  const filmStock = String(roll.film_stock || '').toUpperCase() || (is135 ? 'KODAK 135' : 'KODAK 120');
+
+  let svgParts: string[] = [];
+  svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${canvasWidth}" height="${canvasHeight}" viewBox="0 0 ${canvasWidth} ${canvasHeight}">`);
+  svgParts.push(`<rect width="${canvasWidth}" height="${canvasHeight}" fill="#ffffff"/>`);
+
+  // 头部背景
+  svgParts.push(`<rect x="0" y="0" width="${canvasWidth}" height="${headerHeight}" fill="#0a0a0a"/>`);
+
+  // 品牌文字
+  svgParts.push(`<text x="${edgeMargin}" y="${headerHeight / 2 - 18}" fill="#ffffff" font-family="Inter,-apple-system,sans-serif" font-size="46" font-weight="bold" dominant-baseline="middle">FilmAlbum</text>`);
+  svgParts.push(`<text x="${edgeMargin}" y="${headerHeight / 2 + 28}" fill="#c5a86a" font-family="Inter,-apple-system,sans-serif" font-size="18" font-weight="bold" dominant-baseline="middle">CONTACT SHEET</text>`);
+
+  // 右侧影集详情
+  const rollTitle = String(roll.title || 'UNTITLED').toUpperCase();
+  const archiveText = `FORMAT: ${formatName.toUpperCase()}  •  STOCK: ${filmStock}  •  CAMERA: ${String(roll.camera || 'N/A').toUpperCase()}`;
+  let displayDate = String(roll.shot_date || 'N/A');
+  const endDate = String(roll.end_date || '');
+  if (endDate && endDate !== String(roll.shot_date)) displayDate = `${displayDate} ~ ${endDate}`;
+  const dateText = `DATE: ${displayDate}  •  TOTAL FRAMES: ${frames.length}`;
+
+  svgParts.push(`<text x="${canvasWidth - edgeMargin}" y="${headerHeight / 2 - 22}" fill="#ffffff" font-family="Inter,-apple-system,sans-serif" font-size="44" font-weight="bold" text-anchor="end" dominant-baseline="middle">${rollTitle}</text>`);
+  svgParts.push(`<text x="${canvasWidth - edgeMargin}" y="${headerHeight / 2 + 12}" fill="#8e8e93" font-family="Inter,-apple-system,sans-serif" font-size="13" text-anchor="end" dominant-baseline="middle">${archiveText}</text>`);
+  svgParts.push(`<text x="${canvasWidth - edgeMargin}" y="${headerHeight / 2 + 38}" fill="#8e8e93" font-family="Inter,-apple-system,sans-serif" font-size="13" text-anchor="end" dominant-baseline="middle">${dateText}</text>`);
+
+  // 绘制每一行
+  for (let r = 0; r < rows; r++) {
+    const rowY = headerHeight + edgeMargin + r * (rowHeight + rowGap);
+
+    if (is135) {
+      // 135 格式：黑色胶片条背景
+      svgParts.push(`<rect x="${edgeMargin}" y="${rowY}" width="${usableWidth}" height="${rowHeight}" fill="#0b0b0b"/>`);
+
+      // 齿孔（顶部 + 底部）
+      const sprocketH = Math.round((photoH / 24) * 2.4);
+      const sprocketW = Math.round((photoH / 24) * 2.8);
+      const sprocketPitch = (photoH / 24) * 4.75;
+      const sprocketTopY = rowY + Math.round((photoH / 24) * 2.0);
+      const sprocketBottomY = rowY + rowHeight - Math.round((photoH / 24) * 2.0) - sprocketH;
+      const sprocketCount = Math.floor(usableWidth / sprocketPitch);
+      for (let s = 0; s < sprocketCount; s++) {
+        const sx = edgeMargin + s * sprocketPitch + (sprocketPitch - sprocketW) / 2;
+        const r2 = Math.round((photoH / 24) * 0.5);
+        svgParts.push(`<rect x="${sx.toFixed(1)}" y="${sprocketTopY}" width="${sprocketW}" height="${sprocketH}" rx="${r2}" fill="#ffffff"/>`);
+        svgParts.push(`<rect x="${sx.toFixed(1)}" y="${sprocketBottomY}" width="${sprocketW}" height="${sprocketH}" rx="${r2}" fill="#ffffff"/>`);
+      }
+    }
+
+    for (let col = 0; col < cols; col++) {
+      const index = r * cols + col;
+      if (index >= frames.length) break;
+
+      const frame = frames[index] as Record<string, unknown>;
+      const centerX = edgeMargin + col * (itemWidth + gap) + itemWidth / 2;
+      const photoX = centerX - photoW / 2;
+      const photoY = rowY + borderTop;
+      const imgUrl = String(frame.preview_url || frame.image_url || '');
+
+      if (!is135) {
+        // 中画幅：黑色单格背景
+        svgParts.push(`<rect x="${photoX - 8}" y="${rowY}" width="${itemWidth}" height="${rowHeight}" fill="#0b0b0b"/>`);
+      }
+
+      if (imgUrl) {
+        // NOTE: SVG <image> 标签引用外部图片 URL，文件尺寸极小，移动端查看时需网络加载图片
+        svgParts.push(`<image href="${imgUrl}" x="${photoX.toFixed(1)}" y="${photoY.toFixed(1)}" width="${photoW.toFixed(1)}" height="${photoH.toFixed(1)}" preserveAspectRatio="xMidYMid slice"/>`);
+      } else {
+        // 无图片时显示占位
+        svgParts.push(`<rect x="${photoX.toFixed(1)}" y="${photoY.toFixed(1)}" width="${photoW.toFixed(1)}" height="${photoH.toFixed(1)}" fill="#222222"/>`);
+        svgParts.push(`<text x="${centerX.toFixed(1)}" y="${(photoY + photoH / 2).toFixed(1)}" fill="#ffffff" font-size="10" text-anchor="middle" dominant-baseline="middle">NO IMAGE</text>`);
+      }
+
+      // 胶卷型号文字（顶部）
+      const filmFontSize = Math.max(7, Math.round((photoH / 24) * 1.1));
+      svgParts.push(`<text x="${centerX.toFixed(1)}" y="${(rowY + 9).toFixed(1)}" fill="#c5a86a" font-family="Inter,sans-serif" font-size="${filmFontSize}" text-anchor="middle" dominant-baseline="middle">${filmStock}</text>`);
+
+      // 帧号（底部）
+      const frameNumFontSize = Math.max(7, Math.round((photoH / 24) * 1.4));
+      const frameNumStr = `▶ ${String(index + 1).padStart(2, '0')}`;
+      svgParts.push(`<text x="${centerX.toFixed(1)}" y="${(rowY + rowHeight - 5).toFixed(1)}" fill="#c5a86a" font-family="Inter,sans-serif" font-size="${frameNumFontSize}" font-weight="bold" text-anchor="middle" dominant-baseline="auto">${frameNumStr}</text>`);
+    }
+  }
+
+  svgParts.push('</svg>');
+  const svgContent = svgParts.join('\n');
+
+  return new Response(svgContent, {
+    headers: {
+      'Content-Type': 'image/svg+xml',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(String(roll.title || 'contact-sheet'))}_ContactSheet.svg"`,
+      'Access-Control-Allow-Origin': '*',
+    }
+  });
+});
+
 /** GET /api/rolls/frame/:frameId - 通过帧 ID 获取底片及所属胶卷完整信息 */
 rolls.get('/frame/:frameId', authOptional(), async (c) => {
   const frameId = c.req.param('frameId');

@@ -168,15 +168,22 @@ export default function Login() {
     <main className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-8 py-16">
       <div className="w-full max-w-md relative">
         {/* 右上角进入系统管理后台按钮 */}
-        <button
-          type="button"
-          onClick={() => navigate('/admin')}
-          className="absolute right-0 top-0 p-2 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container active:scale-95 transition-all duration-300 flex items-center justify-center"
-          title={t('settings.goToAdmin') || '进入系统管理后台'}
-          aria-label={t('settings.goToAdmin') || '进入系统管理后台'}
-        >
-          <ShieldAlert size={20} />
-        </button>
+        <div className="absolute right-0 top-0 group">
+          <button
+            type="button"
+            onClick={() => navigate('/admin')}
+            className="p-2.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container active:scale-95 transition-all duration-300 flex items-center justify-center relative z-10"
+            aria-label={t('settings.goToAdmin') || '进入系统管理后台'}
+          >
+            <ShieldAlert size={20} className="transition-transform group-hover:rotate-[15deg] group-hover:scale-110 duration-300" />
+          </button>
+          
+          {/* 精美的 Tooltip 悬浮框 */}
+          <div className="absolute right-0 top-12 scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 origin-top-right whitespace-nowrap bg-surface-container-high text-on-surface text-xs py-2 px-3.5 rounded-xl border border-outline-variant/15 shadow-xl flex items-center gap-2 z-20">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="font-medium tracking-wide">{t('settings.goToAdmin') || '进入系统管理后台'}</span>
+          </div>
+        </div>
 
         {/* Logo 区域 */}
         <div className="text-center mb-12">

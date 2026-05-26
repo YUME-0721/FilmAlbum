@@ -494,6 +494,20 @@ export default function FilmRoll() {
     fetchRoll();
   }, [id]);
 
+  // 智能捕获移动端拉起带有 ?export=true 时的自动导出行为，实现无缝一键导出与网页端一致的高精度 JPG 索引图
+  useEffect(() => {
+    if (!isLoading && roll.id !== 'roll-001' && frames.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('export') === 'true') {
+        // 延时等待页面首屏与图片资源加载，随后自动开始绘制高质量 Canvas 联系单并下载 JPG
+        const timer = setTimeout(() => {
+          generateContactSheet();
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isLoading, roll, frames]);
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !id) return;
