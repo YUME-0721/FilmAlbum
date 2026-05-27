@@ -3,8 +3,9 @@ import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert, Image
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/ThemeContext';
 import { FilmStripCard, FrameItem } from '../components/FilmStripCard';
+import { PhotoViewerModal } from '../components/PhotoViewerModal';
 import client from '../api/client';
-import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library/legacy';
 import { ArrowLeft, HardDriveDownload, Sparkles, MapPin, Camera, ImagePlus, Pencil, ArrowUpDown, Trash2, ArrowUp, ArrowDown, Check, Calendar, Tag, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { RollItem } from './DashboardScreen';
@@ -52,6 +53,10 @@ export const RollDetailScreen: React.FC<RollDetailScreenProps> = ({ roll, onBack
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [isSortMode, setIsSortMode] = useState(false);
+
+  // 📸 控制高级大图查看器的显隐与初始触发底片
+  const [isViewerVisible, setIsViewerVisible] = useState(false);
+  const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
 
   // 控制编辑详情 Modal 及表单状态
   const [showEditModal, setShowEditModal] = useState(false);
@@ -209,11 +214,9 @@ export const RollDetailScreen: React.FC<RollDetailScreenProps> = ({ roll, onBack
           // 瞬间关闭 Modal，不清除 loadedImagesCount 以便复用已加载完的离屏画布缓存
           setIsGeneratingSheet(false);
 
-          await Sharing.shareAsync(uri, {
-            mimeType: 'image/jpeg',
-            dialogTitle: `导出《${currentRoll.title}》索引图`,
-            UTI: 'public.jpeg',
-          });
+          // NOTE: 将直接分享逻辑改为保存到本地相册
+          await MediaLibrary.saveToLibraryAsync(uri);
+          Alert.alert('✅ 保存成功', '索引图已成功保存到您的本地相册！');
         } catch (captureErr: any) {
           console.error('应用内位图捕获失败:', captureErr);
           Alert.alert('导出失败', captureErr?.message || '无法渲染高精度 JPG，请重试');
@@ -227,29 +230,27 @@ export const RollDetailScreen: React.FC<RollDetailScreenProps> = ({ roll, onBack
     }
   }, [loadedImagesCount, isGeneratingSheet, frames.length]);
 
-  // NOTE: 在安卓应用内本地极速渲染并生成高精度 JPG 索引图并直接拉起原生系统分享菜单进行保存与发送
+  // NOTE: 在安卓应用内本地极速渲染并生成高精度 JPG 索引图并保存到本地系统相册
   const handleExport = async () => {
     if (frames.length === 0) {
       Alert.alert('影集为空', '当前影集没有照片，无法生成索引图');
       return;
     }
     
-    setExporting(true);
-    setIsGeneratingSheet(true);
-    // 直接展示当前已经加载的缓存进度，如果已全部载入，将以毫秒级速度瞬间导出！
-    setSheetProgressText(`⏳ 正在对齐超清光栅化底片 (${loadedImagesCount}/${frames.length})...`);
-    
     try {
-      // 1. 获取系统分享的可用性
-      const isSharingAvailable = await Sharing.isAvailableAsync();
-      if (!isSharingAvailable) {
-        Alert.alert('❌ 导出失败', '当前设备不支持分享和保存功能');
-        setIsGeneratingSheet(false);
-        setExporting(false);
+      // NOTE: 请求系统相册读写权限，避免中途因为没有权限而中断导出
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('⚠️ 权限不足', '需要相册写入权限才能保存索引图，请在系统设置中开启');
         return;
       }
 
-      // 2. 清除并重建 4.5 秒保底机制，防范弱网下极其个别的死链或网络波动导致的无限卡死
+      setExporting(true);
+      setIsGeneratingSheet(true);
+      // 直接展示当前已经加载的缓存进度，如果已全部载入，将以毫秒级速度瞬间导出！
+      setSheetProgressText(`⏳ 正在对齐超清光栅化底片 (${loadedImagesCount}/${frames.length})...`);
+
+      // 清除并重建 4.5 秒保底机制，防范弱网下极其个别的死链或网络波动导致的无限卡死
       if (fallbackTimerRef.current) {
         clearTimeout(fallbackTimerRef.current);
       }
@@ -259,9 +260,6 @@ export const RollDetailScreen: React.FC<RollDetailScreenProps> = ({ roll, onBack
           setLoadedImagesCount(frames.length); // 强行拉平计数器触发导出
         }
       }, 4500);
-
-      // 注意：这里我们不再调用 Promise.all(Image.prefetch) 并阻塞网络请求，彻底消除因并发 30 个 TCP 连接造成的严重网络阻塞！
-      // 画面会立刻拉起前台 Modal 载入底片大图，并启动 onLoad 加载状态对齐！
 
     } catch (err: any) {
       console.error('导出索引图失败:', err);
@@ -704,6 +702,10 @@ export const RollDetailScreen: React.FC<RollDetailScreenProps> = ({ roll, onBack
                 index={index}
                 format={currentRoll.format}
                 filmStock={currentRoll.filmStock}
+                onPress={() => {
+                  setViewerInitialIndex(index);
+                  setIsViewerVisible(true);
+                }}
               />
               
               {isSortMode && (
@@ -1439,6 +1441,24 @@ export const RollDetailScreen: React.FC<RollDetailScreenProps> = ({ roll, onBack
             })()}
           </ViewShot>
         </View>
+
+      {/* 📸 大图查看与曝光元数据编辑器 */}
+      <PhotoViewerModal
+        visible={isViewerVisible}
+        roll={{
+          id: currentRoll.id,
+          title: currentRoll.title,
+          filmStock: currentRoll.filmStock,
+          camera: currentRoll.camera,
+          lens: currentRoll.lens,
+          shotDate: currentRoll.shotDate,
+          format: currentRoll.format
+        }}
+        frames={frames}
+        initialIndex={viewerInitialIndex}
+        onClose={() => setIsViewerVisible(false)}
+        onRefreshRoll={fetchFrames}
+      />
     </View>
   );
 };

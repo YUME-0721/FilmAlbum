@@ -935,7 +935,8 @@ rolls.put('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async
     location?: string;
     camera?: string;
     lens?: string;
-    tags?: string[];
+    description?: string;
+    tags?: string[] | string;
   }>();
 
   const updates: string[] = [];
@@ -949,7 +950,8 @@ rolls.put('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async
     shotDate: 'shot_date',
     location: 'location',
     camera: 'camera',
-    lens: 'lens'
+    lens: 'lens',
+    description: 'description'
   };
 
   for (const [tsKey, dbKey] of Object.entries(fieldMap)) {
@@ -962,7 +964,15 @@ rolls.put('/:rollId/frames/:frameId', authRequired(), requireLevel('lv2'), async
 
   if (body.tags !== undefined) {
     updates.push('tags = ?');
-    values.push(JSON.stringify(body.tags));
+    let parsedTags = body.tags;
+    if (typeof parsedTags === 'string') {
+      try {
+        parsedTags = JSON.parse(parsedTags);
+      } catch (e) {
+        parsedTags = [];
+      }
+    }
+    values.push(JSON.stringify(parsedTags || []));
   }
 
   if (updates.length === 0) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
@@ -11,6 +11,15 @@ export interface FrameItem {
   aperture?: string;
   shutterSpeed?: string;
   iso?: string;
+  camera?: string;
+  lens?: string;
+  shotDate?: string;
+  exposureCompensation?: string;
+  description?: string;
+  location?: string;
+  tags?: string[] | string;
+  fileSize?: number; // 💡 底片文件大小（字节数）
+  fileFormat?: string; // 💡 底片文件格式
 }
 
 interface FilmStripCardProps {
@@ -18,9 +27,10 @@ interface FilmStripCardProps {
   index: number;
   format: '135' | '120' | string;
   filmStock: string;
+  onPress?: () => void;
 }
 
-export const FilmStripCard: React.FC<FilmStripCardProps> = ({ frame, index, format, filmStock }) => {
+export const FilmStripCard: React.FC<FilmStripCardProps> = ({ frame, index, format, filmStock, onPress }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   
@@ -31,21 +41,25 @@ export const FilmStripCard: React.FC<FilmStripCardProps> = ({ frame, index, form
   // NOTE: 高维 135 拟物底片卡片设计，直角无圆角，无论何种主题均为纯黑底与黑边框，复现暗房剪裁胶片条质感
   if (is135) {
     return (
-      <View style={{
-        width: '100%',
-        backgroundColor: '#000000',
-        padding: 2,
-        paddingBottom: 6,
-        marginBottom: 16,
-        borderRadius: 0, // 强制直角无圆角
-        borderWidth: 1.5,
-        borderColor: '#1a1a1a', // 纯黑胶片边缘描边
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-        elevation: 4
-      }}>
+      <TouchableOpacity 
+        activeOpacity={0.9}
+        onPress={onPress}
+        style={{
+          width: '100%',
+          backgroundColor: '#000000',
+          padding: 2,
+          paddingBottom: 6,
+          marginBottom: 16,
+          borderRadius: 0, // 强制直角无圆角
+          borderWidth: 1.5,
+          borderColor: '#1a1a1a', // 纯黑胶片边缘描边
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 4
+        }}
+      >
         {/* 顶部齿孔带 */}
         <View style={{ width: '100%', height: 32, backgroundColor: '#000000', position: 'relative' }}>
           {/* 6个圆角物理齿孔，暗底孔隙 */}
@@ -111,26 +125,30 @@ export const FilmStripCard: React.FC<FilmStripCardProps> = ({ frame, index, form
             </Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   }
 
   // NOTE: 复古 120 中画幅底片卡片设计，直角无圆角，全黑色卡底与深邃氛围
   return (
-    <View style={{
-      width: '100%',
-      backgroundColor: '#000000',
-      padding: 8,
-      marginBottom: 16,
-      borderRadius: 0, // 强制直角无圆角
-      borderWidth: 1.5,
-      borderColor: '#1a1a1a', // 纯黑色宽卡纸边框描边
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 6,
-      elevation: 4
-    }}>
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={onPress}
+      style={{
+        width: '100%',
+        backgroundColor: '#000000',
+        padding: 8,
+        marginBottom: 16,
+        borderRadius: 0, // 强制直角无圆角
+        borderWidth: 1.5,
+        borderColor: '#1a1a1a', // 纯黑色宽卡纸边框描边
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 4
+      }}
+    >
       {/* 顶部胶卷品牌栏 */}
       <View style={{ width: '100%', height: 28, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
         <Text style={{ fontSize: 9, fontFamily: 'monospace', fontWeight: 'bold', letterSpacing: 2, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
@@ -153,6 +171,6 @@ export const FilmStripCard: React.FC<FilmStripCardProps> = ({ frame, index, form
           ▶ {frameNum}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
