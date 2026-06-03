@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   View, Text, Image, Modal, TouchableOpacity, ScrollView, 
   TextInput, Alert, StyleSheet, Dimensions, PanResponder, 
-  ActivityIndicator, Clipboard, FlatList
+  ActivityIndicator, Clipboard, FlatList, Platform
 } from 'react-native';
 import { 
   X, ZoomIn, ZoomOut, RotateCw, Trash2, Info, ArrowLeft, 
@@ -19,6 +19,7 @@ import client from '../api/client';
 import { Image as ExpoImage } from 'expo-image';
 import { useTheme } from '../theme/ThemeContext';
 import { FrameItem } from './FilmStripCard';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -274,6 +275,7 @@ interface PhotoViewerModalProps {
     lens: string;
     shotDate: string;
     format: string;
+    tags?: string[];
   };
   frames: FrameItem[];
   initialIndex: number;
@@ -290,6 +292,7 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
   onRefreshRoll
 }) => {
   const { isDark } = useTheme();
+  const { t, i18n } = useTranslation();
   
   // 核心数据状态
   const [frames, setFrames] = useState<FrameItem[]>(initialFrames);
@@ -518,26 +521,24 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
   };
 
   // 保存修改后的底片档案至后端
-  const handleSaveChanges = async () => {
+  const handleSaveChanges = async (customForm = editForm, customTags = tags) => {
     if (!currentFrame) return;
     setIsSavingDetails(true);
     try {
       const payload = {
-        ...editForm,
-        tags: tags
+        ...customForm,
+        tags: customTags
       };
       
       const response = await client.put(`/api/rolls/${roll.id}/frames/${currentFrame.id}`, payload);
       if (response.data && response.data.success) {
-        Alert.alert('✅ 保存成功', '曝光参数及底片档案已同步存入云端数据库！');
-        
         // 局部更新缓存状态
         const updatedFrames = frames.map((f, i) => {
           if (i === currentIndex) {
             return {
               ...f,
-              ...editForm,
-              tags: tags
+              ...customForm,
+              tags: customTags
             };
           }
           return f;
@@ -555,20 +556,25 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
     }
   };
 
-  // 添加标签
+  // 添加标签并自动保存
   const handleAddTag = () => {
-    if (!tagInput.trim()) return;
-    if (tags.includes(tagInput.trim())) {
+    const trimmed = tagInput.trim();
+    if (!trimmed) return;
+    if (tags.includes(trimmed)) {
       setTagInput('');
       return;
     }
-    setTags([...tags, tagInput.trim()]);
+    const nextTags = [...tags, trimmed];
+    setTags(nextTags);
     setTagInput('');
+    handleSaveChanges(editForm, nextTags);
   };
 
-  // 删除标签
+  // 删除标签并自动保存
   const handleRemoveTag = (targetTag: string) => {
-    setTags(tags.filter(t => t !== targetTag));
+    const nextTags = tags.filter(t => t !== targetTag);
+    setTags(nextTags);
+    handleSaveChanges(editForm, nextTags);
   };
 
   // 彻底删除单张照片
@@ -715,6 +721,7 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
 
   const activeImage = isShowingOriginal ? currentFrame.imageUrl : (currentFrame.previewUrl || currentFrame.imageUrl);
   const brandInitial = (roll.filmStock || 'K').trim().charAt(0).toUpperCase();
+  const isViewerDark = borderType === 'white' ? true : (borderType === 'black' ? false : isDark);
 
   return (
     <Modal
@@ -723,15 +730,15 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
       transparent={false}
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#f7f7f7' }]}>
+      <View style={[styles.container, { backgroundColor: isViewerDark ? '#000000' : '#f7f7f7' }]}>
         
         {/* 顶部状态与功能悬浮条 */}
         <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onClose} style={[styles.iconButton, { backgroundColor: isDark ? '#1a1a1a' : '#ffffff' }]}>
-            <ArrowLeft size={18} color={isDark ? '#ffffff' : '#1a1a1a'} />
+          <TouchableOpacity onPress={onClose} style={[styles.iconButton, { backgroundColor: isViewerDark ? '#1a1a1a' : '#ffffff' }]}>
+            <ArrowLeft size={18} color={isViewerDark ? '#ffffff' : '#1a1a1a'} />
           </TouchableOpacity>
           
-          <Text style={[styles.headerTitle, { color: isDark ? '#ffffff' : '#1a1a1a' }]} numberOfLines={1}>
+          <Text style={[styles.headerTitle, { color: isViewerDark ? '#ffffff' : '#1a1a1a' }]} numberOfLines={1}>
             {roll.title} ({currentIndex + 1}/{frames.length})
           </Text>
 
@@ -759,7 +766,7 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
               handleDoubleClick={() => {}}
               brandInitial={brandInitial}
               roll={roll}
-              isDark={isDark}
+              isDark={isViewerDark}
             />
           </View>
 
@@ -772,7 +779,7 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
               pagingEnabled={true}
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.id}
-              scrollEnabled={scale === 1} // 💡 绝妙设计：双击放大时禁用水平滑动翻页，让位于放大平移拖拽，从根本上解决手势冲突！
+              scrollEnabled={scale <= 1} // 💡 绝妙设计：双击放大时禁用水平滑动翻页，在原图或缩小状态下允许滑动
               initialScrollIndex={initialIndex}
               getItemLayout={(_, index) => ({
                 length: SCREEN_WIDTH,
@@ -803,7 +810,7 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
                   handleDoubleClick={handleDoubleClick}
                   brandInitial={brandInitial}
                   roll={roll}
-                  isDark={isDark}
+                  isDark={isViewerDark}
                 />
               )}
             />
@@ -817,25 +824,39 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
             onPress={() => setIsShowingOriginal(!isShowingOriginal)}
             style={[styles.capsuleBtn, isShowingOriginal ? styles.capsuleBtnActive : {}]}
           >
-            <Eye size={12} color={isShowingOriginal ? '#563b00' : (isDark ? '#e7e5e5' : '#1a1a1a')} />
-            <Text style={[styles.capsuleText, { color: isShowingOriginal ? '#563b00' : (isDark ? '#e7e5e5' : '#1a1a1a') }]}>
+            <Eye size={12} color={isShowingOriginal ? '#563b00' : (isViewerDark ? '#e7e5e5' : '#1a1a1a')} />
+            <Text style={[styles.capsuleText, { color: isShowingOriginal ? '#563b00' : (isViewerDark ? '#e7e5e5' : '#1a1a1a') }]}>
               {isShowingOriginal ? '高清原图' : '预览画质'}
             </Text>
           </TouchableOpacity>
 
           {/* 旋转 */}
           <TouchableOpacity onPress={handleRotate} style={styles.controlIconBtn}>
-            <RotateCw size={14} color={isDark ? '#e7e5e5' : '#1a1a1a'} />
+            <RotateCw size={14} color={isViewerDark ? '#e7e5e5' : '#1a1a1a'} />
           </TouchableOpacity>
 
           {/* 放大 */}
-          <TouchableOpacity onPress={() => setScale(prev => Math.min(prev + 0.3, 3))} style={styles.controlIconBtn}>
-            <ZoomIn size={14} color={isDark ? '#e7e5e5' : '#1a1a1a'} />
+          <TouchableOpacity 
+            onPress={() => setScale(prev => {
+              const next = Math.min(prev + 0.3, 3);
+              const rounded = Math.round(next * 10) / 10;
+              return Math.abs(rounded - 1.0) < 0.05 ? 1 : rounded;
+            })} 
+            style={styles.controlIconBtn}
+          >
+            <ZoomIn size={14} color={isViewerDark ? '#e7e5e5' : '#1a1a1a'} />
           </TouchableOpacity>
 
           {/* 缩小 */}
-          <TouchableOpacity onPress={() => setScale(prev => Math.max(prev - 0.3, 1))} style={styles.controlIconBtn}>
-            <ZoomOut size={14} color={isDark ? '#e7e5e5' : '#1a1a1a'} />
+          <TouchableOpacity 
+            onPress={() => setScale(prev => {
+              const next = Math.max(prev - 0.3, 0.4);
+              const rounded = Math.round(next * 10) / 10;
+              return Math.abs(rounded - 1.0) < 0.05 ? 1 : rounded;
+            })} 
+            style={styles.controlIconBtn}
+          >
+            <ZoomOut size={14} color={isViewerDark ? '#e7e5e5' : '#1a1a1a'} />
           </TouchableOpacity>
 
           {/* 信息看板展开开关 */}
@@ -843,9 +864,9 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
             onPress={() => setShowSidebar(!showSidebar)}
             style={[styles.capsuleBtn, showSidebar ? styles.capsuleBtnActive : {}]}
           >
-            <Sliders size={12} color={showSidebar ? '#563b00' : (isDark ? '#e7e5e5' : '#1a1a1a')} />
-            <Text style={[styles.capsuleText, { color: showSidebar ? '#563b00' : (isDark ? '#e7e5e5' : '#1a1a1a') }]}>
-              底片档案
+            <Sliders size={12} color={showSidebar ? '#563b00' : (isViewerDark ? '#e7e5e5' : '#1a1a1a')} />
+            <Text style={[styles.capsuleText, { color: showSidebar ? '#563b00' : (isViewerDark ? '#e7e5e5' : '#1a1a1a') }]}>
+              {t('roll.photoArchive')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -924,137 +945,127 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
                 )}
               </View>
 
-              {/* 二、曝光参数与参数档案编辑 (高精参数原位同步) */}
+              {/* 二、拍摄信息 */}
               <View style={styles.sectionCard}>
-                <Text style={styles.sectionTitle}>⚙️ 曝光参数与底片档案 (云端同步)</Text>
+                <Text style={styles.sectionTitle}>⚙️ {t('roll.shotInfo')}</Text>
                 
                 <View style={styles.formRow}>
                   <View style={styles.formCol}>
-                    <Text style={styles.inputLabel}>曝光帧号</Text>
-                    <TextInput
-                      value={currentFrame.frameNumber}
-                      editable={false}
-                      style={[styles.disabledInput, { color: isDark ? '#888' : '#666' }]}
-                    />
-                  </View>
-                  <View style={styles.formCol}>
-                    <Text style={styles.inputLabel}>ISO 感光度</Text>
-                    <TextInput
-                      value={editForm.iso}
-                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, iso: txt }))}
-                      placeholder="例如: 400"
-                      placeholderTextColor={isDark ? '#666' : '#999'}
-                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.formRow}>
-                  <View style={styles.formCol}>
-                    <Text style={styles.inputLabel}>光圈大小</Text>
-                    <TextInput
-                      value={editForm.aperture}
-                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, aperture: txt }))}
-                      placeholder="例如: f/2.8"
-                      placeholderTextColor={isDark ? '#666' : '#999'}
-                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
-                    />
-                  </View>
-                  <View style={styles.formCol}>
-                    <Text style={styles.inputLabel}>快门速度</Text>
-                    <TextInput
-                      value={editForm.shutterSpeed}
-                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, shutterSpeed: txt }))}
-                      placeholder="例如: 1/125s"
-                      placeholderTextColor={isDark ? '#666' : '#999'}
-                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.formRow}>
-                  <View style={styles.formCol}>
-                    <Text style={styles.inputLabel}>曝光补偿 (EV)</Text>
-                    <TextInput
-                      value={editForm.exposureCompensation}
-                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, exposureCompensation: txt }))}
-                      placeholder="例如: +0.3 或 -1"
-                      placeholderTextColor={isDark ? '#666' : '#999'}
-                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
-                    />
-                  </View>
-                  <View style={styles.formCol}>
-                    <Text style={styles.inputLabel}>拍摄日期</Text>
+                    <Text style={styles.inputLabel}>{t('roll.date')}</Text>
                     <TextInput
                       value={editForm.shotDate}
                       onChangeText={(txt) => setEditForm(prev => ({ ...prev, shotDate: txt }))}
+                      onBlur={() => handleSaveChanges()}
                       placeholder="YYYY-MM-DD"
                       placeholderTextColor={isDark ? '#666' : '#999'}
                       style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
                     />
                   </View>
+                  <View style={styles.formCol}>
+                    <Text style={styles.inputLabel}>{t('roll.location')}</Text>
+                    <TextInput
+                      value={editForm.location}
+                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, location: txt }))}
+                      onBlur={() => handleSaveChanges()}
+                      placeholder={t('roll.inputLocation')}
+                      placeholderTextColor={isDark ? '#666' : '#999'}
+                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
+                    />
+                  </View>
                 </View>
 
-                <View style={styles.formGroup}>
-                  <Text style={styles.inputLabel}>相机机身 (Camera)</Text>
-                  <TextInput
-                    value={editForm.camera}
-                    onChangeText={(txt) => setEditForm(prev => ({ ...prev, camera: txt }))}
-                    placeholder="请输入相机机身型号"
-                    placeholderTextColor={isDark ? '#666' : '#999'}
-                    style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
-                  />
+                <View style={styles.formRow}>
+                  <View style={styles.formCol}>
+                    <Text style={styles.inputLabel}>{t('roll.camera')}</Text>
+                    <TextInput
+                      value={editForm.camera}
+                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, camera: txt }))}
+                      onBlur={() => handleSaveChanges()}
+                      placeholder={t('roll.inputCamera')}
+                      placeholderTextColor={isDark ? '#666' : '#999'}
+                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
+                    />
+                  </View>
+                  <View style={styles.formCol}>
+                    <Text style={styles.inputLabel}>{t('roll.lens')}</Text>
+                    <TextInput
+                      value={editForm.lens}
+                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, lens: txt }))}
+                      onBlur={() => handleSaveChanges()}
+                      placeholder={t('roll.inputLens')}
+                      placeholderTextColor={isDark ? '#666' : '#999'}
+                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
+                    />
+                  </View>
                 </View>
-
-                <View style={styles.formGroup}>
-                  <Text style={styles.inputLabel}>镜头型号 (Lens)</Text>
-                  <TextInput
-                    value={editForm.lens}
-                    onChangeText={(txt) => setEditForm(prev => ({ ...prev, lens: txt }))}
-                    placeholder="请输入镜头焦距与光圈"
-                    placeholderTextColor={isDark ? '#666' : '#999'}
-                    style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
-                  />
-                </View>
-
-                <View style={styles.formGroup}>
-                  <Text style={styles.inputLabel}>底片备注 / 说明 (Description)</Text>
-                  <TextInput
-                    value={editForm.description}
-                    onChangeText={(txt) => setEditForm(prev => ({ ...prev, description: txt }))}
-                    placeholder="记录这一刻的拍摄心情或冲洗工艺描述..."
-                    placeholderTextColor={isDark ? '#666' : '#999'}
-                    multiline={true}
-                    numberOfLines={3}
-                    style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000', height: 72, paddingTop: 10 }]}
-                  />
-                </View>
-
-                <TouchableOpacity 
-                  onPress={handleSaveChanges} 
-                  disabled={isSavingDetails}
-                  style={styles.saveBtn}
-                >
-                  {isSavingDetails ? (
-                    <ActivityIndicator size="small" color="#563b00" />
-                  ) : (
-                    <>
-                      <Check size={16} color="#563b00" />
-                      <Text style={styles.saveBtnText}>保存底片档案修改</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
               </View>
 
-              {/* 三、标签管理面版 (Tags) */}
+              {/* 三、曝光参数 */}
               <View style={styles.sectionCard}>
-                <Text style={styles.sectionTitle}>🏷️ 标签管理 (Tags)</Text>
+                <Text style={styles.sectionTitle}>⚙️ {t('roll.exposure')}</Text>
+                
+                <View style={styles.formRow}>
+                  <View style={styles.formCol}>
+                    <Text style={styles.inputLabel}>{t('roll.aperture')}</Text>
+                    <TextInput
+                      value={editForm.aperture}
+                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, aperture: txt }))}
+                      onBlur={() => handleSaveChanges()}
+                      placeholder={t('roll.placeholders.aperture')}
+                      placeholderTextColor={isDark ? '#666' : '#999'}
+                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
+                    />
+                  </View>
+                  <View style={styles.formCol}>
+                    <Text style={styles.inputLabel}>{t('roll.shutterSpeed')}</Text>
+                    <TextInput
+                      value={editForm.shutterSpeed}
+                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, shutterSpeed: txt }))}
+                      onBlur={() => handleSaveChanges()}
+                      placeholder={t('roll.placeholders.shutterSpeed')}
+                      placeholderTextColor={isDark ? '#666' : '#999'}
+                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={styles.formCol}>
+                    <Text style={styles.inputLabel}>{t('roll.iso')}</Text>
+                    <TextInput
+                      value={editForm.iso}
+                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, iso: txt }))}
+                      onBlur={() => handleSaveChanges()}
+                      placeholder={t('roll.placeholders.iso')}
+                      placeholderTextColor={isDark ? '#666' : '#999'}
+                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
+                    />
+                  </View>
+                  <View style={styles.formCol}>
+                    <Text style={styles.inputLabel}>{t('roll.exposureCompensation')}</Text>
+                    <TextInput
+                      value={editForm.exposureCompensation}
+                      onChangeText={(txt) => setEditForm(prev => ({ ...prev, exposureCompensation: txt }))}
+                      onBlur={() => handleSaveChanges()}
+                      placeholder={t('roll.placeholders.exposureCompensation')}
+                      placeholderTextColor={isDark ? '#666' : '#999'}
+                      style={[styles.textInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              {/* 三、标签 */}
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>🏷️ {t('roll.tags')}</Text>
                 
                 <View style={styles.tagInputRow}>
                   <TextInput
                     value={tagInput}
                     onChangeText={setTagInput}
-                    placeholder="新增自定义分类标签..."
+                    onSubmitEditing={handleAddTag}
+                    returnKeyType="done"
+                    placeholder={i18n.language === 'zh-CN' ? '新增自定义标签，回车或点击+号添加...' : 'Add custom tag, press enter or +...'}
                     placeholderTextColor={isDark ? '#666' : '#999'}
                     style={[styles.tagInput, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', color: isDark ? '#fff' : '#000' }]}
                   />
@@ -1064,18 +1075,30 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
                 </View>
 
                 <View style={styles.tagsContainer}>
-                  {tags.length === 0 ? (
-                    <Text style={{ fontSize: 11, color: isDark ? '#666' : '#999', fontStyle: 'italic' }}>这帧底片暂无分类标签</Text>
+                  {(!roll.tags || roll.tags.length === 0) && tags.length === 0 ? (
+                    <Text style={{ fontSize: 11, color: isDark ? '#666' : '#999', fontStyle: 'italic' }}>
+                      {t('roll.noTags')}
+                    </Text>
                   ) : (
-                    tags.map((tag) => (
-                      <View key={tag} style={[styles.tagBadge, { backgroundColor: isDark ? '#262626' : '#f0f0f0' }]}>
-                        <Tag size={10} color="#ffba20" />
-                        <Text style={[styles.tagText, { color: isDark ? '#e7e5e5' : '#333' }]}>{tag}</Text>
-                        <TouchableOpacity onPress={() => handleRemoveTag(tag)} style={styles.tagDelBtn}>
-                          <Text style={{ color: '#ff5252', fontSize: 10, fontWeight: 'bold' }}>×</Text>
-                        </TouchableOpacity>
-                      </View>
-                    ))
+                    <>
+                      {/* 胶卷公共标签（只读） */}
+                      {roll.tags?.map((tag, index) => (
+                        <View key={`roll-${index}`} style={[styles.tagBadge, { backgroundColor: isDark ? '#1a1a1a' : '#eaeaea', borderColor: isDark ? '#333' : '#ddd', borderWidth: 0.5 }]}>
+                          <Tag size={12} color={isDark ? '#888' : '#767575'} />
+                          <Text style={[styles.tagText, { color: isDark ? '#aaa' : '#666' }]}>{tag}</Text>
+                        </View>
+                      ))}
+                      {/* 照片专属标签（可删除） */}
+                      {tags.map((tag) => (
+                        <View key={tag} style={[styles.tagBadge, { backgroundColor: isDark ? '#262626' : '#f0f0f0' }]}>
+                          <Tag size={12} color="#ffba20" />
+                          <Text style={[styles.tagText, { color: isDark ? '#e7e5e5' : '#333' }]}>{tag}</Text>
+                          <TouchableOpacity onPress={() => handleRemoveTag(tag)} style={styles.tagDelBtn}>
+                            <Text style={{ color: '#ff5252', fontSize: 13, fontWeight: 'bold' }}>×</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </>
                   )}
                 </View>
               </View>
@@ -1242,7 +1265,7 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 48,
+    paddingTop: Platform.OS === 'ios' ? 48 : 16,
     alignItems: 'center',
   },
   headerBar: {
@@ -1416,7 +1439,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.54,
+    height: SCREEN_HEIGHT * 0.75,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderTopWidth: 1,
@@ -1575,7 +1598,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 10,
     paddingHorizontal: 12,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   tagAddBtn: {
@@ -1594,19 +1617,19 @@ const styles = StyleSheet.create({
   tagBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 8,
-    paddingRight: 6,
-    paddingVertical: 4,
+    paddingLeft: 10,
+    paddingRight: 8,
+    paddingVertical: 6,
     borderRadius: 8,
-    gap: 4,
+    gap: 6,
   },
   tagText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '700',
   },
   tagDelBtn: {
-    width: 14,
-    height: 14,
+    width: 16,
+    height: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },

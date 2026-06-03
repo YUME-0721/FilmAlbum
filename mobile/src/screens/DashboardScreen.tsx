@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/useAuthStore';
 import { useTheme } from '../theme/ThemeContext';
 import client from '../api/client';
-import { FolderHeart, LogOut, Search, Plus, Calendar, MapPin, Settings } from 'lucide-react-native';
+import { FolderHeart, LogOut, Search, Plus, Calendar, MapPin } from 'lucide-react-native';
 
 export interface FrameItem {
   id: string;
@@ -32,11 +32,10 @@ interface DashboardScreenProps {
   extraRolls?: RollItem[];      // 本地新建（未同步到服务端）的胶卷
   onSelectRoll: (roll: RollItem) => void;
   onAddRoll: () => void;        // 打开新建胶卷页
-  onOpenSettings: () => void;   // 打开设置页
   onEditProfile: () => void;    // 打开个人资料编辑页
 }
 
-export const DashboardScreen: React.FC<DashboardScreenProps> = ({ extraRolls = [], onSelectRoll, onAddRoll, onOpenSettings, onEditProfile }) => {
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({ extraRolls = [], onSelectRoll, onAddRoll, onEditProfile }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { user, logout, setUser } = useAuthStore();
@@ -297,23 +296,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ extraRolls = [
                 <Text style={{ fontSize: 11, fontWeight: '800', color: isDark ? '#e7e5e5' : '#555555' }}>
                   ✏️ 编辑资料
                 </Text>
-              </TouchableOpacity>
-
-              {/* 设置 */}
-              <TouchableOpacity
-                onPress={onOpenSettings}
-                style={{
-                  width: 32,
-                  height: 32,
-                  backgroundColor: isDark ? '#191a1a' : '#eaeaea',
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: isDark ? 'rgba(72,72,72,0.3)' : 'rgba(224,224,224,0.6)',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
-              >
-                <Settings size={14} color={isDark ? '#e7e5e5' : '#1a1a1a'} />
               </TouchableOpacity>
 
               {/* 注销 */}

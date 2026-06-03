@@ -1452,7 +1452,8 @@ export const RollDetailScreen: React.FC<RollDetailScreenProps> = ({ roll, onBack
           camera: currentRoll.camera,
           lens: currentRoll.lens,
           shotDate: currentRoll.shotDate,
-          format: currentRoll.format
+          format: currentRoll.format,
+          tags: currentRoll.tags
         }}
         frames={frames}
         initialIndex={viewerInitialIndex}

@@ -28,7 +28,7 @@ type ThemeModeOption = 'light' | 'dark' | 'system';
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
   const { t, i18n } = useTranslation();
   const { isDark, themeMode, setThemeMode } = useTheme();
-  const { user, logout } = useAuthStore();
+  const { user, logout, isAuthenticated } = useAuthStore();
 
   const [apiUrl, setApiUrl] = useState(getBaseUrl());
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
@@ -168,12 +168,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
     <View style={{ flex: 1, backgroundColor: bgColor }}>
       {/* 顶部导航栏 */}
       <View style={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <TouchableOpacity
-          onPress={onBack}
-          style={{ padding: 10, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor }}
-        >
-          <ArrowLeft size={20} color={textColor} />
-        </TouchableOpacity>
+        {!isAuthenticated && onBack && (
+          <TouchableOpacity
+            onPress={onBack}
+            style={{ padding: 10, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor }}
+          >
+            <ArrowLeft size={20} color={textColor} />
+          </TouchableOpacity>
+        )}
         <Text style={{ fontSize: 20, fontWeight: '800', color: textColor }}>
           {t('settings.title')}
         </Text>

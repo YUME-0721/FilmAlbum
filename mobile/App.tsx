@@ -58,7 +58,7 @@ import { PostDetailScreen } from './src/screens/PostDetailScreen';
 import { GearScreen, GearItem } from './src/screens/GearScreen';
 import { AddGearScreen } from './src/screens/AddGearScreen';
 import { EditProfileScreen } from './src/screens/EditProfileScreen';
-import { Film, Compass, Camera } from 'lucide-react-native';
+import { Film, Compass, Camera, Settings as SettingsIcon } from 'lucide-react-native';
 import './src/i18n'; // 挂载 i18n 国际化引擎
 
 // NOTE: 路由状态枚举，全面扩展以无缝承载动态、设备资产链、个人资料编辑页
@@ -79,7 +79,7 @@ const AppContent: React.FC = () => {
   const [screen, setScreen] = useState<Screen>('login');
   const [selectedRoll, setSelectedRoll] = useState<RollItem | null>(null);
   const [selectedPost, setSelectedPost] = useState<PostItem | null>(null);
-  type Tab = 'rolls' | 'explore' | 'gear';
+  type Tab = 'rolls' | 'explore' | 'gear' | 'settings';
   const [activeTab, setActiveTab] = useState<Tab>('rolls');
   
   // NOTE: 保存本地临时胶卷和设备列表引用，以支撑高水准离线沙盒
@@ -275,15 +275,14 @@ const AppContent: React.FC = () => {
             extraRolls={localRolls}
             onSelectRoll={(roll) => { setSelectedRoll(roll); setScreen('rollDetail'); }}
             onAddRoll={() => setScreen('addRoll')}
-            onOpenSettings={() => setScreen('settings')}
             onEditProfile={() => setScreen('editProfile')}
           />
         );
     }
   };
 
-  // NOTE: 只有当用户已登录，且处于 Rolls / Explore / Gear 3个主频道页面时，才展示底部 Tab 栏
-  const showTabBar = isAuthenticated && (screen === 'dashboard' || screen === 'explore' || screen === 'gear');
+  // NOTE: 只有当用户已登录，且处于 Rolls / Explore / Gear / Settings 4个主频道页面时，才展示底部 Tab 栏
+  const showTabBar = isAuthenticated && (screen === 'dashboard' || screen === 'explore' || screen === 'gear' || screen === 'settings');
 
   return (
     <Animated.View style={animatedBgStyle}>
@@ -353,6 +352,22 @@ const AppContent: React.FC = () => {
               color: activeTab === 'gear' ? '#ffba20' : (isDark ? '#767575' : '#9a9a9a')
             }}>
               设备
+            </Text>
+          </TouchableOpacity>
+
+          {/* Tab 4: 设置 */}
+          <TouchableOpacity
+            onPress={() => { setScreen('settings'); setActiveTab('settings'); }}
+            style={{ alignItems: 'center', flex: 1, paddingVertical: 6 }}
+          >
+            <SettingsIcon size={20} color={activeTab === 'settings' ? '#ffba20' : (isDark ? '#767575' : '#9a9a9a')} />
+            <Text style={{
+              fontSize: 10,
+              fontWeight: '800',
+              marginTop: 4,
+              color: activeTab === 'settings' ? '#ffba20' : (isDark ? '#767575' : '#9a9a9a')
+            }}>
+              设置
             </Text>
           </TouchableOpacity>
         </View>
