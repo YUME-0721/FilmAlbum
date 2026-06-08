@@ -81,5 +81,5 @@ jobs:
           # 尝试创建 Pages 项目（如果已存在会忽略错误）
           npx wrangler pages project create film-album-web --production-branch main || true
           
-          # 执行部署
-          npx wrangler pages deploy dist --project-name=film-album-web
+          # 执行部署，显式传递安全的 ASCII 提交信息，规避 Cloudflare API 中文编码报错
+          npx wrangler pages deploy dist --project-name=film-album-web --commit-message="Deploy commit ${{ github.sha }}" --commit-hash="${{ github.sha }}" --branch="${{ github.ref_name }}"
