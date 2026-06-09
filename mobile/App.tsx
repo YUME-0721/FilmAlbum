@@ -57,12 +57,13 @@ import { ExploreScreen, PostItem } from './src/screens/ExploreScreen';
 import { PostDetailScreen } from './src/screens/PostDetailScreen';
 import { GearScreen, GearItem } from './src/screens/GearScreen';
 import { AddGearScreen } from './src/screens/AddGearScreen';
+import { GearDetailScreen } from './src/screens/GearDetailScreen';
 import { EditProfileScreen } from './src/screens/EditProfileScreen';
 import { Film, Compass, Camera, Settings as SettingsIcon } from 'lucide-react-native';
 import './src/i18n'; // 挂载 i18n 国际化引擎
 
 // NOTE: 路由状态枚举，全面扩展以无缝承载动态、设备资产链、个人资料编辑页
-type Screen = 'login' | 'dashboard' | 'addRoll' | 'settings' | 'rollDetail' | 'explore' | 'postDetail' | 'gear' | 'addGear' | 'editProfile';
+type Screen = 'login' | 'dashboard' | 'addRoll' | 'settings' | 'rollDetail' | 'explore' | 'postDetail' | 'gear' | 'addGear' | 'editProfile' | 'gearDetail';
 
 // NOTE: 主题切换动画时长与缓动配置
 const THEME_TRANSITION_MS = 350;
@@ -79,6 +80,7 @@ const AppContent: React.FC = () => {
   const [screen, setScreen] = useState<Screen>('login');
   const [selectedRoll, setSelectedRoll] = useState<RollItem | null>(null);
   const [selectedPost, setSelectedPost] = useState<PostItem | null>(null);
+  const [selectedGear, setSelectedGear] = useState<GearItem | null>(null);
   type Tab = 'rolls' | 'explore' | 'gear' | 'settings';
   const [activeTab, setActiveTab] = useState<Tab>('rolls');
   
@@ -253,8 +255,19 @@ const AppContent: React.FC = () => {
         return (
           <GearScreen
             onAddGear={() => setScreen('addGear')}
+            onSelectGear={(gear) => {
+              setSelectedGear(gear);
+              setScreen('gearDetail');
+            }}
           />
         );
+      case 'gearDetail':
+        return selectedGear ? (
+          <GearDetailScreen
+            gear={selectedGear}
+            onBack={handleBackToTab}
+          />
+        ) : null;
       case 'addGear':
         return (
           <AddGearScreen

@@ -266,7 +266,7 @@ export default function GearDetail() {
               <h3 className="text-xs font-label uppercase tracking-widest text-primary font-bold">设备点评与历史介绍</h3>
               <div className="space-y-5 text-sm md:text-base text-on-surface-variant leading-relaxed font-sans font-normal text-justify">
                 {reviewParagraphs.map((para, index) => (
-                  <p key={index} className="first-letter:text-xl first-letter:font-bold first-letter:text-primary transition-all duration-300">
+                  <p key={index} className="transition-all duration-300">
                     {para}
                   </p>
                 ))}

@@ -33,9 +33,10 @@ export interface GearItem {
 
 interface GearScreenProps {
   onAddGear: () => void;
+  onSelectGear: (gear: GearItem) => void;
 }
 
-export const GearScreen: React.FC<GearScreenProps> = ({ onAddGear }) => {
+export const GearScreen: React.FC<GearScreenProps> = ({ onAddGear, onSelectGear }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
 
@@ -197,7 +198,9 @@ export const GearScreen: React.FC<GearScreenProps> = ({ onAddGear }) => {
             </View>
           }
           renderItem={({ item }) => (
-            <View
+            <TouchableOpacity
+              onPress={() => onSelectGear(item)}
+              activeOpacity={0.85}
               style={{
                 backgroundColor: cardBg,
                 borderRadius: 20,
@@ -301,7 +304,7 @@ export const GearScreen: React.FC<GearScreenProps> = ({ onAddGear }) => {
                   </Text>
                 ) : null}
               </View>
-            </View>
+            </TouchableOpacity>
           )}
         />
       )}
