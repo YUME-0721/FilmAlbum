@@ -3,9 +3,14 @@
     "name": "FilmAlbum",
     "slug": "filmalbum",
     "newArchEnabled": false,
-    "version": "1.0.0",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0e0e0e"
+    },
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,

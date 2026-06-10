@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/useAuthStore';
 import { useTheme } from '../theme/ThemeContext';
 import client from '../api/client';
-import { FolderHeart, LogOut, Search, Plus, Calendar, MapPin } from 'lucide-react-native';
+import { FolderHeart, Search, Plus, Calendar, MapPin } from 'lucide-react-native';
 
 export interface FrameItem {
   id: string;
@@ -296,28 +296,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ extraRolls = [
                 <Text style={{ fontSize: 11, fontWeight: '800', color: isDark ? '#e7e5e5' : '#555555' }}>
                   ✏️ 编辑资料
                 </Text>
-              </TouchableOpacity>
-
-              {/* 注销 */}
-              <TouchableOpacity
-                onPress={() => {
-                  Alert.alert('退出登录', '确定要注销并离开暗房吗？', [
-                    { text: '取消', style: 'cancel' },
-                    { text: '注销', style: 'destructive', onPress: logout }
-                  ]);
-                }}
-                style={{
-                  width: 32,
-                  height: 32,
-                  backgroundColor: isDark ? '#191a1a' : '#eaeaea',
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: isDark ? 'rgba(72,72,72,0.3)' : 'rgba(224,224,224,0.6)',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
-              >
-                <LogOut size={14} color="#ff5252" />
               </TouchableOpacity>
             </View>
           </View>

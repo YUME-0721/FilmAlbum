@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   View, Text, Image, Modal, TouchableOpacity, ScrollView, 
   TextInput, Alert, StyleSheet, Dimensions, PanResponder, 
-  ActivityIndicator, Clipboard, FlatList, Platform
+  ActivityIndicator, Clipboard, FlatList, Platform, StatusBar
 } from 'react-native';
 import { 
   X, ZoomIn, ZoomOut, RotateCw, Trash2, Info, ArrowLeft, 
@@ -360,8 +360,12 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
   // 手势记录引用，防止横向手势滑动冲突
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // 📸 FlatList 引用，用于控制水平照片列表的物理顺滑滑动定位
-  const flatListRef = useRef<FlatList<any>>(null);
+  // 📸 ScrollView 引用，用于控制水平照片列表的物理顺滑滑动定位
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [isScrollPositioned, setIsScrollPositioned] = useState(false); // 💡 首次滚动定位是否真正完成
+  // NOTE: 动态 scrollViewKey 每次 visible+initialIndex 变化时都会改变，强迫 React 彻底销毁并重建 ScrollView 原生实例
+  // 这样 contentOffset 会在原生层全新的测量周期中被 100% 正确应用，彻底杜绝复用时的偏移量截断
+  const [scrollViewKey, setScrollViewKey] = useState(() => `sv-${Date.now()}`);
 
   // 深度监听外部数据
   useEffect(() => {
@@ -370,25 +374,33 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
 
   useEffect(() => {
     if (visible) {
-      setIsListReady(false); // 👈 打开时先进入“秒开单图占位通道”，绝不卡顿和黑屏
+      setIsListReady(false);
+      setIsScrollPositioned(false);
       setCurrentIndex(initialIndex);
       resetViewerState();
+      // 💡 每次唤起 Modal 时更新 scrollViewKey，强制销毁并重建 ScrollView 实例
+      // 这确保 contentOffset 属性在全新的原生实例上被正确应用，绝不被旧实例的复用状态所污染
+      setScrollViewKey(`sv-${roll.id}-${initialIndex}-${Date.now()}`);
 
-      // 💡 延迟 350ms 等待 Modal 原生滑入动画彻底平息，组件尺寸完全测量稳定后，再悄无声息地挂载多图滚动 FlatList
+      // 💡 延迟 350ms 等待 Modal 原生滑入动画彻底平息，组件尺寸完全测量稳定后，再载入多图滚动 ScrollView
       const timer = setTimeout(() => {
         setIsListReady(true);
-        if (flatListRef.current) {
-          try {
-            flatListRef.current.scrollToIndex({ index: initialIndex, animated: false });
-          } catch (e) {
-            console.warn('Initial scroll index error:', e);
-          }
-        }
       }, 350);
 
       return () => clearTimeout(timer);
     }
   }, [visible, initialIndex]);
+
+  // 💡 ScrollView 挂载就绪后的 isScrollPositioned 延迟解锁
+  // contentOffset 属性已在原生层完成定位，只需等待 80ms 渲染缓冲，再隐去底层守望单图，彻底避免黑屏闪现
+  useEffect(() => {
+    if (isListReady && !isScrollPositioned) {
+      const timer = setTimeout(() => {
+        setIsScrollPositioned(true);
+      }, 80);
+      return () => clearTimeout(timer);
+    }
+  }, [isListReady, isScrollPositioned]);
 
   // 当切换图片或编辑初始化时，重置图片加载状态，并填入表单默认值
   useEffect(() => {
@@ -488,6 +500,7 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
     if (targetIndex >= 0 && targetIndex < frames.length) {
       setCurrentIndex(targetIndex);
       resetViewerState();
+      scrollViewRef.current?.scrollTo({ x: SCREEN_WIDTH * targetIndex, animated: false });
     }
   };
 
@@ -750,7 +763,7 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
         {/* 核心大图展示区 (物理重叠守望架构，提供 100% 绝对秒开，防抖、防黑屏、防滑动失效) */}
         <View style={styles.imageContainer}>
           {/* 🛡️ 守望单图：永远居于最底层作为底片物理靠山，一瞬间亮起，且在整个生命周期永不卸载，100% 阻断任何由于 remount 或列表计算导致的短暂黑屏 */}
-          <View style={[StyleSheet.absoluteFill, { opacity: isListReady ? 0 : 1 }]}>
+          <View style={[StyleSheet.absoluteFill, { opacity: isScrollPositioned ? 0 : 1 }]} pointerEvents={isScrollPositioned ? 'none' : 'auto'}>
             <ViewerImageItem
               item={frames[currentIndex] || currentFrame}
               isCurrent={true}
@@ -770,22 +783,17 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
             />
           </View>
 
-          {/* 🎞️ 滑动滑块：浮在守望单图上方，作为高层手势链。在 Modal 物理尺寸完全稳固后悄无声息挂载，并因 initialScrollIndex 此时 100% 精准测算而直接定位到位 */}
+          {/* 🎞️ 滑动列表：在 Modal 动画平息后挂载，通过 key 强制销毁重建 + contentOffset 原生定位，100% 精准定位到目标底片 */}
+          {/* NOTE: contentOffset 属性会在原生层的全新测量周期内被第一帧直接应用，彻底规避 Android scrollTo 越界 Clamp 问题 */}
           {isListReady && (
-            <FlatList
-              ref={flatListRef}
-              data={frames}
+            <ScrollView
+              key={scrollViewKey}
+              ref={scrollViewRef}
               horizontal={true}
               pagingEnabled={true}
               showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
               scrollEnabled={scale <= 1} // 💡 绝妙设计：双击放大时禁用水平滑动翻页，在原图或缩小状态下允许滑动
-              initialScrollIndex={initialIndex}
-              getItemLayout={(_, index) => ({
-                length: SCREEN_WIDTH,
-                offset: SCREEN_WIDTH * index,
-                index
-              })}
+              contentOffset={{ x: SCREEN_WIDTH * currentIndex, y: 0 }}
               onMomentumScrollEnd={(e) => {
                 // 滑动完全停止时，平滑更新当前的底片索引，底层的守望单图也将瞬间且无痕同步为当前看图，完成全链路无缝守望
                 const nextIndex = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
@@ -794,8 +802,10 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
                 }
               }}
               style={StyleSheet.absoluteFill}
-              renderItem={({ item, index }) => (
+            >
+              {frames.map((item, index) => (
                 <ViewerImageItem
+                  key={item.id}
                   item={item}
                   isCurrent={index === currentIndex}
                   borderType={scale > 1 ? 'none' : borderType} // 💡 绝妙设计：放大缩小图片时自动动态隐藏边框以满屏查看大图细节！
@@ -812,8 +822,8 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
                   roll={roll}
                   isDark={isViewerDark}
                 />
-              )}
-            />
+              ))}
+            </ScrollView>
           )}
         </View>
 
@@ -1265,7 +1275,9 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 48 : 16,
+    // NOTE: 使用 StatusBar.currentHeight 动态适配 Android 各类打孔屏、刘海屏，避免标题栏被前置摄像头遮挡
+    // iOS 使用固定 48px 覆盖灵动岛/刘海区域；Android 取状态栏实际高度再加 10px 安全缓冲
+    paddingTop: Platform.OS === 'ios' ? 48 : (StatusBar.currentHeight ?? 24) + 10,
     alignItems: 'center',
   },
   headerBar: {

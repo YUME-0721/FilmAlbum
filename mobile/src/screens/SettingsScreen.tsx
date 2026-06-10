@@ -9,10 +9,10 @@ import { useTheme } from '../theme/ThemeContext';
 import { useAuthStore } from '../store/useAuthStore';
 import { changeLanguage } from '../i18n';
 import client, { getBaseUrl } from '../api/client';
-import { MMKV } from '../utils/safe-storage';
+import { MMKV, getStorageDiagnostic } from '../utils/safe-storage';
 import {
   ArrowLeft, Sun, Moon, Smartphone, Globe, Server,
-  LogOut, CheckCircle, XCircle, RotateCcw
+  LogOut, CheckCircle, XCircle, RotateCcw, Activity
 } from 'lucide-react-native';
 
 const storage = new MMKV();
@@ -46,41 +46,55 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
     changeLanguage(next);
   };
 
-  // NOTE: 保存并测试 API 连通性
-  const handleTestConnection = async () => {
+  // NOTE: 保存 API 地址到本地
+  const handleSaveApiUrl = () => {
     const url = apiUrl.trim();
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      Alert.alert(t('common.error'), t('settings.invalidUrl'));
+      Alert.alert(t('common.error'), t('settings.invalidUrl') || '请输入有效的服务器地址 (必须以 http:// 或 https:// 开头)');
       return;
     }
     storage.set(API_URL_KEY, url);
+    Alert.alert(
+      i18n.language === 'zh-CN' ? '保存成功' : 'Success',
+      i18n.language === 'zh-CN' ? '服务器地址已成功保存！' : 'API server URL has been saved successfully!'
+    );
+  };
+
+  // NOTE: 测试 API 地址连通性（不自动保存，只做探测）
+  const handleTestConnection = async () => {
+    const url = apiUrl.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      Alert.alert(t('common.error'), t('settings.invalidUrl') || '请输入有效的服务器地址 (必须以 http:// 或 https:// 开头)');
+      return;
+    }
     setTestStatus('loading');
-    
-    // 重置前缀剥离标记，确保再次测试时状态干净
-    storage.set('api-no-prefix', false);
 
     try {
+      const cleanUrl = url.replace(/\/$/, '');
       // 1. 优先尝试标准的 /api/health
-      const response = await client.get('/api/health', { timeout: 5000 });
+      const response = await axios.get(`${cleanUrl}/api/health`, { timeout: 5000 });
       if (response.status === 200) {
+        storage.set('api-no-prefix', false);
         setTestStatus('ok');
-        Alert.alert('✅ ' + t('settings.connectSuccess'));
+        Alert.alert(
+          '✅ ' + (t('settings.connectSuccess') || '连接成功'),
+          i18n.language === 'zh-CN' ? '测试连接成功！如果确认无误，请点击左侧的“保存”按钮。' : 'Test connection success! Please click "Save" to save it.'
+        );
         return;
       }
     } catch (err) {
-      // 2. 失败后自动降级尝试不含 /api 的 /health 接口 (生产环境兼容)
+      // 2. 失败后自动降级尝试不含 /api 的 /health 接口
       try {
         const cleanUrl = url.replace(/\/$/, '');
         const fallbackResponse = await axios.get(`${cleanUrl}/health`, { timeout: 5000 });
         if (fallbackResponse.status === 200) {
-          // 标记当前 API 无需 /api 前缀
           storage.set('api-no-prefix', true);
           setTestStatus('ok');
           Alert.alert(
-            '✅ ' + t('settings.connectSuccess'),
+            '✅ ' + (t('settings.connectSuccess') || '连接成功'),
             i18n.language === 'zh-CN'
-              ? '已智能适配生产环境 API 前缀重写！'
-              : 'Successfully adapted to production API prefix rewrite!'
+              ? '已智能适配生产环境 API 前缀重写！如果确认无误，请点击左侧的“保存”按钮。'
+              : 'Successfully adapted to production API prefix rewrite! Please click "Save" to save it.'
           );
           return;
         }
@@ -89,14 +103,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
       }
     }
     setTestStatus('error');
-    Alert.alert('❌ ' + t('settings.connectFailed'));
-  };
-
-  // NOTE: 重置 API 地址为模拟器默认值
-  const handleResetApiUrl = () => {
-    storage.delete(API_URL_KEY);
-    setApiUrl(DEFAULT_API_URL);
-    setTestStatus('idle');
+    Alert.alert('❌ ' + (t('settings.connectFailed') || '连接失败，请检查地址是否正确或后端服务是否已启动'));
   };
 
   // NOTE: 退出登录前确认弹窗
@@ -262,11 +269,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
             onChangeText={(v) => {
               setApiUrl(v);
               setTestStatus('idle');
-              // NOTE: 实时自动保存合法地址，防止用户未点测试连接直接返回导致未保存成功
-              const trimmed = v.trim();
-              if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-                storage.set(API_URL_KEY, trimmed);
-              }
             }}
             placeholder={DEFAULT_API_URL}
             placeholderTextColor={subTextColor}
@@ -281,31 +283,37 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
           />
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity
-              onPress={handleTestConnection}
+              onPress={handleSaveApiUrl}
               style={{
                 flex: 1, paddingVertical: 10, borderRadius: 12,
                 backgroundColor: '#ffba20',
                 flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6,
               }}
             >
-              {testStatus === 'loading'
-                ? <ActivityIndicator size="small" color="#563b00" />
-                : testStatus === 'ok'
-                  ? <CheckCircle size={15} color="#563b00" />
-                  : testStatus === 'error'
-                    ? <XCircle size={15} color="#563b00" />
-                    : null
-              }
               <Text style={{ color: '#563b00', fontWeight: '700', fontSize: 13 }}>
-                {t('settings.testConnection')}
+                {t('common.save') || '保存'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={handleResetApiUrl}
-              style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: inputBg, borderWidth: 1, borderColor, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+              onPress={handleTestConnection}
+              style={{
+                paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
+                backgroundColor: inputBg, borderWidth: 1, borderColor,
+                flexDirection: 'row', alignItems: 'center', gap: 4
+              }}
             >
-              <RotateCcw size={14} color={subTextColor} />
-              <Text style={{ color: subTextColor, fontWeight: '600', fontSize: 13 }}>{t('settings.resetDefault')}</Text>
+              {testStatus === 'loading' ? (
+                <ActivityIndicator size="small" color={subTextColor} />
+              ) : testStatus === 'ok' ? (
+                <CheckCircle size={14} color="#4caf50" />
+              ) : testStatus === 'error' ? (
+                <XCircle size={14} color="#ff5252" />
+              ) : (
+                <Activity size={14} color={subTextColor} />
+              )}
+              <Text style={{ color: subTextColor, fontWeight: '600', fontSize: 13 }}>
+                {t('settings.testConnection') || '测试连接'}
+              </Text>
             </TouchableOpacity>
           </View>
         </SettingCard>
@@ -336,24 +344,41 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
         </SettingCard>
 
         {/* 账号操作 */}
-        <SectionTitle title={t('settings.account')} textColor={subTextColor} />
-        <TouchableOpacity
-          onPress={handleLogout}
-          style={{
-            backgroundColor: cardBg, borderRadius: 16, padding: 16, borderWidth: 1, borderColor,
-            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <LogOut size={18} color="#ff5252" />
-            <Text style={{ color: '#ff5252', fontWeight: '600', fontSize: 15 }}>{t('nav.logout')}</Text>
+        {isAuthenticated && (
+          <>
+            <SectionTitle title={t('settings.account')} textColor={subTextColor} />
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={{
+                backgroundColor: cardBg, borderRadius: 16, padding: 16, borderWidth: 1, borderColor,
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <LogOut size={18} color="#ff5252" />
+                <Text style={{ color: '#ff5252', fontWeight: '600', fontSize: 15 }}>{t('nav.logout')}</Text>
+              </View>
+              <Text style={{ color: subTextColor, fontSize: 12 }}>▶</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {/* 诊断看板 */}
+        <View style={{ backgroundColor: cardBg, borderRadius: 16, padding: 12, marginTop: 24, borderWidth: 1, borderColor }}>
+          <Text style={{ fontSize: 11, fontWeight: '800', color: '#ffba20', marginBottom: 6, textAlign: 'center' }}>🛡️ 移动端诊断看板 (Diagnostic Panel)</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+            <Text style={{ fontSize: 10, color: subTextColor, width: '48%' }}>存储机制: <Text style={{ color: textColor, fontWeight: 'bold' }}>{getStorageDiagnostic().storageType}</Text></Text>
+            <Text style={{ fontSize: 10, color: subTextColor, width: '48%' }}>MMKV 库: <Text style={{ color: textColor, fontWeight: 'bold' }}>{getStorageDiagnostic().isMMKVLoaded ? '已载入' : '载入失败'}</Text></Text>
+            <Text style={{ fontSize: 10, color: subTextColor, width: '48%' }}>MMKV 实例: <Text style={{ color: textColor, fontWeight: 'bold' }}>{getStorageDiagnostic().isMMKVActive ? '就绪' : '不可用'}</Text></Text>
+            <Text style={{ fontSize: 10, color: subTextColor, width: '48%' }}>文件系统库: <Text style={{ color: textColor, fontWeight: 'bold' }}>{getStorageDiagnostic().isFileSystemLoaded ? '已挂载' : '不可用'}</Text></Text>
+            <Text style={{ fontSize: 10, color: subTextColor, width: '48%' }}>备份文件名: <Text style={{ color: textColor, fontWeight: 'bold' }}>{getStorageDiagnostic().storageFile}</Text></Text>
+            <Text style={{ fontSize: 10, color: subTextColor, width: '48%' }}>预加载同步: <Text style={{ color: textColor, fontWeight: 'bold' }}>{getStorageDiagnostic().preloaded ? '成功' : '等待'}</Text></Text>
           </View>
-          <Text style={{ color: subTextColor, fontSize: 12 }}>▶</Text>
-        </TouchableOpacity>
+        </View>
 
         {/* 版本信息 */}
-        <Text style={{ textAlign: 'center', color: subTextColor, fontSize: 11, marginTop: 32 }}>
-          FilmAlbum v1.0.0 · 暗房影集
+        <Text style={{ textAlign: 'center', color: subTextColor, fontSize: 11, marginTop: 16 }}>
+          FilmAlbum v1.0.3 · 暗房影集
         </Text>
       </ScrollView>
     </View>

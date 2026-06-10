@@ -1,13 +1,16 @@
 // NOTE: 必须在最顶部导入全局 CSS，NativeWind v4 依赖此文件注入 Tailwind 样式
 import './global.css';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
+import { View, ActivityIndicator, TouchableOpacity, Text, BackHandler, Image, StyleSheet } from 'react-native';
 import axios from 'axios';
-import { MMKV, storageReadyPromise } from './src/utils/safe-storage';
+import { MMKV, storageReadyPromise, preloadMemoryStorageFromDisk } from './src/utils/safe-storage';
 
 const storage = new MMKV();
+
+// NOTE: 阻止 expo-splash-screen 在 React 首次渲染后自动消失，由 initApp 完成后手动触发 + React 层淡出动画接管
+try { require('expo-splash-screen').preventAutoHideAsync(); } catch (e) {}
 
 // NOTE: App 启动或重载时自动静默探测 API 域名，以无缝感应并适配线上生产环境的 /api 前缀重写
 const detectApiPrefix = async () => {
@@ -94,6 +97,15 @@ const AppContent: React.FC = () => {
   const toastOpacity = useSharedValue(0);
   const [prevAuth, setPrevAuth] = useState(isAuthenticated);
 
+  // NOTE: 启动画面动画控制，重构为两阶段触发策略：
+  // 阶段 1：React 覆盖层挂载的第一帧（onLayout）立即隐藏原生 splash，消灭原生拉伸展示时间
+  // 阶段 2：initApp 完成 + 最少展示 1.5秒后，平滑淡出
+  const [isSplashOverlayHidden, setIsSplashOverlayHidden] = useState(false);
+  const [isInitDone, setIsInitDone] = useState(false);
+  const [isNativeSplashHidden, setIsNativeSplashHidden] = useState(false);
+  const splashStartTime = useRef(Date.now()); // 记录启动画面开始时间，用于计算剩余展示时长
+  const splashOverlayOpacity = useSharedValue(1);
+
   const showToast = (message: string) => {
     setToastMessage(message);
     toastY.value = withTiming(-120, { duration: 0 }, () => {
@@ -112,6 +124,8 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
+        // 主动触发文件预加载，此时 Native bridge 常量已准备就绪，可获得正确的 documentDirectory 目录
+        preloadMemoryStorageFromDisk();
         // 确保从文件系统/MMKV持久化加载回全部数据后再做初始化
         await storageReadyPromise;
       } catch (e) {
@@ -119,9 +133,50 @@ const AppContent: React.FC = () => {
       }
       initialize();
       detectApiPrefix();
+      // NOTE: init 完成后仅标记就绪状态，真正的淡出时机由专用 useEffect 给合最少展示时长后再启动
+      setIsInitDone(true);
     };
     initApp();
   }, []);
+
+  // NOTE: 淡出触发条件：init 完成 + React 覆盖层就绪（原生 splash 已隐藏）
+  // 强制最少展示时长 1500ms，再启动 700ms 淡出动画
+  useEffect(() => {
+    if (!isInitDone || !isNativeSplashHidden || isSplashOverlayHidden) return;
+    const elapsed = Date.now() - splashStartTime.current;
+    const MIN_DISPLAY_MS = 2000;
+    const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed);
+    const timer = setTimeout(() => {
+      splashOverlayOpacity.value = withTiming(0, {
+        duration: 700,
+        easing: Easing.out(Easing.cubic),
+      }, (finished) => {
+        if (finished) runOnJS(setIsSplashOverlayHidden)(true);
+      });
+    }, remaining);
+    return () => clearTimeout(timer);
+  }, [isInitDone, isNativeSplashHidden]);
+
+  // NOTE: 优雅拦截 Android 物理返回键与系统侧边滑动返回手势，保障多级页面导航的历史连贯性
+  useEffect(() => {
+    const handleHardwareBack = () => {
+      // 检查当前是否在非一级页面（子页面）上
+      const isSubScreen = ['addRoll', 'rollDetail', 'postDetail', 'gearDetail', 'addGear', 'editProfile'].includes(screen);
+      // 特殊情况：如果当前在设置页，但未登录，属于独立流，也需返回登录
+      const isSettingsSubScreen = screen === 'settings' && !isAuthenticated;
+
+      if (isSubScreen || isSettingsSubScreen) {
+        handleBackToTab();
+        return true; // 已消费该返回事件，阻止系统默认直接关闭应用的逻辑
+      }
+      return false; // 在一级主页时释放拦截，采用系统默认逻辑（即退出应用到桌面）
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', handleHardwareBack);
+    return () => {
+      subscription.remove();
+    };
+  }, [screen, isAuthenticated]);
 
   // NOTE: isDark 变化时触发平滑动画：背景色插值 + 内容层「呼吸」透明度
   useEffect(() => {
@@ -171,6 +226,21 @@ const AppContent: React.FC = () => {
     zIndex: 9999,
   }));
 
+  // NOTE: 启动画面覆盖层的动画样式：绝对定位全屏，深黑背景 + 图标居中，z-index 层级高于一切内容
+  const splashOverlayStyle = StyleSheet.create({
+    overlay: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      backgroundColor: '#0e0e0e',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 99999,
+    }
+  }).overlay;
+
   // 认证状态变化时自动切换到 dashboard 或 login
   useEffect(() => {
     if (!isLoading) {
@@ -183,13 +253,8 @@ const AppContent: React.FC = () => {
     }
   }, [isAuthenticated, isLoading]);
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: isDark ? '#0e0e0e' : '#f5f5f5', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#ffba20" />
-      </View>
-    );
-  }
+  // NOTE: isLoading 期间 renderScreen 返回 null，启动画面覆盖层会遮住空白期，用户体验无缝
+  // 去掉早期返回，让主 JSX 始终挂载（覆盖层负责遮挡）
 
   // NOTE: 当子页面返回时，统一切回用户离开前的那个 Tab，保证操作的连贯性
   const handleBackToTab = () => {
@@ -211,6 +276,9 @@ const AppContent: React.FC = () => {
 
   // 状态机路由分发
   const renderScreen = () => {
+    // NOTE: 初始化期间返回 null，启动画面覆盖层负责展示连黑期
+    if (isLoading) return null;
+    
     if (!isAuthenticated) {
       if (screen === 'settings') {
         return <SettingsScreen onBack={() => setScreen('login')} />;
@@ -395,6 +463,32 @@ const AppContent: React.FC = () => {
           <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#ffffff' : '#1a1a1a', flex: 1 }}>
             {toastMessage}
           </Text>
+        </Animated.View>
+      )}
+
+      {/* NOTE: 启动画面覆盖层
+           - onLayout 在第一帧立刻隐藏原生 splash，消灭其拉伸变形的展示时间
+           - resizeMode="cover" 铺满屏幕且不留白边
+           - 最短 1.5s 后平滑淡出 */}
+      {!isSplashOverlayHidden && (
+        <Animated.View
+          style={[splashOverlayStyle, { opacity: splashOverlayOpacity }]}
+          onLayout={() => {
+            // NOTE: 第一帧渲染就绪后立刻隐藏原生 splash
+            // 这样用户看到 React 覆盖层（cover 模式，无变形）的时间远早于看到原生 stretch
+            if (!isNativeSplashHidden) {
+              setIsNativeSplashHidden(true);
+              splashStartTime.current = Date.now(); // 计时从覆盖层出现开始
+              try { require('expo-splash-screen').hideAsync(); } catch (e) {}
+            }
+          }}
+          pointerEvents="none"
+        >
+          <Image
+            source={require('./assets/splash-icon.png')}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
+          />
         </Animated.View>
       )}
     </Animated.View>
